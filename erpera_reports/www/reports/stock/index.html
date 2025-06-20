@@ -1,0 +1,50 @@
+{% extends 'erpera_reports/templates/pages/base.html' %}
+
+{% block page_content %}
+    <div class="section-container">
+        <h2 class="section-title">Total Stock</h2>
+        <div class="charts-row">
+            {% set chart_id = 'branchWiseStock' %}
+            {% set title = 'Branch Wise Stock' %}
+            {% set backgroundColor = '#2ca02c' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 6 %}
+            {% set data_url = 'erpera_reports.stock.get_branch_wise_stock' %}
+            {% include "erpera_reports/templates/includes/raw_bar.html" %}
+
+            {% set chart_id = 'companyWiseStock' %}
+            {% set title = 'Company Wise Stock' %}
+            {% set backgroundColor = '#1f77b4' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 6 %}
+            {% set data_url = 'erpera_reports.stock.get_company_wise_stock' %}
+            {% include "erpera_reports/templates/includes/raw_bar.html" %}
+        </div>
+    </div>
+{% endblock %}
+
+<style>
+.section-container {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #28a745;
+}
+
+.charts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+</style>

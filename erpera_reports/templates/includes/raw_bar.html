@@ -1,0 +1,98 @@
+<style>
+  .raw-bar-container {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    padding: 1rem 1rem 0.5rem 1rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    min-width: 200px;
+  }
+  .raw-bar-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: #374151;
+  }
+  .raw-bar-canvas {
+    width: 100% !important;
+    height: 180px !important;
+    display: block;
+  }
+  .width-12 { flex: 0 0 100%; max-width: 100%; }
+  .width-6  { flex: 0 0 50%;  max-width: 50%; }
+  .width-4  { flex: 0 0 33.333%; max-width: 33.333%; }
+  .width-3  { flex: 0 0 25%;  max-width: 25%; }
+  .width-2  { flex: 0 0 16.666%; max-width: 16.666%; }
+  @media (max-width: 1200px) {
+    .width-12,
+    .width-6,
+    .width-4,
+    .width-3,
+    .width-2 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
+</style>
+{% if chart_id and title and (data_url or (labels and data)) %}
+<div class="raw-bar-container width-{{ width|default(4) }}">
+  <div class="raw-bar-title">{{ title }}</div>
+  <canvas id="{{ chart_id }}" class="raw-bar-canvas"></canvas>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    function renderRawBarChart_{{ chart_id }}(labels, data, backgroundColor) {
+      new Chart(document.getElementById('{{ chart_id }}'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: backgroundColor || '{{ backgroundColor|default("#667eea") }}',
+            borderRadius: 6,
+            barPercentage: 0.7,
+            categoryPercentage: 0.6
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: '#f3f4f6' },
+              ticks: { color: '#6b7280', font: { size: 12 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#6b7280', font: { size: 12 } }
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+    {% if data_url %}
+    frappe.call({
+      method: "{{ data_url }}",
+      callback: function(r) {
+        if (r.message) {
+          renderRawBarChart_{{ chart_id }}(
+            r.message.labels,
+            r.message.data,
+            r.message.backgroundColor || '{{ backgroundColor|default("#667eea") }}'
+          );
+        }
+      }
+    });
+    {% else %}
+    renderRawBarChart_{{ chart_id }}(
+      {{ labels|tojson }},
+      {{ data|tojson }},
+      {{ backgroundColor|tojson|default('"#667eea"') }}
+    );
+    {% endif %}
+  });
+</script>
+{% endif %}

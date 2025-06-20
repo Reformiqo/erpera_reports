@@ -1,0 +1,171 @@
+{% extends 'erpera_reports/templates/pages/base.html' %}
+
+{% block page_content %}
+    <div class="overview-cards">
+        <div class="card">
+            <div class="card-icon products">📦</div>
+            <div class="card-value">5483</div>
+            <div class="card-label">Total Products</div>
+        </div>
+        <div class="card">
+            <div class="card-icon orders">📚</div>
+            <div class="card-value">2859</div>
+            <div class="card-label">Orders</div>
+        </div>
+        <div class="card">
+            <div class="card-icon stock">📈</div>
+            <div class="card-value">5483</div>
+            <div class="card-label">Total Stock</div>
+        </div>
+        <div class="card">
+            <div class="card-icon out-of-stock">⚠️</div>
+            <div class="card-value">38</div>
+            <div class="card-label">Out of Stock</div>
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Total Selling</h2>
+        <div class="charts-row">
+            {% set chart_id = 'branchWiseSelling' %}
+            {% set title = 'Branch Wise Selling' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 4 %}
+            {% set data_url = 'erpera_reports.selling.get_branch_wise_selling' %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+
+            {% set chart_id = 'companyWiseSelling' %}
+            {% set title = 'Company Wise Selling' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 4 %}
+            {% set data_url = 'erpera_reports.selling.get_company_wise_selling' %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+
+            {% set chart_id = 'sellingSummary' %}
+            {% set title = 'Selling Summary' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 4 %}
+            {% set data_url = 'erpera_reports.selling.get_selling_summary' %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Consolidated Total Selling</h2>
+        <div class="charts-row">
+            {% set chart_id = 'consolidatedTotalSelling' %}
+            {% set title = 'Consolidated Total Selling' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.selling.consolidated_total_selling' %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+
+            {% set chart_id = 'entityWiseSelling' %}
+            {% set title = 'Entity Wise Selling' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.selling.get_entity_wise_selling' %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Top Customers</h2>
+        <div class="charts-row">
+            {% set chart_id = 'topCustomersByBranch' %}
+            {% set title = 'Top Customers by Branch' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12%}
+            {% set data_url = 'erpera_reports.selling.get_top_customers_by_branch' %}
+            {% include "erpera_reports/templates/includes/raw_bar.html" %}
+
+            {% set chart_id = 'topCustomersByCompany' %}
+            {% set title = 'Top Customers by Company' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.selling.get_top_customers_by_company' %}
+            {% include "erpera_reports/templates/includes/raw_bar.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Consolidated Top Customers</h2>
+        <div class="charts-row">
+            {% set chart_id = 'consolidatedTopCustomers' %}
+            {% set title = 'Top 10 Customers Overall' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.selling.get_consolidated_top_customers' %}
+            {% include "erpera_reports/templates/includes/raw_bar.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Top Selling Products</h2>
+        <div class="charts-row">
+            {% set chart_id = 'topSellingProductsByBranch' %}
+            {% set title = 'Top Selling Products by Branch' %}
+            {% set data_url = 'erpera_reports.selling.get_top_selling_products_by_branch' %}
+            {% set width = 12 %}
+            {% include "erpera_reports/templates/includes/multi_pie.html" %}
+
+            {% set chart_id = 'topSellingProductsByCompany' %}
+            {% set title = 'Top Selling Products by Company' %}
+            {% set data_url = 'erpera_reports.selling.get_top_selling_products_by_company' %}
+            {% set width = 12 %}
+            {% include "erpera_reports/templates/includes/multi_pie.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Consolidated Top Selling Products</h2>
+        <div class="charts-row">
+            {% set chart_id = 'consolidatedTopSellingProducts' %}
+            {% set title = 'Top 10 Products Overall' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'pie' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.selling.get_consolidated_top_selling_products' %}
+            {% include "erpera_reports/templates/includes/doughnut.html" %}
+        </div>
+    </div>
+
+    <!-- Space for future sections -->
+
+{% endblock %}
+
+<style>
+.section-container {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #7c3aed;
+}
+
+.charts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+</style>
+
+   

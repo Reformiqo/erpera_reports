@@ -1,0 +1,99 @@
+<style>
+  .doughnut-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    min-width: 260px;
+    transition: box-shadow 0.2s;
+  }
+  .doughnut-container:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .doughnut-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    color: #374151;
+    letter-spacing: 0.01em;
+  }
+  .doughnut-canvas {
+    width: 100% !important;
+    height: 260px !important;
+    display: block;
+  }
+  .width-12 { flex: 0 0 100%; max-width: 100%; }
+  .width-6  { flex: 0 0 50%;  max-width: 50%; }
+  .width-4  { flex: 0 0 33.333%; max-width: 33.333%; }
+  .width-3  { flex: 0 0 25%;  max-width: 25%; }
+  .width-2  { flex: 0 0 16.666%; max-width: 16.666%; }
+  @media (max-width: 1200px) {
+    .width-12,
+    .width-6,
+    .width-4,
+    .width-3,
+    .width-2 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
+</style>
+{% if chart_id and title and (data_url or (labels and data)) %}
+<div class="doughnut-container width-{{ width|default(4) }}">
+  <div class="doughnut-title">{{ title }}</div>
+  <canvas id="{{ chart_id }}" class="doughnut-canvas"></canvas>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    function renderDoughnutChart_{{ chart_id }}(labels, data, backgroundColor) {
+      new Chart(document.getElementById('{{ chart_id }}'), {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: backgroundColor || '{{ backgroundColor|default("#667eea") }}'
+          }]
+        },
+        options: {
+          plugins: { legend: { position: 'bottom' } },
+          onClick: function(evt, elements) {
+            if (elements.length > 0) {
+              const idx = elements[0].index;
+              const label = this.data.labels[idx];
+              const value = this.data.datasets[0].data[idx];
+              if (typeof showDrillDownModal === 'function') {
+                showDrillDownModal({ label, value }, '{{ title }}');
+              }
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+    {% if data_url %}
+      frappe.call({
+        method: "{{ data_url }}",
+        callback: function(r) {
+          if (r.message) {
+            renderDoughnutChart_{{ chart_id }}(
+              r.message.labels,
+              r.message.data,
+              r.message.backgroundColor || '{{ backgroundColor|default("#667eea") }}'
+            );
+          }
+        }
+      });
+    {% else %}
+      renderDoughnutChart_{{ chart_id }}(
+        {{ labels|tojson }},
+        {{ data|tojson }},
+        {{ backgroundColor|tojson|default('"#667eea"') }}
+      );
+    {% endif %}
+  });
+</script>
+{% endif %} 

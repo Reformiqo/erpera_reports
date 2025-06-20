@@ -1,0 +1,232 @@
+{% extends 'erpera_reports/templates/pages/base.html' %}
+
+{% block page_content %}
+    <div class="overview-cards">
+        <div class="card">
+            <div class="card-icon products">📦</div>
+            <div class="card-value">5483</div>
+            <div class="card-label">Total Products</div>
+        </div>
+        <div class="card">
+            <div class="card-icon orders">📚</div>
+            <div class="card-value">2859</div>
+            <div class="card-label">Orders</div>
+        </div>
+        <div class="card">
+            <div class="card-icon stock">📈</div>
+            <div class="card-value">5483</div>
+            <div class="card-label">Total Stock</div>
+        </div>
+        <div class="card">
+            <div class="card-icon out-of-stock">⚠️</div>
+            <div class="card-value">38</div>
+            <div class="card-label">Out of Stock</div>
+        </div>
+    </div>
+
+    <div class="charts-row">
+        {% set chart_id = 'motaChart' %}
+        {% set title = 'HRK Mota Varaccha Buying' %}
+        {% set backgroundColor = '#7c3aed' %}
+        {% set chart_type = 'bar' %}
+        {% set width = 4 %}
+        {% set data_url = 'erpera_reports.api.get_buying_summary' %}
+        {% include "erpera_reports/templates/includes/bar.html" %}
+  
+        {% set chart_id = 'branchWiseBuying' %}
+        {% set title = 'Branch Wise Buying' %}
+        {% set backgroundColor = '#7c3aed' %}
+        {% set chart_type = 'bar' %}
+        {% set width = 4 %}
+        {% set data_url = 'erpera_reports.api.get_branch_wise_buying' %}
+        {% include "erpera_reports/templates/includes/bar.html" %}
+
+        {% set chart_id = 'companyWiseBuying' %}
+        {% set title = 'Company Wise Buying' %}
+        {% set backgroundColor = '#7c3aed' %}
+        {% set chart_type = 'bar' %}
+        {% set width = 4 %}
+        {% set data_url = 'erpera_reports.api.get_company_wise_buying' %}
+        {% include "erpera_reports/templates/includes/bar.html" %}
+  
+  
+       
+      </div>
+
+      <div class="charts-row">
+        {% set chart_id = 'consolidatedBuying' %}
+        {% set title = 'Consolidated Buying' %}
+        {% set backgroundColor = '#7c3aed' %}
+        {% set chart_type = 'bar' %}
+        {% set width = 12 %}
+        {% set data_url = 'erpera_reports.consolidated.get_entity_summary' %}
+        {% include "erpera_reports/templates/includes/bar.html" %}
+  
+        {% set chart_id = 'entityWiseBuying' %}
+        {% set title = 'Entity Wise Buying' %}
+        {% set backgroundColor = '#7c3aed' %}
+        {% set chart_type = 'bar' %}
+        {% set width = 12 %}
+        {% set data_url = 'erpera_reports.consolidated.consolidated_total_buying' %}
+        {% include "erpera_reports/templates/includes/bar.html" %}
+
+       
+  
+  
+       
+      </div>
+      <div class="charts-row">
+        {% set chart_id = 'topBuyingProductPie' %}
+{% set title = 'Top Buying Products' %}
+{% set data_url = 'erpera_reports.chart.get_top_buying_product_pie' %}
+{% set width = 6 %}
+{% include "erpera_reports/templates/includes/doughnut.html" %}
+
+
+
+{% set chart_id = 'topSupplierExpensesRawBar' %}
+{% set title = 'Top Suppliers for Expenses' %}
+{% set data_url = 'erpera_reports.raw_bar.get_top_supplier_for_expenses_raw_bar' %}
+{% set width = 12 %}
+{% include "erpera_reports/templates/includes/raw_bar.html" %}
+{% endblock %}
+      </div>
+      <script>
+        // Utility function to show modal using Frappe
+        function showDrillDownModal(data, chartType = '') {
+          if (typeof frappe !== 'undefined' && frappe.ui && frappe.ui.Dialog) {
+            try {
+              const modal = new frappe.ui.Dialog({
+                title: 'Drill Down',
+                size: 'extra-large',
+                static: true
+              });
+              
+              modal.$body.html(`
+                <div style="padding: 0;">
+                  <div style="margin-bottom: 15px;">
+                    <span style="display: inline-flex; align-items: center; font-size: 12px; color: #10b981;">
+                      <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 6px;"></span>
+                      Fetched in 0.018s 31 minutes ago
+                    </span>
+                  </div>
+                  
+                  <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                    <h6 style="margin: 0 0 15px 0; font-weight: 600; color: #374151;">Operations</h6>
+                    <button class="btn btn-sm btn-light" style="margin-right: 10px;">
+                      <i class="fa fa-plus"></i> Add Operation
+                    </button>
+                    <button class="btn btn-sm btn-light" style="margin-right: 10px;">
+                      <i class="fa fa-filter"></i> Filter posting_date
+                    </button>
+                    <button class="btn btn-sm btn-light" style="margin-right: 10px;">
+                      <i class="fa fa-filter"></i> Filter status cost_center
+                    </button>
+                    <button class="btn btn-sm btn-light">
+                      <i class="fa fa-search"></i> Select HRK Mota Varac... query
+                    </button>
+                  </div>
+                  
+                  <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px;">
+                    <table class="table table-sm table-hover" style="margin: 0; font-size: 13px;">
+                      <thead style="position: sticky; top: 0; background: #f8f9fa; z-index: 10;">
+                        <tr>
+                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">#</th>
+                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Item Name</th>
+                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600; text-align: right;">Rate</th>
+                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600; text-align: right;">Qty</th>
+                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600; text-align: right;">Amount</th>
+                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600; text-align: right;">Net Total</th>
+                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600; text-align: right;">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr style="border-bottom: 1px solid #f3f4f6;">
+                          <td style="padding: 8px;">1</td>
+                          <td style="padding: 8px;">Fresho Guava Juice-160ml</td>
+                          <td style="padding: 8px; text-align: right;">155.22</td>
+                          <td style="padding: 8px; text-align: right;">100</td>
+                          <td style="padding: 8px; text-align: right;">15,522</td>
+                          <td style="padding: 8px; text-align: right;">15,522</td>
+                          <td style="padding: 8px; text-align: right;">15,522</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f3f4f6;">
+                          <td style="padding: 8px;">2</td>
+                          <td style="padding: 8px;">Fresho Litchi Juice-160ml</td>
+                          <td style="padding: 8px; text-align: right;">155.22</td>
+                          <td style="padding: 8px; text-align: right;">50</td>
+                          <td style="padding: 8px; text-align: right;">7,761</td>
+                          <td style="padding: 8px; text-align: right;">7,761</td>
+                          <td style="padding: 8px; text-align: right;">7,761</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #f3f4f6;">
+                          <td style="padding: 8px;">3</td>
+                          <td style="padding: 8px;">Khan</td>
+                          <td style="padding: 8px; text-align: right;">155.22</td>
+                          <td style="padding: 8px; text-align: right;">10</td>
+                          <td style="padding: 8px; text-align: right;">1,552.2</td>
+                          <td style="padding: 8px; text-align: right;">41,267</td>
+                          <td style="padding: 8px; text-align: right;">41,267</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span>Showing 3 of 3 rows</span>
+                      <button class="btn btn-sm btn-light">
+                        <i class="fa fa-download"></i> Download
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `);
+    
+              modal.$wrapper.find('.modal-dialog').css({
+                'max-width': '90%',
+                'width': '1200px',
+                'margin': '30px auto'
+              });
+    
+              modal.show();
+              return;
+            } catch (e) {
+              console.log('Frappe Dialog error:', e);
+            }
+          }
+    
+          if (typeof frappe !== 'undefined' && frappe.msgprint) {
+            const content = `
+              <div style="max-height: 500px; overflow-y: auto;">
+                <p style="margin-bottom: 15px;"><strong>Details for:</strong> ${data.label} | <strong>Value:</strong> ₹${data.value.toLocaleString()}</p>
+                <table class="table table-bordered table-sm">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th style="text-align: right;">Rate</th>
+                      <th style="text-align: right;">Qty</th>
+                      <th style="text-align: right;">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>Fresho Guava Juice-160ml</td><td style="text-align: right;">155.22</td><td style="text-align: right;">100</td><td style="text-align: right;">15,522</td></tr>
+                    <tr><td>Fresho Litchi Juice-160ml</td><td style="text-align: right;">155.22</td><td style="text-align: right;">50</td><td style="text-align: right;">7,761</td></tr>
+                    <tr><td>Khan</td><td style="text-align: right;">106.68</td><td style="text-align: right;">30</td><td style="text-align: right;">3,200</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            `;
+            
+            frappe.msgprint({
+              title: 'Drill Down',
+              message: content,
+              wide: true
+            });
+            return;
+          }
+    
+          alert(`Drill Down Details\n\nDetails for: ${data.label}\nValue: ₹${data.value.toLocaleString()}\n${chartType ? `Chart: ${chartType}` : ''}`);
+        }
+      </script>
+

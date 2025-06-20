@@ -1,0 +1,155 @@
+<style>
+  .chart-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    min-width: 260px;
+    transition: box-shadow 0.2s;
+  }
+  .chart-container:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .chart-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    color: #374151;
+    letter-spacing: 0.01em;
+  }
+  .chart-canvas {
+    width: 100% !important;
+    height: 260px !important;
+    display: block;
+  }
+  .charts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  .charts-row > .chart-container {
+    min-width: 260px;
+  }
+  .charts-row > .width-12 { flex: 0 0 100%; max-width: 100%; }
+  .charts-row > .width-6  { flex: 0 0 50%;  max-width: 50%; }
+  .charts-row > .width-4  { flex: 0 0 33.333%; max-width: 33.333%; }
+  .charts-row > .width-3  { flex: 0 0 25%;  max-width: 25%; }
+  .charts-row > .width-2  { flex: 0 0 16.666%; max-width: 16.666%; }
+  @media (max-width: 1200px) {
+    .charts-row > .width-12,
+    .charts-row > .width-6,
+    .charts-row > .width-4,
+    .charts-row > .width-3,
+    .charts-row > .width-2 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
+</style>
+{% if chart_id and title and (data_url or (labels and (data or datasets))) %}
+<div class="chart-container width-{{ width|default(4) }}">
+  <div class="chart-title">{{ title }}</div>
+  <canvas id="{{ chart_id }}" class="chart-canvas"></canvas>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    function renderBarChart_{{ chart_id }}(labels, data, datasets, backgroundColor) {
+      // If datasets are provided, use them (multi-dataset mode)
+      // Otherwise, build a single dataset from data/backgroundColor
+      let chartData;
+      if (datasets && Array.isArray(datasets) && datasets.length > 0) {
+        chartData = {
+          labels: labels,
+          datasets: datasets
+        };
+      } else {
+        chartData = {
+          labels: labels,
+          datasets: [{
+            label: '{{ title }}',
+            data: data,
+            backgroundColor: backgroundColor || '{{ backgroundColor|default("#667eea") }}',
+            borderRadius: 8,
+            barPercentage: 0.7,
+            categoryPercentage: 0.6
+          }]
+        };
+      }
+      new Chart(document.getElementById('{{ chart_id }}'), {
+        type: '{{ chart_type|default("bar") }}',
+        data: chartData,
+        options: {
+          plugins: {
+            legend: { display: chartData.datasets.length > 1 },
+            tooltip: {
+              backgroundColor: '#111827',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: '#e5e7eb',
+              borderWidth: 1
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: '#f3f4f6' },
+              ticks: { color: '#6b7280', font: { size: 13 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#6b7280', font: { size: 13 } }
+            }
+          },
+          onClick: function(evt, elements) {
+            if (elements.length > 0) {
+              const idx = elements[0].index;
+              const dsIdx = elements[0].datasetIndex || 0;
+              const label = this.data.labels[idx];
+              const value = this.data.datasets[dsIdx].data[idx];
+              if (typeof showDrillDownModal === 'function') {
+                showDrillDownModal({ label, value }, '{{ title }}');
+              }
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+    {% if data_url %}
+      frappe.call({
+        method: "{{ data_url }}",
+        callback: function(r) {
+          if (r.message) {
+            // Support both single and multi-dataset API responses
+            if (r.message.datasets) {
+              renderBarChart_{{ chart_id }}(
+                r.message.labels,
+                null,
+                r.message.datasets
+              );
+            } else {
+              renderBarChart_{{ chart_id }}(
+                r.message.labels,
+                r.message.data,
+                null,
+                r.message.backgroundColor || '{{ backgroundColor|default("#667eea") }}'
+              );
+            }
+          }
+        }
+      });
+    {% else %}
+      // For static data passed via context
+      {% if datasets %}
+        renderBarChart_{{ chart_id }}({{ labels|tojson }}, null, {{ datasets|tojson }});
+      {% else %}
+        renderBarChart_{{ chart_id }}({{ labels|tojson }}, {{ data|tojson }}, null, {{ backgroundColor|tojson|default('"#667eea"') }});
+      {% endif %}
+    {% endif %}
+  });
+</script>
+{% endif %}

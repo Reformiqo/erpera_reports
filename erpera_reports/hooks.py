@@ -1,9 +1,9 @@
 app_name = "erpera_reports"
 app_title = "Erpera Reports"
-app_publisher = "erpera"
-app_description = "erpera reports"
-app_email = "info@erpera.io"
-app_license = "mit"
+app_publisher = "MK"
+app_description = "Reports"
+app_email = "mk@gmail.com"
+app_license = "MIT"
 
 # Apps
 # ------------------
@@ -241,4 +241,32 @@ app_license = "mit"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
+
+# Whitelisted methods
+whitelisted_methods = {
+    # Selling
+    "erpera_reports.selling.get_total_branch_wise_selling": "erpera_reports.selling.get_total_branch_wise_selling",
+    "erpera_reports.selling.get_branch_wise_selling": "erpera_reports.selling.get_branch_wise_selling",
+    "erpera_reports.selling.get_company_wise_selling": "erpera_reports.selling.get_company_wise_selling",
+    "erpera_reports.selling.get_selling_summary": "erpera_reports.selling.get_selling_summary",
+    "erpera_reports.selling.consolidated_total_selling": "erpera_reports.selling.consolidated_total_selling",
+    "erpera_reports.selling.get_entity_wise_selling": "erpera_reports.selling.get_entity_wise_selling",
+    "erpera_reports.selling.get_top_customers_raw_bar": "erpera_reports.selling.get_top_customers_raw_bar",
+    "erpera_reports.selling.get_top_customers_by_branch": "erpera_reports.selling.get_top_customers_by_branch",
+    "erpera_reports.selling.get_top_customers_by_company": "erpera_reports.selling.get_top_customers_by_company",
+    "erpera_reports.selling.get_consolidated_top_customers": "erpera_reports.selling.get_consolidated_top_customers",
+    "erpera_reports.selling.get_top_selling_products_by_branch": "erpera_reports.selling.get_top_selling_products_by_branch",
+    "erpera_reports.selling.get_top_selling_products_by_company": "erpera_reports.selling.get_top_selling_products_by_company",
+    "erpera_reports.selling.get_consolidated_top_selling_products": "erpera_reports.selling.get_consolidated_top_selling_products",
+    # Stock
+    "erpera_reports.stock.get_total_stock": "erpera_reports.stock.get_total_stock",
+    "erpera_reports.stock.get_branch_wise_stock": "erpera_reports.stock.get_branch_wise_stock",
+    "erpera_reports.stock.get_company_wise_stock": "erpera_reports.stock.get_company_wise_stock",
+}
+
+website_route_rules = [
+    {"from_route": "/reports/selling", "to_route": "erpera_reports/reports/selling"},
+    {"from_route": "/reports/buying", "to_route": "erpera_reports/reports/buying"},
+    {"from_route": "/reports/stock", "to_route": "erpera_reports/reports/stock"},
+]
 

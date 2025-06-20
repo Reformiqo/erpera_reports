@@ -1,0 +1,22 @@
+{% macro summary_card(title, value, change_percentage, change_direction='down', width=3, gap='1.5rem') %}
+  {% set width_map = {
+    12: '100%',
+    6: '50%',
+    4: '33.33%',
+    3: '25%',
+    2: '16.67%',
+    1: '8.33%'
+  } %}
+  {% if width == 12 %}
+    {% set style = 'width: 100%; display: inline-block; vertical-align: top; margin-right: 0; margin-bottom: ' ~ gap ~ '; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 1.5rem 2rem; min-width: 180px; box-sizing: border-box;' %}
+  {% else %}
+    {% set style = 'width: calc(' ~ width_map[width] ~ ' - ' ~ gap ~ '); display: inline-block; vertical-align: top; margin-right: ' ~ gap ~ '; margin-bottom: ' ~ gap ~ '; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 1.5rem 2rem; min-width: 180px; box-sizing: border-box;' %}
+  {% endif %}
+  <div style="{{ style }}" class="card">
+    <div><small style="color: #888;">{{ title }}</small></div>
+    <h2 style="margin: 0.5rem 0 0 0; font-size: 2rem;">₹ {{ value }}</h2>
+    <div style="color: {% if change_direction == 'down' %}#c0392b{% else %}#27ae60{% endif %}; font-size: 1.1rem;">
+      {{ change_direction == 'down' and '↓' or '↑' }} {{ change_percentage }}%
+    </div>
+  </div>
+{% endmacro %}

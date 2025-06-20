@@ -1,0 +1,215 @@
+<style>
+  .multi-pie-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    min-width: 260px;
+    transition: box-shadow 0.2s;
+  }
+  .multi-pie-container:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .multi-pie-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #374151;
+    letter-spacing: 0.01em;
+  }
+  .multi-pie-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  .pie-chart-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .pie-chart-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    color: #374151;
+  }
+  .pie-chart-total {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+  }
+  .pie-canvas {
+    width: 100% !important;
+    height: 200px !important;
+    display: block;
+    margin: 0 auto;
+  }
+  .width-12 { flex: 0 0 100%; max-width: 100%; }
+  .width-6  { flex: 0 0 50%;  max-width: 50%; }
+  .width-4  { flex: 0 0 33.333%; max-width: 33.333%; }
+  .width-3  { flex: 0 0 25%;  max-width: 25%; }
+  .width-2  { flex: 0 0 16.666%; max-width: 16.666%; }
+  @media (max-width: 1200px) {
+    .width-12,
+    .width-6,
+    .width-4,
+    .width-3,
+    .width-2 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+    .multi-pie-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: #6b7280;
+  }
+  .error-message {
+    color: #dc2626;
+    text-align: center;
+    padding: 1rem;
+    background: #fef2f2;
+    border-radius: 6px;
+    margin: 1rem 0;
+  }
+</style>
+
+{% if chart_id and title and data_url %}
+<div class="multi-pie-container width-{{ width|default(6) }}">
+  <div class="multi-pie-title">{{ title }}</div>
+  <div id="{{ chart_id }}_container">
+    <div class="loading-spinner">
+      <i class="fa fa-spinner fa-spin"></i> Loading charts...
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    function renderMultiPieCharts_{{ chart_id }}(datasets) {
+      const container = document.getElementById('{{ chart_id }}_container');
+      
+      if (!datasets || Object.keys(datasets).length === 0) {
+        container.innerHTML = '<div class="error-message">No data available</div>';
+        return;
+      }
+      
+      // Create grid container
+      const gridContainer = document.createElement('div');
+      gridContainer.className = 'multi-pie-grid';
+      
+      // Create pie chart for each entity
+      Object.keys(datasets).forEach((entityName, index) => {
+        const entityData = datasets[entityName];
+        
+        // Create chart item container
+        const chartItem = document.createElement('div');
+        chartItem.className = 'pie-chart-item';
+        
+        // Create title
+        const title = document.createElement('div');
+        title.className = 'pie-chart-title';
+        title.textContent = entityName;
+        
+        // Create total amount
+        const total = document.createElement('div');
+        total.className = 'pie-chart-total';
+        total.textContent = `Total: ₹${entityData.total_amount.toLocaleString()}`;
+        
+        // Create canvas
+        const canvas = document.createElement('canvas');
+        canvas.id = '{{ chart_id }}_' + index;
+        canvas.className = 'pie-canvas';
+        
+        // Append elements
+        chartItem.appendChild(title);
+        chartItem.appendChild(total);
+        chartItem.appendChild(canvas);
+        gridContainer.appendChild(chartItem);
+        
+        // Create pie chart
+        new Chart(canvas, {
+          type: 'pie',
+          data: {
+            labels: entityData.labels,
+            datasets: [{
+              data: entityData.data,
+              backgroundColor: entityData.backgroundColor
+            }]
+          },
+          options: {
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  boxWidth: 12,
+                  padding: 8,
+                  font: {
+                    size: 10
+                  }
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.parsed;
+                    const percentage = ((value / entityData.total_amount) * 100).toFixed(1);
+                    return `${label}: ₹${value.toLocaleString()} (${percentage}%)`;
+                  }
+                }
+              }
+            },
+            onClick: function(evt, elements) {
+              if (elements.length > 0) {
+                const idx = elements[0].index;
+                const label = this.data.labels[idx];
+                const value = this.data.datasets[0].data[idx];
+                if (typeof showDrillDownModal === 'function') {
+                  showDrillDownModal({ 
+                    label: `${entityName} - ${label}`, 
+                    value: value 
+                  }, '{{ title }}');
+                }
+              }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+          }
+        });
+      });
+      
+      // Replace loading spinner with charts
+      container.innerHTML = '';
+      container.appendChild(gridContainer);
+    }
+    
+    // Fetch data and render charts
+    frappe.call({
+      method: "{{ data_url }}",
+      callback: function(r) {
+        if (r.message && r.message.success) {
+          renderMultiPieCharts_{{ chart_id }}(r.message.datasets);
+        } else {
+          const container = document.getElementById('{{ chart_id }}_container');
+          container.innerHTML = '<div class="error-message">Error loading data: ' + 
+            (r.message ? r.message.error || 'Unknown error' : 'No response') + '</div>';
+        }
+      },
+      error: function(err) {
+        const container = document.getElementById('{{ chart_id }}_container');
+        container.innerHTML = '<div class="error-message">Failed to load data</div>';
+      }
+    });
+  });
+</script>
+{% endif %} 
