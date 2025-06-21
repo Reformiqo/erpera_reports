@@ -1,8 +1,63 @@
 import frappe
 from frappe import _
+import json
+
+def apply_filters_to_query(base_query, filters):
+    """
+    Helper function to apply filters to SQL queries
+    """
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    
+    filters = filters or {}
+    conditions = []
+    params = {}
+    
+    # Date range filters
+    if filters.get('from_date'):
+        conditions.append("si.posting_date >= %(from_date)s")
+        params['from_date'] = filters['from_date']
+    
+    if filters.get('to_date'):
+        conditions.append("si.posting_date <= %(to_date)s")
+        params['to_date'] = filters['to_date']
+    
+    # Item filter
+    if filters.get('item'):
+        conditions.append("sii.item_code = %(item)s")
+        params['item'] = filters['item']
+    
+    # Item group filter
+    if filters.get('item_group'):
+        conditions.append("i.item_group = %(item_group)s")
+        params['item_group'] = filters['item_group']
+    
+    # Company filter
+    if filters.get('company'):
+        conditions.append("si.company = %(company)s")
+        params['company'] = filters['company']
+    
+    # Branch filter
+    if filters.get('branch'):
+        conditions.append("si.cost_center = %(branch)s")
+        params['branch'] = filters['branch']
+    
+    # Custom filters
+    if filters.get('warehouse'):
+        conditions.append("sii.warehouse = %(warehouse)s")
+        params['warehouse'] = filters['warehouse']
+    
+    # Add existing conditions
+    if conditions:
+        if "where" in base_query.lower():
+            base_query += " AND " + " AND ".join(conditions)
+        else:
+            base_query += " WHERE " + " AND ".join(conditions)
+    
+    return base_query, params
 
 @frappe.whitelist()
-def get_total_branch_wise_selling():
+def get_total_branch_wise_selling(filters=None):
     """
     Chart Name: Total Selling
     Chart Type: Bar
@@ -13,78 +68,93 @@ def get_total_branch_wise_selling():
     branch_query = """
     SELECT
         COALESCE(si.cost_center, 'Unknown Branch') AS branch,
-        DATE_FORMAT(si.posting_date, '%b %Y') AS month_year,
-        DATE_FORMAT(si.posting_date, '%Y-%m') AS sort_date,
+        DATE_FORMAT(si.posting_date, '%%b %%Y') AS month_year,
+        DATE_FORMAT(si.posting_date, '%%Y-%%m') AS sort_date,
         SUM(sii.amount) AS total_amount,
         COUNT(DISTINCT si.name) AS invoice_count
     FROM `tabSales Invoice` si
     INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+    INNER JOIN `tabItem` i ON sii.item_code = i.name
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
-        AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
         AND si.cost_center IS NOT NULL
         AND si.cost_center != ''
-    GROUP BY 
-        si.cost_center,
-        DATE_FORMAT(si.posting_date, '%Y-%m'),
-        DATE_FORMAT(si.posting_date, '%b %Y')
-    ORDER BY 
-        si.cost_center,
-        sort_date
     """
     
     # Query for company-wise data
     company_query = """
     SELECT
         COALESCE(si.company, 'Unknown Company') AS company,
-        DATE_FORMAT(si.posting_date, '%b %Y') AS month_year,
-        DATE_FORMAT(si.posting_date, '%Y-%m') AS sort_date,
+        DATE_FORMAT(si.posting_date, '%%b %%Y') AS month_year,
+        DATE_FORMAT(si.posting_date, '%%Y-%%m') AS sort_date,
         SUM(sii.amount) AS total_amount,
         COUNT(DISTINCT si.name) AS invoice_count
     FROM `tabSales Invoice` si
     INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+    INNER JOIN `tabItem` i ON sii.item_code = i.name
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
-        AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
         AND si.company IS NOT NULL
         AND si.company != ''
-    GROUP BY 
-        si.company,
-        DATE_FORMAT(si.posting_date, '%Y-%m'),
-        DATE_FORMAT(si.posting_date, '%b %Y')
-    ORDER BY 
-        si.company,
-        sort_date
     """
     
     # Summary query for overall totals
     summary_query = """
     SELECT
-        DATE_FORMAT(si.posting_date, '%b %Y') AS month_year,
-        DATE_FORMAT(si.posting_date, '%Y-%m') AS sort_date,
+        DATE_FORMAT(si.posting_date, '%%b %%Y') AS month_year,
+        DATE_FORMAT(si.posting_date, '%%Y-%%m') AS sort_date,
         SUM(sii.amount) AS total_amount,
         COUNT(DISTINCT si.name) AS invoice_count,
         COUNT(DISTINCT si.cost_center) AS branch_count,
         COUNT(DISTINCT si.company) AS company_count
     FROM `tabSales Invoice` si
     INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+    INNER JOIN `tabItem` i ON sii.item_code = i.name
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
-        AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-    GROUP BY 
-        DATE_FORMAT(si.posting_date, '%Y-%m'),
-        DATE_FORMAT(si.posting_date, '%b %Y')
-    ORDER BY sort_date
     """
     
     try:
+        # Apply filters to queries
+        branch_query, branch_params = apply_filters_to_query(branch_query, filters)
+        company_query, company_params = apply_filters_to_query(company_query, filters)
+        summary_query, summary_params = apply_filters_to_query(summary_query, filters)
+        
+        # Add GROUP BY and ORDER BY clauses
+        branch_query += """
+        GROUP BY 
+            si.cost_center,
+            DATE_FORMAT(si.posting_date, '%%Y-%%m'),
+            DATE_FORMAT(si.posting_date, '%%b %%Y')
+        ORDER BY 
+            si.cost_center,
+            sort_date
+        """
+        
+        company_query += """
+        GROUP BY 
+            si.company,
+            DATE_FORMAT(si.posting_date, '%%Y-%%m'),
+            DATE_FORMAT(si.posting_date, '%%b %%Y')
+        ORDER BY 
+            si.company,
+            sort_date
+        """
+        
+        summary_query += """
+        GROUP BY 
+            DATE_FORMAT(si.posting_date, '%%Y-%%m'),
+            DATE_FORMAT(si.posting_date, '%%b %%Y')
+        ORDER BY sort_date
+        """
+        
         # Execute queries
-        branch_result = frappe.db.sql(branch_query, as_dict=True)
-        company_result = frappe.db.sql(company_query, as_dict=True)
-        summary_result = frappe.db.sql(summary_query, as_dict=True)
+        branch_result = frappe.db.sql(branch_query, branch_params, as_dict=True)
+        company_result = frappe.db.sql(company_query, company_params, as_dict=True)
+        summary_result = frappe.db.sql(summary_query, summary_params, as_dict=True)
         
         # Process branch-wise data
         branch_data = {}
@@ -175,7 +245,8 @@ def get_total_branch_wise_selling():
             "metadata": {
                 "total_branches": len(branch_data),
                 "total_companies": len(company_data),
-                "date_range": "Last 12 months"
+                "date_range": "Last 12 months",
+                "filters_applied": filters
             },
             "success": True
         }
@@ -192,37 +263,37 @@ def get_total_branch_wise_selling():
         }
 
 @frappe.whitelist()
-def get_branch_wise_selling():
+def get_branch_wise_selling(filters=None):
     """
     Separate endpoint for branch-wise data only
     """
-    result = get_total_branch_wise_selling()
+    result = get_total_branch_wise_selling(filters)
     if result.get('success'):
         return result['branch_wise']
     return {"labels": [], "datasets": [], "error": result.get('error')}
 
 @frappe.whitelist()
-def get_company_wise_selling():
+def get_company_wise_selling(filters=None):
     """
     Separate endpoint for company-wise data only
     """
-    result = get_total_branch_wise_selling()
+    result = get_total_branch_wise_selling(filters)
     if result.get('success'):
         return result['company_wise']
     return {"labels": [], "datasets": [], "error": result.get('error')}
 
 @frappe.whitelist()
-def get_selling_summary():
+def get_selling_summary(filters=None):
     """
     Separate endpoint for summary data only
     """
-    result = get_total_branch_wise_selling()
+    result = get_total_branch_wise_selling(filters)
     if result.get('success'):
         return result['summary']
     return {"labels": [], "data": [], "error": result.get('error')}
 
 @frappe.whitelist()
-def consolidated_total_selling():
+def consolidated_total_selling(filters=None):
     """
     Chart Name: Consolidate Total Selling
     Chart Type: Bar
@@ -239,27 +310,17 @@ def consolidated_total_selling():
         END AS entity_name,
         COALESCE(si.company, 'Unknown Company') AS company,
         COALESCE(si.cost_center, 'No Branch') AS branch,
-        DATE_FORMAT(si.posting_date, '%b %Y') AS month_year,
-        DATE_FORMAT(si.posting_date, '%Y-%m') AS sort_date,
+        DATE_FORMAT(si.posting_date, '%%b %%Y') AS month_year,
+        DATE_FORMAT(si.posting_date, '%%Y-%%m') AS sort_date,
         SUM(sii.amount) AS total_amount,
         COUNT(DISTINCT si.name) AS invoice_count,
         SUM(sii.qty) AS total_qty
     FROM `tabSales Invoice` si
     INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+    INNER JOIN `tabItem` i ON sii.item_code = i.name
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
-        AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-    GROUP BY 
-        entity_name,
-        si.company,
-        si.cost_center,
-        DATE_FORMAT(si.posting_date, '%Y-%m'),
-        DATE_FORMAT(si.posting_date, '%b %Y')
-    ORDER BY 
-        si.company,
-        si.cost_center,
-        sort_date
     """
     
     # Query to get entity totals for sorting
@@ -273,18 +334,39 @@ def consolidated_total_selling():
         SUM(sii.amount) AS total_amount
     FROM `tabSales Invoice` si
     INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+    INNER JOIN `tabItem` i ON sii.item_code = i.name
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
-        AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-    GROUP BY entity_name
-    ORDER BY total_amount DESC
     """
     
     try:
+        # Apply filters to queries
+        consolidated_query, consolidated_params = apply_filters_to_query(consolidated_query, filters)
+        entity_totals_query, entity_totals_params = apply_filters_to_query(entity_totals_query, filters)
+        
+        # Add GROUP BY and ORDER BY clauses
+        consolidated_query += """
+        GROUP BY 
+            entity_name,
+            si.company,
+            si.cost_center,
+            DATE_FORMAT(si.posting_date, '%%Y-%%m'),
+            DATE_FORMAT(si.posting_date, '%%b %%Y')
+        ORDER BY 
+            si.company,
+            si.cost_center,
+            sort_date
+        """
+        
+        entity_totals_query += """
+        GROUP BY entity_name
+        ORDER BY total_amount DESC
+        """
+        
         # Execute queries
-        consolidated_result = frappe.db.sql(consolidated_query, as_dict=True)
-        entity_totals_result = frappe.db.sql(entity_totals_query, as_dict=True)
+        consolidated_result = frappe.db.sql(consolidated_query, consolidated_params, as_dict=True)
+        entity_totals_result = frappe.db.sql(entity_totals_query, entity_totals_params, as_dict=True)
         
         if not consolidated_result:
             return {
@@ -383,6 +465,10 @@ def consolidated_total_selling():
                     }
                 }
             },
+            "metadata": {
+                "filters_applied": filters,
+                "total_entities": len(datasets)
+            },
             "success": True
         }
         
@@ -397,12 +483,12 @@ def consolidated_total_selling():
         }
 
 @frappe.whitelist()
-def get_entity_wise_selling():
+def get_entity_wise_selling(filters=None):
     """
     Get summary of all entities with their totals for a single-bar-per-entity chart
     """
     try:
-        result = consolidated_total_selling()
+        result = consolidated_total_selling(filters)
         if result.get('success') and result.get('datasets'):
             labels = []
             data = []
@@ -415,6 +501,7 @@ def get_entity_wise_selling():
                 'labels': labels,
                 'data': data,
                 'backgroundColor': backgroundColors,
+                'filters_applied': filters,
                 'success': True
             }
         else:
@@ -435,29 +522,24 @@ def get_entity_wise_selling():
         }
 
 @frappe.whitelist()
-def get_top_customers_raw_bar(branch=None, company=None, limit=10):
+def get_top_customers_raw_bar(filters=None, branch=None, company=None, limit=10):
     """
     Top Customers Raw Bar Chart
     Branch wise and company wise different chart
     Shows top customers by sales amount
     """
-    filters = []
-    params = []
+    if isinstance(filters, str):
+        filters = json.loads(filters)
     
+    filters = filters or {}
+    
+    # Merge filters with parameters
     if branch:
-        filters.append("si.cost_center = %s")
-        params.append(branch)
+        filters['branch'] = branch
     if company:
-        filters.append("si.company = %s")
-        params.append(company)
-        
-    filters.append("si.docstatus = 1")
-    filters.append("si.status NOT IN ('Cancelled', 'Return')")
-    filters.append("si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)")
+        filters['company'] = company
     
-    where_clause = " AND ".join(filters)
-    
-    sql = f"""
+    base_query = """
         SELECT 
             si.customer_name,
             si.customer,
@@ -466,15 +548,22 @@ def get_top_customers_raw_bar(branch=None, company=None, limit=10):
             SUM(si.net_total) as net_amount,
             AVG(si.total) as avg_invoice_value
         FROM `tabSales Invoice` si
-        WHERE {where_clause}
+        WHERE 
+            si.docstatus = 1
+            AND si.status NOT IN ('Cancelled', 'Return')
+    """
+    
+    try:
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
         GROUP BY si.customer, si.customer_name
         ORDER BY total_amount DESC
         LIMIT %s
-    """
-    params.append(limit)
-    
-    try:
-        result = frappe.db.sql(sql, params, as_dict=True)
+        """
+        params['limit'] = limit
+        
+        result = frappe.db.sql(query, params, as_dict=True)
         
         # Color palette for the bars
         color_palette = [
@@ -498,7 +587,8 @@ def get_top_customers_raw_bar(branch=None, company=None, limit=10):
         return {
             "labels": labels,
             "data": data,
-            "backgroundColor": backgroundColor
+            "backgroundColor": backgroundColor,
+            "filters_applied": filters
         }
         
     except Exception as e:
@@ -510,11 +600,11 @@ def get_top_customers_raw_bar(branch=None, company=None, limit=10):
         }
 
 @frappe.whitelist()
-def get_top_customers_by_branch():
+def get_top_customers_by_branch(filters=None):
     """
     Get top customers for each branch with color grouping
     """
-    sql = """
+    base_query = """
         SELECT 
             si.cost_center as branch,
             si.customer_name,
@@ -526,13 +616,17 @@ def get_top_customers_by_branch():
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.cost_center IS NOT NULL 
             AND si.cost_center != ''
-            AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-        GROUP BY si.cost_center, si.customer_name
-        ORDER BY si.cost_center, total_amount DESC
     """
     
     try:
-        result = frappe.db.sql(sql, as_dict=True)
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY si.cost_center, si.customer_name
+        ORDER BY si.cost_center, total_amount DESC
+        """
+        
+        result = frappe.db.sql(query, params, as_dict=True)
         
         # Color palette for branches
         branch_colors = {
@@ -588,7 +682,8 @@ def get_top_customers_by_branch():
         
         return {
             "labels": formatted_labels,
-            "datasets": datasets
+            "datasets": datasets,
+            "filters_applied": filters
         }
         
     except Exception as e:
@@ -599,11 +694,11 @@ def get_top_customers_by_branch():
         }
 
 @frappe.whitelist()
-def get_top_customers_by_company():
+def get_top_customers_by_company(filters=None):
     """
     Get top customers for each company
     """
-    sql = """
+    base_query = """
         SELECT 
             si.company,
             si.customer_name,
@@ -614,13 +709,17 @@ def get_top_customers_by_company():
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.company IS NOT NULL 
             AND si.company != ''
-            AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-        GROUP BY si.company, si.customer_name
-        ORDER BY si.company, total_amount DESC
     """
     
     try:
-        result = frappe.db.sql(sql, as_dict=True)
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY si.company, si.customer_name
+        ORDER BY si.company, total_amount DESC
+        """
+        
+        result = frappe.db.sql(query, params, as_dict=True)
         
         # Color palette for the bars
         color_palette = [
@@ -671,7 +770,8 @@ def get_top_customers_by_company():
         return {
             "labels": labels,
             "data": data,
-            "backgroundColor": backgroundColor
+            "backgroundColor": backgroundColor,
+            "filters_applied": filters
         }
         
     except Exception as e:
@@ -683,11 +783,11 @@ def get_top_customers_by_company():
         }
 
 @frappe.whitelist()
-def get_consolidated_top_customers():
+def get_consolidated_top_customers(filters=None):
     """
     Get consolidated top 10 customers across all companies
     """
-    sql = """
+    base_query = """
         SELECT 
             si.customer_name,
             si.customer,
@@ -698,14 +798,18 @@ def get_consolidated_top_customers():
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
-            AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-        GROUP BY si.customer, si.customer_name
-        ORDER BY total_amount DESC
-        LIMIT 10
     """
     
     try:
-        result = frappe.db.sql(sql, as_dict=True)
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY si.customer, si.customer_name
+        ORDER BY total_amount DESC
+        LIMIT 10
+        """
+        
+        result = frappe.db.sql(query, params, as_dict=True)
         
         # Color gradient from blue to purple
         colors = [
@@ -730,7 +834,8 @@ def get_consolidated_top_customers():
         return {
             "labels": labels,
             "data": data,
-            "backgroundColor": backgroundColor
+            "backgroundColor": backgroundColor,
+            "filters_applied": filters
         }
         
     except Exception as e:
@@ -742,11 +847,11 @@ def get_consolidated_top_customers():
         }
 
 @frappe.whitelist()
-def get_top_selling_products_by_branch():
+def get_top_selling_products_by_branch(filters=None):
     """
     Get top selling products for each branch with percentage calculations
     """
-    sql = """
+    base_query = """
         SELECT 
             si.cost_center as branch,
             sii.item_name,
@@ -756,18 +861,23 @@ def get_top_selling_products_by_branch():
             COUNT(DISTINCT si.name) as invoice_count
         FROM `tabSales Invoice` si
         INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+        INNER JOIN `tabItem` i ON sii.item_code = i.name
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.cost_center IS NOT NULL 
             AND si.cost_center != ''
-            AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-        GROUP BY si.cost_center, sii.item_code, sii.item_name
-        ORDER BY si.cost_center, total_amount DESC
     """
     
     try:
-        result = frappe.db.sql(sql, as_dict=True)
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY si.cost_center, sii.item_code, sii.item_name
+        ORDER BY si.cost_center, total_amount DESC
+        """
+        
+        result = frappe.db.sql(query, params, as_dict=True)
         
         # Process data by branch
         branch_data = {}
@@ -833,6 +943,7 @@ def get_top_selling_products_by_branch():
         
         return {
             'datasets': datasets,
+            'filters_applied': filters,
             'success': True
         }
         
@@ -845,11 +956,11 @@ def get_top_selling_products_by_branch():
         }
 
 @frappe.whitelist()
-def get_top_selling_products_by_company():
+def get_top_selling_products_by_company(filters=None):
     """
     Get top selling products for each company with percentage calculations
     """
-    sql = """
+    base_query = """
         SELECT 
             si.company,
             sii.item_name,
@@ -860,24 +971,23 @@ def get_top_selling_products_by_company():
             COUNT(DISTINCT si.company) as company_count
         FROM `tabSales Invoice` si
         INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+        INNER JOIN `tabItem` i ON sii.item_code = i.name
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.company IS NOT NULL 
             AND si.company != ''
-            AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-        GROUP BY si.company, sii.item_code, sii.item_name
-        ORDER BY si.company, total_amount DESC
     """
     
     try:
-        result = frappe.db.sql(sql, as_dict=True)
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY si.company, sii.item_code, sii.item_name
+        ORDER BY si.company, total_amount DESC
+        """
         
-        # Debug: Log the initial query results
-        frappe.log_error(f"Top selling products query results: {len(result)} rows")
-        if result:
-            companies = set(row['company'] for row in result)
-            frappe.log_error(f"Companies found in results: {companies}")
+        result = frappe.db.sql(query, params, as_dict=True)
         
         # Process data by company
         company_data = {}
@@ -888,8 +998,6 @@ def get_top_selling_products_by_company():
                     'items': [],
                     'total_company_amount': 0
                 }
-                # Debug: Log when we find a new company
-                frappe.log_error(f"Processing new company: {company}")
             
             # Add to company total
             amount = float(row['total_amount']) if row['total_amount'] else 0
@@ -902,11 +1010,6 @@ def get_top_selling_products_by_company():
                     'amount': amount,
                     'quantity': float(row['total_quantity']) if row['total_quantity'] else 0
                 })
-        
-        # Debug: Log company data summary
-        frappe.log_error(f"Companies processed: {list(company_data.keys())}")
-        for company, data in company_data.items():
-            frappe.log_error(f"Company {company}: {len(data['items'])} items, total amount: {data['total_company_amount']}")
         
         # Color palette for the pie charts
         colors = [
@@ -949,11 +1052,9 @@ def get_top_selling_products_by_company():
                 'total_amount': total_company_amount
             }
         
-        # Debug: Log final datasets
-        frappe.log_error(f"Final datasets prepared for companies: {list(datasets.keys())}")
-        
         return {
             'datasets': datasets,
+            'filters_applied': filters,
             'success': True
         }
         
@@ -967,12 +1068,12 @@ def get_top_selling_products_by_company():
         }
 
 @frappe.whitelist()
-def get_consolidated_top_selling_products():
+def get_consolidated_top_selling_products(filters=None):
     """
     Get consolidated top 10 selling products across all companies
     Shows overall top selling products regardless of company
     """
-    sql = """
+    base_query = """
         SELECT 
             sii.item_name,
             sii.item_code,
@@ -983,17 +1084,22 @@ def get_consolidated_top_selling_products():
             GROUP_CONCAT(DISTINCT si.company) as companies
         FROM `tabSales Invoice` si
         INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+        INNER JOIN `tabItem` i ON sii.item_code = i.name
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
-            AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-        GROUP BY sii.item_code, sii.item_name
-        ORDER BY total_amount DESC
-        LIMIT 10
     """
     
     try:
-        result = frappe.db.sql(sql, as_dict=True)
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY sii.item_code, sii.item_name
+        ORDER BY total_amount DESC
+        LIMIT 10
+        """
+        
+        result = frappe.db.sql(query, params, as_dict=True)
         
         if not result:
             return {
@@ -1042,6 +1148,7 @@ def get_consolidated_top_selling_products():
             'backgroundColor': backgroundColor,
             'tooltips': tooltips,
             'total_amount': total_amount,
+            'filters_applied': filters,
             'success': True
         }
         

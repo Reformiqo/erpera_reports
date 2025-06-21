@@ -3,27 +3,28 @@
 {% block page_content %}
     <div class="overview-cards">
         <div class="card">
-            <div class="card-icon products">📦</div>
-            <div class="card-value">5483</div>
-            <div class="card-label">Total Products</div>
+            <div class="card-icon products">💰</div>
+            <div class="card-value">{{ total_sales }}</div>
+            <div class="card-label">Total Sales</div>
         </div>
         <div class="card">
-            <div class="card-icon orders">📚</div>
-            <div class="card-value">2859</div>
-            <div class="card-label">Orders</div>
+            <div class="card-icon orders">📄</div>
+            <div class="card-value">{{ invoice_count }}</div>
+            <div class="card-label">Total Invoices</div>
         </div>
         <div class="card">
-            <div class="card-icon stock">📈</div>
-            <div class="card-value">5483</div>
-            <div class="card-label">Total Stock</div>
+            <div class="card-icon stock">👥</div>
+            <div class="card-value">{{ customer_count }}</div>
+            <div class="card-label">Unique Customers</div>
         </div>
         <div class="card">
-            <div class="card-icon out-of-stock">⚠️</div>
-            <div class="card-value">38</div>
-            <div class="card-label">Out of Stock</div>
+            <div class="card-icon out-of-stock">📊</div>
+            <div class="card-value">{{ avg_invoice_value }}</div>
+            <div class="card-label">Average Sale Value</div>
         </div>
     </div>
 
+    
     <div class="section-container">
         <h2 class="section-title">Total Selling</h2>
         <div class="charts-row">
@@ -31,24 +32,43 @@
             {% set title = 'Branch Wise Selling' %}
             {% set backgroundColor = '#7c3aed' %}
             {% set chart_type = 'bar' %}
-            {% set width = 4 %}
+            {% set width = 12 %}
             {% set data_url = 'erpera_reports.selling.get_branch_wise_selling' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
             {% set chart_id = 'companyWiseSelling' %}
             {% set title = 'Company Wise Selling' %}
             {% set backgroundColor = '#7c3aed' %}
             {% set chart_type = 'bar' %}
-            {% set width = 4 %}
+            {% set width = 12 %}
             {% set data_url = 'erpera_reports.selling.get_company_wise_selling' %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
+            ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
             {% set chart_id = 'sellingSummary' %}
             {% set title = 'Selling Summary' %}
             {% set backgroundColor = '#7c3aed' %}
             {% set chart_type = 'bar' %}
-            {% set width = 4 %}
+            {% set width = 12 %}
             {% set data_url = 'erpera_reports.selling.get_selling_summary' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
     </div>
@@ -62,6 +82,12 @@
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
             {% set data_url = 'erpera_reports.selling.consolidated_total_selling' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
             {% set chart_id = 'entityWiseSelling' %}
@@ -70,6 +96,12 @@
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
             {% set data_url = 'erpera_reports.selling.get_entity_wise_selling' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
     </div>
@@ -83,7 +115,13 @@
             {% set chart_type = 'bar' %}
             {% set width = 12%}
             {% set data_url = 'erpera_reports.selling.get_top_customers_by_branch' %}
-            {% include "erpera_reports/templates/includes/raw_bar.html" %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
 
             {% set chart_id = 'topCustomersByCompany' %}
             {% set title = 'Top Customers by Company' %}
@@ -91,7 +129,12 @@
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
             {% set data_url = 'erpera_reports.selling.get_top_customers_by_company' %}
-            {% include "erpera_reports/templates/includes/raw_bar.html" %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
     </div>
 
@@ -104,7 +147,11 @@
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
             {% set data_url = 'erpera_reports.selling.get_consolidated_top_customers' %}
-            {% include "erpera_reports/templates/includes/raw_bar.html" %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
     </div>
 
@@ -115,12 +162,22 @@
             {% set title = 'Top Selling Products by Branch' %}
             {% set data_url = 'erpera_reports.selling.get_top_selling_products_by_branch' %}
             {% set width = 12 %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
             {% include "erpera_reports/templates/includes/multi_pie.html" %}
 
             {% set chart_id = 'topSellingProductsByCompany' %}
             {% set title = 'Top Selling Products by Company' %}
             {% set data_url = 'erpera_reports.selling.get_top_selling_products_by_company' %}
             {% set width = 12 %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
+            ] %}
             {% include "erpera_reports/templates/includes/multi_pie.html" %}
         </div>
     </div>

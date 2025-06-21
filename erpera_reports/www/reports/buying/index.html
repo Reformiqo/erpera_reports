@@ -31,6 +31,34 @@
         {% set chart_type = 'bar' %}
         {% set width = 4 %}
         {% set data_url = 'erpera_reports.buying.get_buying_summary' %}
+        {% set filters = {
+          'from_date': '',
+          'to_date': '',
+          'item_list': [
+            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
+            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
+            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
+            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
+            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
+          ],
+          'item_groups': [
+            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
+            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
+            {'value': 'Computers', 'label': 'Computers', 'selected': False},
+            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
+          ],
+          'companies': [
+            {'value': 'Company A', 'label': 'Company A', 'selected': False},
+            {'value': 'Company B', 'label': 'Company B', 'selected': False},
+            {'value': 'Company C', 'label': 'Company C', 'selected': False}
+          ],
+          'branches': [
+            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
+            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
+            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
+            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
+          ]
+        } %}
         {% include "erpera_reports/templates/includes/bar.html" %}
   
         {% set chart_id = 'branchWiseBuying' %}
@@ -39,6 +67,34 @@
         {% set chart_type = 'bar' %}
         {% set width = 6 %}
         {% set data_url = 'erpera_reports.buying.get_branch_wise_buying' %}
+        {% set filters = {
+          'from_date': '',
+          'to_date': '',
+          'item_list': [
+            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
+            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
+            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
+            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
+            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
+          ],
+          'item_groups': [
+            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
+            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
+            {'value': 'Computers', 'label': 'Computers', 'selected': False},
+            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
+          ],
+          'companies': [
+            {'value': 'Company A', 'label': 'Company A', 'selected': False},
+            {'value': 'Company B', 'label': 'Company B', 'selected': False},
+            {'value': 'Company C', 'label': 'Company C', 'selected': False}
+          ],
+          'branches': [
+            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
+            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
+            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
+            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
+          ]
+        } %}
         {% include "erpera_reports/templates/includes/bar.html" %}
 
         {% set chart_id = 'companyWiseBuying' %}
@@ -47,6 +103,34 @@
         {% set chart_type = 'bar' %}
         {% set width = 6 %}
         {% set data_url = 'erpera_reports.buying.get_company_wise_buying' %}
+        {% set filters = {
+          'from_date': '',
+          'to_date': '',
+          'item_list': [
+            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
+            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
+            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
+            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
+            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
+          ],
+          'item_groups': [
+            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
+            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
+            {'value': 'Computers', 'label': 'Computers', 'selected': False},
+            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
+          ],
+          'companies': [
+            {'value': 'Company A', 'label': 'Company A', 'selected': False},
+            {'value': 'Company B', 'label': 'Company B', 'selected': False},
+            {'value': 'Company C', 'label': 'Company C', 'selected': False}
+          ],
+          'branches': [
+            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
+            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
+            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
+            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
+          ]
+        } %}
         {% include "erpera_reports/templates/includes/bar.html" %}
   
   
@@ -60,6 +144,34 @@
         {% set chart_type = 'bar' %}
         {% set width = 12 %}
         {% set data_url = 'erpera_reports.buying.get_buying_summary' %}
+        {% set filters = {
+          'from_date': '',
+          'to_date': '',
+          'item_list': [
+            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
+            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
+            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
+            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
+            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
+          ],
+          'item_groups': [
+            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
+            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
+            {'value': 'Computers', 'label': 'Computers', 'selected': False},
+            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
+          ],
+          'companies': [
+            {'value': 'Company A', 'label': 'Company A', 'selected': False},
+            {'value': 'Company B', 'label': 'Company B', 'selected': False},
+            {'value': 'Company C', 'label': 'Company C', 'selected': False}
+          ],
+          'branches': [
+            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
+            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
+            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
+            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
+          ]
+        } %}
         {% include "erpera_reports/templates/includes/bar.html" %}
   
         {% set chart_id = 'consolidatedBuying' %}
@@ -68,6 +180,34 @@
         {% set chart_type = 'bar' %}
         {% set width = 12 %}
         {% set data_url = 'erpera_reports.buying.consolidated_total_buying' %}
+        {% set filters = {
+          'from_date': '',
+          'to_date': '',
+          'item_list': [
+            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
+            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
+            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
+            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
+            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
+          ],
+          'item_groups': [
+            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
+            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
+            {'value': 'Computers', 'label': 'Computers', 'selected': False},
+            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
+          ],
+          'companies': [
+            {'value': 'Company A', 'label': 'Company A', 'selected': False},
+            {'value': 'Company B', 'label': 'Company B', 'selected': False},
+            {'value': 'Company C', 'label': 'Company C', 'selected': False}
+          ],
+          'branches': [
+            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
+            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
+            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
+            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
+          ]
+        } %}
         {% include "erpera_reports/templates/includes/bar.html" %}
 
         {% set chart_id = 'entitySummary' %}
@@ -76,6 +216,34 @@
         {% set chart_type = 'bar' %}
         {% set width = 12 %}
         {% set data_url = 'erpera_reports.buying.get_entity_summary' %}
+        {% set filters = {
+          'from_date': '',
+          'to_date': '',
+          'item_list': [
+            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
+            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
+            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
+            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
+            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
+          ],
+          'item_groups': [
+            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
+            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
+            {'value': 'Computers', 'label': 'Computers', 'selected': False},
+            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
+          ],
+          'companies': [
+            {'value': 'Company A', 'label': 'Company A', 'selected': False},
+            {'value': 'Company B', 'label': 'Company B', 'selected': False},
+            {'value': 'Company C', 'label': 'Company C', 'selected': False}
+          ],
+          'branches': [
+            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
+            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
+            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
+            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
+          ]
+        } %}
         {% include "erpera_reports/templates/includes/bar.html" %}
 
        

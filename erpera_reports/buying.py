@@ -1,15 +1,71 @@
 import frappe
 from frappe import _
+import json
+
+def apply_filters_to_query(base_query, filters):
+    """
+    Helper function to apply filters to SQL queries
+    """
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    
+    filters = filters or {}
+    conditions = []
+    params = {}
+    
+    # Date range filters
+    if filters.get('from_date'):
+        conditions.append("pi.posting_date >= %(from_date)s")
+        params['from_date'] = filters['from_date']
+    
+    if filters.get('to_date'):
+        conditions.append("pi.posting_date <= %(to_date)s")
+        params['to_date'] = filters['to_date']
+    
+    # Item filter
+    if filters.get('item'):
+        conditions.append("pii.item_code = %(item)s")
+        params['item'] = filters['item']
+    
+    # Item group filter
+    if filters.get('item_group'):
+        conditions.append("i.item_group = %(item_group)s")
+        params['item_group'] = filters['item_group']
+    
+    # Company filter
+    if filters.get('company'):
+        conditions.append("pi.company = %(company)s")
+        params['company'] = filters['company']
+    
+    # Branch filter
+    if filters.get('branch'):
+        conditions.append("pi.cost_center = %(branch)s")
+        params['branch'] = filters['branch']
+    
+    # Custom filters
+    if filters.get('warehouse'):
+        conditions.append("pii.warehouse = %(warehouse)s")
+        params['warehouse'] = filters['warehouse']
+    
+    # Add existing conditions
+    if conditions:
+        if "where" in base_query.lower():
+            base_query += " AND " + " AND ".join(conditions)
+        else:
+            base_query += " WHERE " + " AND ".join(conditions)
+    
+    return base_query, params
 
 @frappe.whitelist()
-def get_mota_chart_data():
+def get_mota_chart_data(filters=None):
     return {
         "labels": ["Jan", "Apr", "May", "Jun"],
-        "data": [84200, 28100, 85800, 62500]
+        "data": [84200, 28100, 85800, 62500],
+        "filters_applied": filters
     }
 
 @frappe.whitelist()
-def get_total_branch_wise_buying():
+def get_total_branch_wise_buying(filters=None):
     """
     Chart Name: Total Buying
     Chart Type: Bar
@@ -21,8 +77,8 @@ def get_total_branch_wise_buying():
     branch_query = """
     SELECT
         COALESCE(pi.cost_center, 'Unknown Branch') AS branch,
-        DATE_FORMAT(pi.posting_date, '%b %Y') AS month_year,
-        DATE_FORMAT(pi.posting_date, '%Y-%m') AS sort_date,
+        DATE_FORMAT(pi.posting_date, '%%b %%Y') AS month_year,
+        DATE_FORMAT(pi.posting_date, '%%Y-%%m') AS sort_date,
         SUM(pii.amount) AS total_amount,
         COUNT(DISTINCT pi.name) AS invoice_count
     FROM `tabPurchase Invoice` pi
@@ -36,24 +92,16 @@ def get_total_branch_wise_buying():
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
         )
         AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
-        AND pi.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
         AND pi.cost_center IS NOT NULL
         AND pi.cost_center != ''
-    GROUP BY 
-        pi.cost_center,
-        DATE_FORMAT(pi.posting_date, '%Y-%m'),
-        DATE_FORMAT(pi.posting_date, '%b %Y')
-    ORDER BY 
-        pi.cost_center,
-        sort_date
     """
     
     # Query for company-wise data
     company_query = """
     SELECT
         COALESCE(pi.company, 'Unknown Company') AS company,
-        DATE_FORMAT(pi.posting_date, '%b %Y') AS month_year,
-        DATE_FORMAT(pi.posting_date, '%Y-%m') AS sort_date,
+        DATE_FORMAT(pi.posting_date, '%%b %%Y') AS month_year,
+        DATE_FORMAT(pi.posting_date, '%%Y-%%m') AS sort_date,
         SUM(pii.amount) AS total_amount,
         COUNT(DISTINCT pi.name) AS invoice_count
     FROM `tabPurchase Invoice` pi
@@ -67,23 +115,15 @@ def get_total_branch_wise_buying():
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
         )
         AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
-        AND pi.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
         AND pi.company IS NOT NULL
         AND pi.company != ''
-    GROUP BY 
-        pi.company,
-        DATE_FORMAT(pi.posting_date, '%Y-%m'),
-        DATE_FORMAT(pi.posting_date, '%b %Y')
-    ORDER BY 
-        pi.company,
-        sort_date
     """
     
     # Summary query for overall totals
     summary_query = """
     SELECT
-        DATE_FORMAT(pi.posting_date, '%b %Y') AS month_year,
-        DATE_FORMAT(pi.posting_date, '%Y-%m') AS sort_date,
+        DATE_FORMAT(pi.posting_date, '%%b %%Y') AS month_year,
+        DATE_FORMAT(pi.posting_date, '%%Y-%%m') AS sort_date,
         SUM(pii.amount) AS total_amount,
         COUNT(DISTINCT pi.name) AS invoice_count,
         COUNT(DISTINCT pi.cost_center) AS branch_count,
@@ -99,18 +139,46 @@ def get_total_branch_wise_buying():
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
         )
         AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
-        AND pi.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-    GROUP BY 
-        DATE_FORMAT(pi.posting_date, '%Y-%m'),
-        DATE_FORMAT(pi.posting_date, '%b %Y')
-    ORDER BY sort_date
     """
     
     try:
+        # Apply filters to queries
+        branch_query, branch_params = apply_filters_to_query(branch_query, filters)
+        company_query, company_params = apply_filters_to_query(company_query, filters)
+        summary_query, summary_params = apply_filters_to_query(summary_query, filters)
+        
+        # Add GROUP BY and ORDER BY clauses
+        branch_query += """
+        GROUP BY 
+            pi.cost_center,
+            DATE_FORMAT(pi.posting_date, '%%Y-%%m'),
+            DATE_FORMAT(pi.posting_date, '%%b %%Y')
+        ORDER BY 
+            pi.cost_center,
+            sort_date
+        """
+        
+        company_query += """
+        GROUP BY 
+            pi.company,
+            DATE_FORMAT(pi.posting_date, '%%Y-%%m'),
+            DATE_FORMAT(pi.posting_date, '%%b %%Y')
+        ORDER BY 
+            pi.company,
+            sort_date
+        """
+        
+        summary_query += """
+        GROUP BY 
+            DATE_FORMAT(pi.posting_date, '%%Y-%%m'),
+            DATE_FORMAT(pi.posting_date, '%%b %%Y')
+        ORDER BY sort_date
+        """
+        
         # Execute queries
-        branch_result = frappe.db.sql(branch_query, as_dict=True)
-        company_result = frappe.db.sql(company_query, as_dict=True)
-        summary_result = frappe.db.sql(summary_query, as_dict=True)
+        branch_result = frappe.db.sql(branch_query, branch_params, as_dict=True)
+        company_result = frappe.db.sql(company_query, company_params, as_dict=True)
+        summary_result = frappe.db.sql(summary_query, summary_params, as_dict=True)
         
         # Process branch-wise data
         branch_data = {}
@@ -202,7 +270,7 @@ def get_total_branch_wise_buying():
                 "total_branches": len(branch_data),
                 "total_companies": len(company_data),
                 "date_range": "Last 12 months",
-                "filter_criteria": "Stock items only (excluding expense & service items)"
+                "filters_applied": filters
             },
             "success": True
         }
@@ -219,92 +287,123 @@ def get_total_branch_wise_buying():
         }
 
 @frappe.whitelist()
-def get_branch_wise_buying():
+def get_branch_wise_buying(filters=None):
     """
     Separate endpoint for branch-wise data only
     """
-    result = get_total_branch_wise_buying()
+    result = get_total_branch_wise_buying(filters)
     if result.get('success'):
         return result['branch_wise']
     return {"labels": [], "datasets": [], "error": result.get('error')}
 
 @frappe.whitelist()
-def get_company_wise_buying():
+def get_company_wise_buying(filters=None):
     """
     Separate endpoint for company-wise data only
     """
-    result = get_total_company_wise_buying()
+    result = get_total_branch_wise_buying(filters)
     if result.get('success'):
         return result['company_wise']
     return {"labels": [], "datasets": [], "error": result.get('error')}
 
 @frappe.whitelist()
-def get_buying_summary():
+def get_buying_summary(filters=None):
     """
     Separate endpoint for summary data only
     """
-    result = get_consolidated_total_buying()
+    result = get_total_branch_wise_buying(filters)
     if result.get('success'):
         return result['summary']
     return {"labels": [], "data": [], "error": result.get('error')}
 
-
-
-
 @frappe.whitelist()
-def get_top_buying_product_pie(branch=None, company=None, limit=5):
+def get_top_buying_product_pie(filters=None, branch=None, company=None, limit=5):
     """
-    Top Buying Product Pie Chart
+    Top Buying Products Pie Chart
     Branch wise and company wise different chart
-    Only choose items in stock (not expense or service items)
     """
-    filters = []
-    params = []
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    
+    filters = filters or {}
+    
+    # Merge filters with parameters
     if branch:
-        filters.append("pi.cost_center = %s")
-        params.append(branch)
+        filters['branch'] = branch
     if company:
-        filters.append("pi.company = %s")
-        params.append(company)
-    filters.append("i.is_stock_item = 1")
-    filters.append("pi.docstatus = 1")
-    filters.append("pi.status NOT IN ('Cancelled', 'Return')")
-    filters.append("pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')")
-    where_clause = " AND ".join(filters)
-    sql = f"""
-        SELECT pii.item_name, SUM(pii.amount) as total_amount
+        filters['company'] = company
+    
+    base_query = """
+        SELECT 
+            pii.item_name,
+            pii.item_code,
+            SUM(pii.amount) as total_amount,
+            SUM(pii.qty) as total_quantity,
+            COUNT(DISTINCT pi.name) as invoice_count
         FROM `tabPurchase Invoice` pi
         INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
         LEFT JOIN `tabItem` i ON pii.item_code = i.name
-        WHERE {where_clause}
-        GROUP BY pii.item_name
+        WHERE 
+            pi.docstatus = 1
+            AND pi.status NOT IN ('Cancelled', 'Return')
+            AND (
+                i.is_stock_item = 1 
+                OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
+            )
+            AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
+    """
+    
+    try:
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY pii.item_code, pii.item_name
         ORDER BY total_amount DESC
         LIMIT %s
-    """
-    params.append(limit)
-    result = frappe.db.sql(sql, params, as_dict=True)
-    color_palette = [
-        '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff',
-        '#f67019', '#f53794', '#acc236', '#166a8f', '#00a950'
-    ]
-    labels = [row['item_name'] for row in result]
-    data = [row['total_amount'] for row in result]
-    backgroundColor = [color_palette[i % len(color_palette)] for i in range(len(labels))]
-    return {
-        "labels": labels,
-        "data": data,
-        "backgroundColor": backgroundColor
-    } 
-
-
+        """
+        params['limit'] = limit
+        
+        result = frappe.db.sql(query, params, as_dict=True)
+        
+        # Color palette for the pie chart
+        color_palette = [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+            '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF9F40'
+        ]
+        
+        # Process the data
+        labels = []
+        data = []
+        backgroundColor = []
+        
+        for i, row in enumerate(result):
+            # Format the label to include item name and total amount
+            label = f"{row['item_name']} (₹{row['total_amount']:,.0f})"
+            labels.append(label)
+            data.append(float(row['total_amount']))
+            backgroundColor.append(color_palette[i % len(color_palette)])
+        
+        return {
+            "labels": labels,
+            "data": data,
+            "backgroundColor": backgroundColor,
+            "filters_applied": filters
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_top_buying_product_pie: {str(e)}")
+        return {
+            "labels": [],
+            "data": [],
+            "backgroundColor": []
+        }
 
 @frappe.whitelist()
-def consolidated_total_buying():
+def consolidated_total_buying(filters=None):
     """
     Chart Name: Consolidate Total Buying
     Chart Type: Bar
-    Note 1: All the company's buying shows in one bar chart using different colour for each company or branch
-    Note 2: Only Choose item which is in stock not choose expense or service item
+    Note: All the company's buying shows in one bar chart using different colour for each company or branch
     """
     
     # Query to get consolidated data by company and branch
@@ -317,8 +416,8 @@ def consolidated_total_buying():
         END AS entity_name,
         COALESCE(pi.company, 'Unknown Company') AS company,
         COALESCE(pi.cost_center, 'No Branch') AS branch,
-        DATE_FORMAT(pi.posting_date, '%b %Y') AS month_year,
-        DATE_FORMAT(pi.posting_date, '%Y-%m') AS sort_date,
+        DATE_FORMAT(pi.posting_date, '%%b %%Y') AS month_year,
+        DATE_FORMAT(pi.posting_date, '%%Y-%%m') AS sort_date,
         SUM(pii.amount) AS total_amount,
         COUNT(DISTINCT pi.name) AS invoice_count,
         SUM(pii.qty) AS total_qty
@@ -333,17 +432,6 @@ def consolidated_total_buying():
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
         )
         AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
-        AND pi.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-    GROUP BY 
-        entity_name,
-        pi.company,
-        pi.cost_center,
-        DATE_FORMAT(pi.posting_date, '%Y-%m'),
-        DATE_FORMAT(pi.posting_date, '%b %Y')
-    ORDER BY 
-        pi.company,
-        pi.cost_center,
-        sort_date
     """
     
     # Query to get entity totals for sorting
@@ -366,15 +454,35 @@ def consolidated_total_buying():
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
         )
         AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
-        AND pi.posting_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-    GROUP BY entity_name
-    ORDER BY total_amount DESC
     """
     
     try:
+        # Apply filters to queries
+        consolidated_query, consolidated_params = apply_filters_to_query(consolidated_query, filters)
+        entity_totals_query, entity_totals_params = apply_filters_to_query(entity_totals_query, filters)
+        
+        # Add GROUP BY and ORDER BY clauses
+        consolidated_query += """
+        GROUP BY 
+            entity_name,
+            pi.company,
+            pi.cost_center,
+            DATE_FORMAT(pi.posting_date, '%%Y-%%m'),
+            DATE_FORMAT(pi.posting_date, '%%b %%Y')
+        ORDER BY 
+            pi.company,
+            pi.cost_center,
+            sort_date
+        """
+        
+        entity_totals_query += """
+        GROUP BY entity_name
+        ORDER BY total_amount DESC
+        """
+        
         # Execute queries
-        consolidated_result = frappe.db.sql(consolidated_query, as_dict=True)
-        entity_totals_result = frappe.db.sql(entity_totals_query, as_dict=True)
+        consolidated_result = frappe.db.sql(consolidated_query, consolidated_params, as_dict=True)
+        entity_totals_result = frappe.db.sql(entity_totals_query, entity_totals_params, as_dict=True)
         
         if not consolidated_result:
             return {
@@ -411,8 +519,7 @@ def consolidated_total_buying():
             '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
             '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
             '#ff9999', '#66b3ff', '#99ff99', '#ffcc99', '#ff99cc',
-            '#c2c2f0', '#ffb3e6', '#c4e17f', '#76d7c4', '#f7dc6f',
-            '#bb8fce', '#85c1e9', '#f8c471', '#82e0aa', '#f1948a'
+            '#c2c2f0', '#ffb3e6', '#c4e17f', '#76d7c4', '#f7dc6f'
         ]
         
         # Prepare datasets for each entity
@@ -438,12 +545,6 @@ def consolidated_total_buying():
         
         # Calculate grand total
         grand_total = sum([ds['entity_total'] for ds in datasets])
-        
-        # Calculate monthly totals for additional insight
-        monthly_totals = []
-        for month in sorted_months:
-            monthly_total = sum([entity_data[entity].get(month, 0) for entity in entity_data.keys()])
-            monthly_totals.append(monthly_total)
         
         return {
             "chart_type": "bar",
@@ -480,18 +581,9 @@ def consolidated_total_buying():
                     }
                 }
             },
-            "summary": {
-                "total_entities": len(datasets),
-                "grand_total": grand_total,
-                "monthly_totals": monthly_totals,
-                "date_range": "Last 12 months",
-                "top_entity": entity_order[0] if entity_order else "N/A",
-                "top_entity_amount": datasets[0]['entity_total'] if datasets else 0
-            },
             "metadata": {
-                "filter_criteria": "Stock items only (excluding expense & service items)",
-                "entities": [ds['label'] for ds in datasets],
-                "months_covered": len(sorted_months)
+                "filters_applied": filters,
+                "total_entities": len(datasets)
             },
             "success": True
         }
@@ -507,12 +599,12 @@ def consolidated_total_buying():
         }
 
 @frappe.whitelist()
-def get_entity_summary():
+def get_entity_summary(filters=None):
     """
     Get summary of all entities with their totals for a single-bar-per-entity chart
     """
     try:
-        result = consolidated_total_buying()
+        result = consolidated_total_buying(filters)
         if result.get('success') and result.get('datasets'):
             labels = []
             data = []
@@ -525,6 +617,7 @@ def get_entity_summary():
                 'labels': labels,
                 'data': data,
                 'backgroundColor': backgroundColors,
+                'filters_applied': filters,
                 'success': True
             }
         else:
@@ -544,54 +637,86 @@ def get_entity_summary():
             'success': False
         }
 
-# Main function alias for backward compatibility
 @frappe.whitelist()
-def total_buying():
-    """
-    Main function - calls consolidated_total_buying
-    """
-    return consolidated_total_buying()
-
+def total_buying(filters=None):
+    return get_total_branch_wise_buying(filters)
 
 @frappe.whitelist()
-def get_top_supplier_for_expenses_raw_bar(branch=None, company=None, limit=5):
+def get_top_supplier_for_expenses_raw_bar(filters=None, branch=None, company=None, limit=5):
     """
-    Top Supplier For Expenses Raw Bar
+    Top Suppliers for Expenses Raw Bar Chart
     Branch wise and company wise different chart
-    Only for item which is expense, service item and Asset buying supplier
+    Shows top suppliers by expense amount
     """
-    filters = []
-    params = []
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    
+    filters = filters or {}
+    
+    # Merge filters with parameters
     if branch:
-        filters.append("pi.cost_center = %s")
-        params.append(branch)
+        filters['branch'] = branch
     if company:
-        filters.append("pi.company = %s")
-        params.append(company)
-    filters.append("pi.docstatus = 1")
-    filters.append("pi.status NOT IN ('Cancelled', 'Return')")
-    filters.append("pii.item_group IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')")
-    where_clause = " AND ".join(filters)
-    sql = f"""
-        SELECT pi.supplier, SUM(pii.amount) as total_amount
+        filters['company'] = company
+    
+    base_query = """
+        SELECT 
+            pi.supplier_name,
+            pi.supplier,
+            COUNT(DISTINCT pi.name) as invoice_count,
+            SUM(pi.total) as total_amount,
+            SUM(pi.net_total) as net_amount,
+            AVG(pi.total) as avg_invoice_value
         FROM `tabPurchase Invoice` pi
         INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-        WHERE {where_clause}
-        GROUP BY pi.supplier
+        WHERE 
+            pi.docstatus = 1
+            AND pi.status NOT IN ('Cancelled', 'Return')
+            AND pii.item_group IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
+    """
+    
+    try:
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY pi.supplier, pi.supplier_name
         ORDER BY total_amount DESC
         LIMIT %s
-    """
-    params.append(limit)
-    result = frappe.db.sql(sql, params, as_dict=True)
-    color_palette = [
-        '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff',
-        '#f67019', '#f53794', '#acc236', '#166a8f', '#00a950'
-    ]
-    labels = [row['supplier'] for row in result]
-    data = [row['total_amount'] for row in result]
-    backgroundColor = [color_palette[i % len(color_palette)] for i in range(len(labels))]
-    return {
-        "labels": labels,
-        "data": data,
-        "backgroundColor": backgroundColor
-    }
+        """
+        params['limit'] = limit
+        
+        result = frappe.db.sql(query, params, as_dict=True)
+        
+        # Color palette for the bars
+        color_palette = [
+            '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff',
+            '#f67019', '#f53794', '#acc236', '#166a8f', '#00a950',
+            '#ff9999', '#66b3ff', '#99ff99', '#ffcc99', '#ff99cc'
+        ]
+        
+        # Process the data
+        labels = []
+        data = []
+        backgroundColor = []
+        
+        for i, row in enumerate(result):
+            # Format the label to include supplier name and total amount
+            label = f"{row['supplier_name']} (₹{row['total_amount']:,.0f})"
+            labels.append(label)
+            data.append(float(row['total_amount']))
+            backgroundColor.append(color_palette[i % len(color_palette)])
+        
+        return {
+            "labels": labels,
+            "data": data,
+            "backgroundColor": backgroundColor,
+            "filters_applied": filters
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_top_supplier_for_expenses_raw_bar: {str(e)}")
+        return {
+            "labels": [],
+            "data": [],
+            "backgroundColor": []
+        }

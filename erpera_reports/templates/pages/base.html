@@ -330,12 +330,12 @@
             <div class="profile">
                 <div class="profile-img">MK</div>
                 <h3>{{frappe.session.user}}</h3>
-                <p>{{frappe.full_name}}</p>
             </div>
             <ul class="nav-menu">
-                <a href="/reports/buying"><li class="nav-item {% if active_page == 'buying' %}active{% endif %}">📋 Buying</li></a>
-                <a href="/reports/selling"><li class="nav-item {% if active_page == 'selling' %}active{% endif %}">🛒 Selling</li></a>
-                <a href="/reports/stock"><li class="nav-item {% if active_page == 'stock' %}active{% endif %}">📦 Stock</li></a>
+               
+                <a href="/reports/selling/index"><li class="nav-item {% if active_page == 'selling' %}active{% endif %}">🛒 Selling</li></a>
+                <a href="/reports/buying/index"><li class="nav-item {% if active_page == 'buying' %}active{% endif %}">📋 Buying</li></a>
+                <a href="/reports/stock/index"><li class="nav-item {% if active_page == 'stock' %}active{% endif %}">📦 Stock</li></a>
             </ul>
         </div>
 

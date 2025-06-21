@@ -81,11 +81,151 @@
     border-radius: 6px;
     margin: 1rem 0;
   }
+
+  /* Filter Styles */
+  .filter-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e9ecef;
+  }
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 140px;
+  }
+  .filter-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.2rem;
+  }
+  .filter-input, .filter-select {
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    background: #fff;
+    transition: border-color 0.15s ease-in-out;
+  }
+  .filter-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+  }
+  .filter-select {
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    background: #fff;
+    cursor: pointer;
+  }
+  .filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+  }
+  .filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-self: flex-end;
+    margin-left: 0.5rem;
+  }
+  .filter-btn {
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+  }
+  .filter-btn-primary {
+    background: #667eea;
+    color: #fff;
+  }
+  .filter-btn-primary:hover {
+    background: #5a67d8;
+  }
+  .filter-btn-secondary {
+    background: #6c757d;
+    color: #fff;
+  }
+  .filter-btn-secondary:hover {
+    background: #5a6268;
+  }
+  .filter-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .filter-toggle {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.25rem 0;
+    margin-bottom: 0.75rem;
+  }
+  .filter-toggle:hover {
+    text-decoration: underline;
+  }
+  .filter-hidden {
+    display: none;
+  }
 </style>
 
 {% if chart_id and title and data_url %}
 <div class="multi-pie-container width-{{ width|default(6) }}">
   <div class="multi-pie-title">{{ title }}</div>
+
+  <!-- Filter Container -->
+  {% if filters %}
+  <div class="filter-container" id="{{ chart_id }}_filters">
+    <button class="filter-toggle" onclick="toggleFilters_{{ chart_id }}()">
+      <i class="fa fa-filter"></i> Filters
+    </button>
+    
+    <div class="filter-content" id="{{ chart_id }}_filter_content">
+      <div class="filter-row">
+        {% for filter in filters %}
+        <div class="filter-group">
+          <label class="filter-label">{{ filter.label }}</label>
+          {% if filter.fieldtype == 'Date' %}
+          <input type="date" class="filter-input filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}">
+          {% elif filter.fieldtype == 'Select' %}
+          <select class="filter-select filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}">
+            <option value="">All</option>
+            {% if filter.options %}
+              {% for option in filter.options %}
+              <option value="{{ option.value }}">{{ option.label }}</option>
+              {% endfor %}
+            {% endif %}
+          </select>
+          {% else %}
+          <input type="text" class="filter-input filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}" placeholder="{{ filter.label }}">
+          {% endif %}
+        </div>
+        {% endfor %}
+        
+        <div class="filter-actions">
+          <button class="filter-btn filter-btn-primary" onclick="applyFilters_{{ chart_id }}()">Apply</button>
+          <button class="filter-btn filter-btn-secondary" onclick="clearFilters_{{ chart_id }}()">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <div id="{{ chart_id }}_container">
     <div class="loading-spinner">
       <i class="fa fa-spinner fa-spin"></i> Loading charts...
@@ -193,23 +333,70 @@
       container.appendChild(gridContainer);
     }
     
-    // Fetch data and render charts
-    frappe.call({
-      method: "{{ data_url }}",
-      callback: function(r) {
-        if (r.message && r.message.success) {
-          renderMultiPieCharts_{{ chart_id }}(r.message.datasets);
-        } else {
+    function loadMultiPieData_{{ chart_id }}(filters = {}) {
+      const container = document.getElementById('{{ chart_id }}_container');
+      container.innerHTML = `<div class="loading-spinner"><i class="fa fa-spinner fa-spin"></i> Loading charts...</div>`;
+
+      frappe.call({
+        method: "{{ data_url }}",
+        args: { filters: filters },
+        callback: function(r) {
+          if (r.message && r.message.success) {
+            renderMultiPieCharts_{{ chart_id }}(r.message.datasets);
+          } else {
+            const container = document.getElementById('{{ chart_id }}_container');
+            container.innerHTML = '<div class="error-message">Error loading data: ' + 
+              (r.message ? r.message.error || 'Unknown error' : 'No response') + '</div>';
+          }
+        },
+        error: function(err) {
           const container = document.getElementById('{{ chart_id }}_container');
-          container.innerHTML = '<div class="error-message">Error loading data: ' + 
-            (r.message ? r.message.error || 'Unknown error' : 'No response') + '</div>';
+          container.innerHTML = '<div class="error-message">Failed to load data</div>';
         }
-      },
-      error: function(err) {
-        const container = document.getElementById('{{ chart_id }}_container');
-        container.innerHTML = '<div class="error-message">Failed to load data</div>';
-      }
-    });
+      });
+    }
+
+    {% if filters %}
+    // Filter functions
+    window.toggleFilters_{{ chart_id }} = function() {
+      const content = document.getElementById('{{ chart_id }}_filter_content');
+      content.classList.toggle('filter-hidden');
+    };
+    
+    window.applyFilters_{{ chart_id }} = function() {
+      const filters = {};
+      const filterElements = document.querySelectorAll('.filter-control-{{ chart_id }}');
+      
+      filterElements.forEach(function(el) {
+        const fieldname = el.dataset.fieldname;
+        if (fieldname) {
+          filters[fieldname] = el.value;
+        }
+      });
+      
+      loadMultiPieData_{{ chart_id }}(filters);
+    };
+    
+    window.clearFilters_{{ chart_id }} = function() {
+      const filterElements = document.querySelectorAll('.filter-control-{{ chart_id }}');
+      if (!filterElements.length) return;
+      
+      filterElements.forEach(function(input) {
+        if (input.type === 'date' || input.type === 'text') {
+          input.value = '';
+        } else if (input.tagName === 'SELECT') {
+          input.selectedIndex = 0;
+        } else {
+          input.value = '';
+        }
+      });
+      
+      applyFilters_{{ chart_id }}();
+    };
+    {% endif %}
+
+    // Initial chart load
+    loadMultiPieData_{{ chart_id }}();
   });
 </script>
 {% endif %} 

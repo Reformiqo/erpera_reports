@@ -1,0 +1,233 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Stock Dashboard with Dynamic Filters</h1>
+            <p class="text-muted">This page demonstrates the enhanced filter system with dynamically populated options.</p>
+        </div>
+    </div>
+
+    <!-- Example 1: Top Selling Items with Dynamic Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Top Selling Items (Dynamic Filters)</h5>
+                </div>
+                <div class="card-body">
+                    {% set chart_config = {
+                        'chart_id': 'dynamic-selling-chart',
+                        'title': 'Top Selling Items (Dynamic Filters)',
+                        'backgroundColor': '#667eea',
+                        'chart_type': 'bar',
+                        'width': '100%',
+                        'data_url': '/api/method/erpera_reports.erpera_reports.api.get_filtered_stock_data',
+                        'filters': {
+                            'item_list': [],
+                            'item_groups': [],
+                            'companies': [],
+                            'branches': []
+                        }
+                    } %}
+                    {% include "erpera_reports/templates/includes/bar.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example 2: Sales vs Returns Comparison -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Sales vs Returns Comparison</h5>
+                </div>
+                <div class="card-body">
+                    {% set chart_config = {
+                        'chart_id': 'sales-returns-chart',
+                        'title': 'Sales vs Returns Comparison',
+                        'backgroundColor': '#f093fb',
+                        'chart_type': 'bar',
+                        'width': '100%',
+                        'data_url': '/api/method/erpera_reports.erpera_reports.api.get_filtered_stock_data',
+                        'filters': {
+                            'item_list': [],
+                            'item_groups': [],
+                            'companies': [],
+                            'branches': []
+                        }
+                    } %}
+                    {% include "erpera_reports/templates/includes/bar.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example 3: Monthly Stock Levels -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Monthly Stock Levels</h5>
+                </div>
+                <div class="card-body">
+                    {% set chart_config = {
+                        'chart_id': 'monthly-stock-chart',
+                        'title': 'Monthly Stock Levels',
+                        'backgroundColor': '#4facfe',
+                        'chart_type': 'bar',
+                        'width': '100%',
+                        'data_url': '/api/method/erpera_reports.erpera_reports.api.get_filtered_stock_data',
+                        'filters': {
+                            'item_list': [],
+                            'item_groups': [],
+                            'companies': [],
+                            'branches': []
+                        }
+                    } %}
+                    {% include "erpera_reports/templates/includes/bar.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load filter options when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch filter options from backend
+    frappe.call({
+        method: 'erpera_reports.erpera_reports.api.get_comprehensive_filter_options',
+        callback: function(r) {
+            if (r.message) {
+                populateFilterOptions(r.message);
+            }
+        }
+    });
+});
+
+function populateFilterOptions(options) {
+    // Populate item filters
+    if (options.item_list) {
+        populateFilterDropdown('item_list', options.item_list);
+    }
+    
+    // Populate item group filters
+    if (options.item_groups) {
+        populateFilterDropdown('item_groups', options.item_groups);
+    }
+    
+    // Populate company filters
+    if (options.companies) {
+        populateFilterDropdown('companies', options.companies);
+    }
+    
+    // Populate branch filters
+    if (options.branches) {
+        populateFilterDropdown('branches', options.branches);
+    }
+}
+
+function populateFilterDropdown(filterType, options) {
+    const filterContainers = document.querySelectorAll(`[data-filter-type="${filterType}"]`);
+    
+    filterContainers.forEach(container => {
+        const select = container.querySelector('select');
+        if (select) {
+            // Clear existing options
+            select.innerHTML = '<option value="">Select ' + filterType.replace('_', ' ') + '</option>';
+            
+            // Add new options
+            options.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option.value;
+                optionElement.textContent = option.label;
+                select.appendChild(optionElement);
+            });
+        }
+    });
+}
+
+// Global drill-down modal function
+function showDrillDownModal(chartTitle, data) {
+    const modal = `
+        <div class="modal fade" id="drillDownModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${chartTitle} - Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>Quantity</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.map(item => `
+                                        <tr>
+                                            <td>${item.item_name || item.label}</td>
+                                            <td>${item.total_qty || item.qty || 0}</td>
+                                            <td>${item.total_amount || item.amount || 0}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('drillDownModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add new modal to body
+    document.body.insertAdjacentHTML('beforeend', modal);
+    
+    // Show modal
+    const modalElement = document.getElementById('drillDownModal');
+    const bsModal = new bootstrap.Modal(modalElement);
+    bsModal.show();
+}
+</script>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.modal-content {
+    border-radius: 0.5rem;
+}
+
+.btn-primary {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.btn-primary:hover {
+    background-color: #5a6fd8;
+    border-color: #5a6fd8;
+}
+</style>
+{% endblock %} 

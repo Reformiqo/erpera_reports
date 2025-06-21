@@ -24,6 +24,108 @@
     height: 260px !important;
     display: block;
   }
+  
+  /* Filter Styles */
+  .filter-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e9ecef;
+  }
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 140px;
+  }
+  .filter-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.2rem;
+  }
+  .filter-input, .filter-select {
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    background: #fff;
+    transition: border-color 0.15s ease-in-out;
+  }
+  .filter-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+  }
+  .filter-select {
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    background: #fff;
+    cursor: pointer;
+  }
+  .filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+  }
+  .filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-self: flex-end;
+    margin-left: 0.5rem;
+  }
+  .filter-btn {
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+  }
+  .filter-btn-primary {
+    background: #667eea;
+    color: #fff;
+  }
+  .filter-btn-primary:hover {
+    background: #5a67d8;
+  }
+  .filter-btn-secondary {
+    background: #6c757d;
+    color: #fff;
+  }
+  .filter-btn-secondary:hover {
+    background: #5a6268;
+  }
+  .filter-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .filter-toggle {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.25rem 0;
+    margin-bottom: 0.75rem;
+  }
+  .filter-toggle:hover {
+    text-decoration: underline;
+  }
+  .filter-hidden {
+    display: none;
+  }
+  
   .charts-row {
     display: flex;
     flex-wrap: wrap;
@@ -48,15 +150,79 @@
       max-width: 100%;
     }
   }
+  @media (max-width: 992px) {
+    .filter-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+    .filter-group {
+      min-width: auto;
+      flex: 1;
+    }
+    .filter-actions {
+      margin-left: 0;
+      align-self: flex-start;
+    }
+  }
 </style>
+
 {% if chart_id and title and (data_url or (labels and (data or datasets))) %}
 <div class="chart-container width-{{ width|default(4) }}">
   <div class="chart-title">{{ title }}</div>
+  
+  <!-- Filter Container -->
+  {% if filters %}
+  <div class="filter-container" id="{{ chart_id }}_filters">
+    <button class="filter-toggle" onclick="toggleFilters_{{ chart_id }}()">
+      <i class="fa fa-filter"></i> Filters
+    </button>
+    
+    <div class="filter-content" id="{{ chart_id }}_filter_content">
+      <div class="filter-row">
+        {% for filter in filters %}
+        <div class="filter-group">
+          <label class="filter-label">{{ filter.label }}</label>
+          {% if filter.fieldtype == 'Date' %}
+          <input type="date" class="filter-input filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}">
+          {% elif filter.fieldtype == 'Select' %}
+          <select class="filter-select filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}">
+            <option value="">All</option>
+            {% if filter.options %}
+              {% for option in filter.options %}
+              <option value="{{ option.value }}">{{ option.label }}</option>
+              {% endfor %}
+            {% endif %}
+          </select>
+          {% else %}
+          <input type="text" class="filter-input filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}" placeholder="{{ filter.label }}">
+          {% endif %}
+        </div>
+        {% endfor %}
+        
+        <div class="filter-actions">
+          <button class="filter-btn filter-btn-primary" onclick="applyFilters_{{ chart_id }}()">Apply</button>
+          <button class="filter-btn filter-btn-secondary" onclick="clearFilters_{{ chart_id }}()">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  
   <canvas id="{{ chart_id }}" class="chart-canvas"></canvas>
 </div>
+
 <script>
   document.addEventListener("DOMContentLoaded", function() {
+    // Initialize chart
+    let currentChart_{{ chart_id }} = null;
+    
     function renderBarChart_{{ chart_id }}(labels, data, datasets, backgroundColor) {
+      // Destroy existing chart if it exists
+      if (currentChart_{{ chart_id }}) {
+        currentChart_{{ chart_id }}.destroy();
+      }
+      
       // If datasets are provided, use them (multi-dataset mode)
       // Otherwise, build a single dataset from data/backgroundColor
       let chartData;
@@ -78,7 +244,8 @@
           }]
         };
       }
-      new Chart(document.getElementById('{{ chart_id }}'), {
+      
+      currentChart_{{ chart_id }} = new Chart(document.getElementById('{{ chart_id }}'), {
         type: '{{ chart_type|default("bar") }}',
         data: chartData,
         options: {
@@ -110,7 +277,7 @@
               const label = this.data.labels[idx];
               const value = this.data.datasets[dsIdx].data[idx];
               if (typeof showDrillDownModal === 'function') {
-                showDrillDownModal({ label, value }, '{{ title }}');
+                showDrillDownModal({ label: label, value: value }, '{{ title }}');
               }
             }
           },
@@ -119,12 +286,78 @@
         }
       });
     }
+    
+    {% if filters %}
+    // Filter functions
+    window.toggleFilters_{{ chart_id }} = function() {
+      const content = document.getElementById('{{ chart_id }}_filter_content');
+      content.classList.toggle('filter-hidden');
+    };
+    
+    window.applyFilters_{{ chart_id }} = function() {
+      const filters = {};
+      const filterElements = document.querySelectorAll('.filter-control-{{ chart_id }}');
+      
+      filterElements.forEach(function(el) {
+        const fieldname = el.dataset.fieldname;
+        if (fieldname) {
+          filters[fieldname] = el.value;
+        }
+      });
+      
+      // Call backend with filters
+      {% if data_url %}
+        frappe.call({
+          method: "{{ data_url }}",
+          args: { filters: filters },
+          callback: function(r) {
+            if (r.message) {
+              if (r.message.datasets) {
+                renderBarChart_{{ chart_id }}(
+                  r.message.labels,
+                  null,
+                  r.message.datasets
+                );
+              } else {
+                renderBarChart_{{ chart_id }}(
+                  r.message.labels,
+                  r.message.data,
+                  null,
+                  r.message.backgroundColor || '{{ backgroundColor|default("#667eea") }}'
+                );
+              }
+            }
+          }
+        });
+      {% endif %}
+    };
+    
+    window.clearFilters_{{ chart_id }} = function() {
+      // Clear all filter inputs
+      const filterElements = document.querySelectorAll('.filter-control-{{ chart_id }}');
+      if (!filterElements.length) return;
+      
+      filterElements.forEach(function(input) {
+        if (input.type === 'date' || input.type === 'text') {
+          input.value = '';
+        } else if (input.tagName === 'SELECT') {
+          input.selectedIndex = 0;
+        } else {
+          input.value = '';
+        }
+      });
+      
+      // Reload chart with cleared filters
+      applyFilters_{{ chart_id }}();
+    };
+    {% endif %}
+    
+    // Initial chart load
     {% if data_url %}
       frappe.call({
         method: "{{ data_url }}",
         callback: function(r) {
           if (r.message) {
-            // Support both single and multi-dataset API responses
             if (r.message.datasets) {
               renderBarChart_{{ chart_id }}(
                 r.message.labels,
