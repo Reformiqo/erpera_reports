@@ -126,14 +126,59 @@
     color: #667eea;
     font-size: 0.9rem;
     cursor: pointer;
-    padding: 0.25rem 0;
+    padding: 0.5rem;
     margin-bottom: 0.75rem;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 2px solid #667eea;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
   }
   .filter-toggle:hover {
-    text-decoration: underline;
+    background-color: #667eea;
+    color: #fff;
+    border-color: #667eea;
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
   }
   .filter-hidden {
     display: none;
+  }
+  
+  /* Custom sliders icon */
+  .custom-sliders-icon {
+    display: inline-block;
+    width: 20px;
+    height: 16px;
+    position: relative;
+  }
+  .custom-sliders-icon::before,
+  .custom-sliders-icon::after {
+    content: '';
+    position: absolute;
+    background: currentColor;
+    border-radius: 1px;
+  }
+  .custom-sliders-icon::before {
+    width: 20px;
+    height: 2px;
+    top: 3px;
+    left: 0;
+    box-shadow: 0 5px 0 currentColor, 0 10px 0 currentColor;
+  }
+  .custom-sliders-icon::after {
+    width: 5px;
+    height: 5px;
+    background: currentColor;
+    border-radius: 50%;
+    top: 1.5px;
+    left: 10px;
+    box-shadow: -7px 5px 0 currentColor, 5px 10px 0 currentColor;
   }
   
   .charts-row {
@@ -185,7 +230,7 @@
   {% if filters %}
   <div class="filter-container" id="{{ chart_id }}_filters">
     <button class="filter-toggle" onclick="toggleFilters_{{ chart_id }}()">
-      <div class="card-icon filter">🔽</div>
+      <span class="custom-sliders-icon"></span>
     </button>
     
     <div class="filter-content" id="{{ chart_id }}_filter_content">
