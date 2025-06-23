@@ -3,406 +3,238 @@
 {% block page_content %}
     <div class="overview-cards">
         <div class="card">
-            <div class="card-icon products">📦</div>
-            <div class="card-value">5483</div>
-            <div class="card-label">Total Products</div>
+            <div class="card-icon products">💰</div>
+            <div class="card-value">{{ total_purchase }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_fiscal_year }})</span></div>
+            <div class="card-label">Total Purchase</div>
         </div>
         <div class="card">
-            <div class="card-icon orders">📚</div>
-            <div class="card-value">2859</div>
-            <div class="card-label">Orders</div>
+            <div class="card-icon orders">📄</div>
+            <div class="card-value">{{ invoice_count }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_fiscal_year }})</span></div>
+            <div class="card-label">Total Invoices</div>
         </div>
         <div class="card">
-            <div class="card-icon stock">📈</div>
-            <div class="card-value">5483</div>
-            <div class="card-label">Total Stock</div>
+            <div class="card-icon stock">🏢</div>
+            <div class="card-value">{{ supplier_count }}</div>
+            <div class="card-label">Unique Suppliers</div>
         </div>
         <div class="card">
-            <div class="card-icon out-of-stock">⚠️</div>
-            <div class="card-value">38</div>
-            <div class="card-label">Out of Stock</div>
+            <div class="card-icon out-of-stock">📊</div>
+            <div class="card-value">{{ avg_invoice_value }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_month }})</span></div>
+            <div class="card-label">Average Purchase Value</div>
         </div>
     </div>
 
-    <div class="charts-row">
-        {% set chart_id = 'motaChart' %}
-        {% set title = 'HRK Mota Varaccha Buying' %}
-        {% set backgroundColor = '#7c3aed' %}
-        {% set chart_type = 'bar' %}
-        {% set width = 4 %}
-        {% set data_url = 'erpera_reports.buying.get_buying_summary' %}
-        {% set filters = {
-          'from_date': '',
-          'to_date': '',
-          'item_list': [
-            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
-            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
-            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
-            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
-            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
-          ],
-          'item_groups': [
-            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
-            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
-            {'value': 'Computers', 'label': 'Computers', 'selected': False},
-            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
-          ],
-          'companies': [
-            {'value': 'Company A', 'label': 'Company A', 'selected': False},
-            {'value': 'Company B', 'label': 'Company B', 'selected': False},
-            {'value': 'Company C', 'label': 'Company C', 'selected': False}
-          ],
-          'branches': [
-            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
-            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
-            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
-            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
-          ]
-        } %}
-        {% include "erpera_reports/templates/includes/bar.html" %}
-  
-        {% set chart_id = 'branchWiseBuying' %}
-        {% set title = 'Branch Wise Buying' %}
-        {% set backgroundColor = '#7c3aed' %}
-        {% set chart_type = 'bar' %}
-        {% set width = 6 %}
-        {% set data_url = 'erpera_reports.buying.get_branch_wise_buying' %}
-        {% set filters = {
-          'from_date': '',
-          'to_date': '',
-          'item_list': [
-            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
-            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
-            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
-            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
-            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
-          ],
-          'item_groups': [
-            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
-            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
-            {'value': 'Computers', 'label': 'Computers', 'selected': False},
-            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
-          ],
-          'companies': [
-            {'value': 'Company A', 'label': 'Company A', 'selected': False},
-            {'value': 'Company B', 'label': 'Company B', 'selected': False},
-            {'value': 'Company C', 'label': 'Company C', 'selected': False}
-          ],
-          'branches': [
-            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
-            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
-            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
-            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
-          ]
-        } %}
-        {% include "erpera_reports/templates/includes/bar.html" %}
+    
+    <div class="section-container">
+        <h2 class="section-title">Total Buying</h2>
+        <div class="charts-row">
+            {% set chart_id = 'branchWiseBuying' %}
+            {% set title = 'Branch Wise Buying' %}
+            {% set backgroundColor = '#059669' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.buying.get_branch_wise_buying' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
 
-        {% set chart_id = 'companyWiseBuying' %}
-        {% set title = 'Company Wise Buying' %}
-        {% set backgroundColor = '#7c3aed' %}
-        {% set chart_type = 'bar' %}
-        {% set width = 6 %}
-        {% set data_url = 'erpera_reports.buying.get_company_wise_buying' %}
-        {% set filters = {
-          'from_date': '',
-          'to_date': '',
-          'item_list': [
-            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
-            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
-            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
-            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
-            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
-          ],
-          'item_groups': [
-            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
-            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
-            {'value': 'Computers', 'label': 'Computers', 'selected': False},
-            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
-          ],
-          'companies': [
-            {'value': 'Company A', 'label': 'Company A', 'selected': False},
-            {'value': 'Company B', 'label': 'Company B', 'selected': False},
-            {'value': 'Company C', 'label': 'Company C', 'selected': False}
-          ],
-          'branches': [
-            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
-            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
-            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
-            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
-          ]
-        } %}
-        {% include "erpera_reports/templates/includes/bar.html" %}
-  
-  
-       
-      </div>
+            {% set chart_id = 'companyWiseBuying' %}
+            {% set title = 'Company Wise Buying' %}
+            {% set backgroundColor = '#059669' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.buying.get_company_wise_buying' %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
 
-      <div class="charts-row">
-        {% set chart_id = 'buyingSummary' %}
-        {% set title = 'Buying Summary' %}
-        {% set backgroundColor = '#7c3aed' %}
-        {% set chart_type = 'bar' %}
-        {% set width = 12 %}
-        {% set data_url = 'erpera_reports.buying.get_buying_summary' %}
-        {% set filters = {
-          'from_date': '',
-          'to_date': '',
-          'item_list': [
-            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
-            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
-            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
-            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
-            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
-          ],
-          'item_groups': [
-            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
-            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
-            {'value': 'Computers', 'label': 'Computers', 'selected': False},
-            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
-          ],
-          'companies': [
-            {'value': 'Company A', 'label': 'Company A', 'selected': False},
-            {'value': 'Company B', 'label': 'Company B', 'selected': False},
-            {'value': 'Company C', 'label': 'Company C', 'selected': False}
-          ],
-          'branches': [
-            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
-            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
-            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
-            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
-          ]
-        } %}
-        {% include "erpera_reports/templates/includes/bar.html" %}
-  
-        {% set chart_id = 'consolidatedBuying' %}
-        {% set title = 'Consolidated Buying' %}
-        {% set backgroundColor = '#7c3aed' %}
-        {% set chart_type = 'bar' %}
-        {% set width = 12 %}
-        {% set data_url = 'erpera_reports.buying.consolidated_total_buying' %}
-        {% set filters = {
-          'from_date': '',
-          'to_date': '',
-          'item_list': [
-            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
-            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
-            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
-            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
-            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
-          ],
-          'item_groups': [
-            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
-            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
-            {'value': 'Computers', 'label': 'Computers', 'selected': False},
-            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
-          ],
-          'companies': [
-            {'value': 'Company A', 'label': 'Company A', 'selected': False},
-            {'value': 'Company B', 'label': 'Company B', 'selected': False},
-            {'value': 'Company C', 'label': 'Company C', 'selected': False}
-          ],
-          'branches': [
-            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
-            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
-            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
-            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
-          ]
-        } %}
-        {% include "erpera_reports/templates/includes/bar.html" %}
+            {% set chart_id = 'buyingSummary' %}
+            {% set title = 'Buying Summary' %}
+            {% set backgroundColor = '#059669' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.buying.get_buying_summary' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
 
-        {% set chart_id = 'entitySummary' %}
-        {% set title = 'Entity Summary' %}
-        {% set backgroundColor = '#7c3aed' %}
-        {% set chart_type = 'bar' %}
-        {% set width = 12 %}
-        {% set data_url = 'erpera_reports.buying.get_entity_summary' %}
-        {% set filters = {
-          'from_date': '',
-          'to_date': '',
-          'item_list': [
-            {'value': 'ITEM-001', 'label': 'Laptop Dell XPS 13', 'selected': False},
-            {'value': 'ITEM-002', 'label': 'Wireless Mouse Logitech', 'selected': False},
-            {'value': 'ITEM-003', 'label': 'Mechanical Keyboard', 'selected': False},
-            {'value': 'ITEM-004', 'label': 'USB-C Cable', 'selected': False},
-            {'value': 'ITEM-005', 'label': 'External Hard Drive 1TB', 'selected': False}
-          ],
-          'item_groups': [
-            {'value': 'Electronics', 'label': 'Electronics', 'selected': False},
-            {'value': 'Accessories', 'label': 'Accessories', 'selected': False},
-            {'value': 'Computers', 'label': 'Computers', 'selected': False},
-            {'value': 'Peripherals', 'label': 'Peripherals', 'selected': False}
-          ],
-          'companies': [
-            {'value': 'Company A', 'label': 'Company A', 'selected': False},
-            {'value': 'Company B', 'label': 'Company B', 'selected': False},
-            {'value': 'Company C', 'label': 'Company C', 'selected': False}
-          ],
-          'branches': [
-            {'value': 'Branch 1', 'label': 'Main Branch', 'selected': False},
-            {'value': 'Branch 2', 'label': 'North Branch', 'selected': False},
-            {'value': 'Branch 3', 'label': 'South Branch', 'selected': False},
-            {'value': 'Branch 4', 'label': 'East Branch', 'selected': False}
-          ]
-        } %}
-        {% include "erpera_reports/templates/includes/bar.html" %}
+    <div class="section-container">
+        <h2 class="section-title">Consolidated Total Buying</h2>
+        <div class="charts-row">
+            {% set chart_id = 'consolidatedTotalBuying' %}
+            {% set title = 'Consolidated Total Buying' %}
+            {% set backgroundColor = '#059669' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.buying.consolidated_total_buying' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
 
-       
-  
-  
-       
-      </div>
-      <div class="charts-row">
-        {% set chart_id = 'topBuyingProductPie' %}
-{% set title = 'Top Buying Products' %}
-{% set data_url = 'erpera_reports.buying.get_top_buying_product_pie' %}
-{% set width = 6 %}
-{% include "erpera_reports/templates/includes/doughnut.html" %}
+            {% set chart_id = 'entityWiseBuying' %}
+            {% set title = 'Entity Wise Buying' %}
+            {% set backgroundColor = '#059669' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.buying.get_entity_summary' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
 
+    <div class="section-container">
+        <h2 class="section-title">Top Suppliers</h2>
+        <div class="charts-row">
+            {% set chart_id = 'topSuppliersByBranch' %}
+            {% set title = 'Top Suppliers by Branch' %}
+            {% set backgroundColor = '#059669' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.buying.get_top_supplier_for_expenses_raw_bar' %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
 
+    <div class="section-container">
+        <h2 class="section-title">Top Buying Products</h2>
+        <div class="charts-row">
+            {% set chart_id = 'topBuyingProductsByBranch' %}
+            {% set title = 'Top Buying Products by Branch' %}
+            {% set data_url = 'erpera_reports.buying.get_top_buying_products_by_branch' %}
+            {% set width = 12 %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+                { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+                { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/multi_pie.html" %}
 
-{% set chart_id = 'topSupplierExpensesRawBar' %}
-{% set title = 'Top Suppliers for Expenses' %}
-{% set data_url = 'erpera_reports.buying.get_top_supplier_for_expenses_raw_bar' %}
-{% set width = 6 %}
-{% include "erpera_reports/templates/includes/raw_bar.html" %}
+            {% set chart_id = 'topBuyingProductsByCompany' %}
+            {% set title = 'Top Buying Products by Company' %}
+            {% set data_url = 'erpera_reports.buying.get_top_buying_products_by_company' %}
+            {% set width = 12 %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+                { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+                { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/multi_pie.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Most Expenses Head</h2>
+        <div class="charts-row">
+            {% set chart_id = 'mostExpensesHeadByBranch' %}
+            {% set title = 'Most Expenses Head by Branch' %}
+            {% set data_url = 'erpera_reports.buying.get_most_expenses_head_by_branch' %}
+            {% set width = 12 %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+                { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/multi_pie.html" %}
+
+            {% set chart_id = 'mostExpensesHeadByCompany' %}
+            {% set title = 'Most Expenses Head by Company' %}
+            {% set data_url = 'erpera_reports.buying.get_most_expenses_head_by_company' %}
+            {% set width = 12 %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+                { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/multi_pie.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Consolidate Most Purchase Head</h2>
+        <div class="charts-row">
+            {% set chart_id = 'consolidateMostPurchaseHead' %}
+            {% set title = 'Top 10 Expense Categories Overall' %}
+            {% set backgroundColor = '#059669' %}
+            {% set chart_type = 'pie' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.buying.get_consolidate_most_purchase_head' %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+                { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/doughnut.html" %}
+        </div>
+    </div>
+
+    <!-- Space for future sections -->
+
 {% endblock %}
-      </div>
-      <script>
-        // Utility function to show modal using Frappe
-        function showDrillDownModal(data, chartType = '') {
-          if (typeof frappe !== 'undefined' && frappe.ui && frappe.ui.Dialog) {
-            try {
-              const modal = new frappe.ui.Dialog({
-                title: 'Drill Down',
-                size: 'extra-large',
-                static: true
-              });
-              
-              modal.$body.html(`
-                <div style="padding: 0;">
-                  <div style="margin-bottom: 15px;">
-                    <span style="display: inline-flex; align-items: center; font-size: 12px; color: #10b981;">
-                      <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 6px;"></span>
-                      Fetched in 0.018s 31 minutes ago
-                    </span>
-                  </div>
-                  
-                  <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
-                    <h6 style="margin: 0 0 15px 0; font-weight: 600; color: #374151;">Operations</h6>
-                    <button class="btn btn-sm btn-light" style="margin-right: 10px;">
-                      <i class="fa fa-plus"></i> Add Operation
-                    </button>
-                    <button class="btn btn-sm btn-light" style="margin-right: 10px;">
-                      <i class="fa fa-filter"></i> Filter posting_date
-                    </button>
-                    <button class="btn btn-sm btn-light" style="margin-right: 10px;">
-                      <i class="fa fa-filter"></i> Filter status cost_center
-                    </button>
-                    <button class="btn btn-sm btn-light">
-                      <i class="fa fa-search"></i> Select HRK Mota Varac... query
-                    </button>
-                  </div>
-                  
-                  <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px;">
-                    <table class="table table-sm table-hover" style="margin: 0; font-size: 13px;">
-                      <thead style="position: sticky; top: 0; background: #f8f9fa; z-index: 10;">
-                        <tr>
-                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">#</th>
-                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Item Name</th>
-                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600; text-align: right;">Rate</th>
-                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600; text-align: right;">Qty</th>
-                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600; text-align: right;">Amount</th>
-                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600; text-align: right;">Net Total</th>
-                          <th style="padding: 12px 8px; border-bottom: 2px solid #e5e7eb; font-weight: 600; text-align: right;">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr style="border-bottom: 1px solid #f3f4f6;">
-                          <td style="padding: 8px;">1</td>
-                          <td style="padding: 8px;">Fresho Guava Juice-160ml</td>
-                          <td style="padding: 8px; text-align: right;">155.22</td>
-                          <td style="padding: 8px; text-align: right;">100</td>
-                          <td style="padding: 8px; text-align: right;">15,522</td>
-                          <td style="padding: 8px; text-align: right;">15,522</td>
-                          <td style="padding: 8px; text-align: right;">15,522</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #f3f4f6;">
-                          <td style="padding: 8px;">2</td>
-                          <td style="padding: 8px;">Fresho Litchi Juice-160ml</td>
-                          <td style="padding: 8px; text-align: right;">155.22</td>
-                          <td style="padding: 8px; text-align: right;">50</td>
-                          <td style="padding: 8px; text-align: right;">7,761</td>
-                          <td style="padding: 8px; text-align: right;">7,761</td>
-                          <td style="padding: 8px; text-align: right;">7,761</td>
-                        </tr>
-                        <tr style="border-bottom: 1px solid #f3f4f6;">
-                          <td style="padding: 8px;">3</td>
-                          <td style="padding: 8px;">Khan</td>
-                          <td style="padding: 8px; text-align: right;">155.22</td>
-                          <td style="padding: 8px; text-align: right;">10</td>
-                          <td style="padding: 8px; text-align: right;">1,552.2</td>
-                          <td style="padding: 8px; text-align: right;">41,267</td>
-                          <td style="padding: 8px; text-align: right;">41,267</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                      <span>Showing 3 of 3 rows</span>
-                      <button class="btn btn-sm btn-light">
-                        <i class="fa fa-download"></i> Download
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              `);
-    
-              modal.$wrapper.find('.modal-dialog').css({
-                'max-width': '90%',
-                'width': '1200px',
-                'margin': '30px auto'
-              });
-    
-              modal.show();
-              return;
-            } catch (e) {
-              console.log('Frappe Dialog error:', e);
-            }
-          }
-    
-          if (typeof frappe !== 'undefined' && frappe.msgprint) {
-            const content = `
-              <div style="max-height: 500px; overflow-y: auto;">
-                <p style="margin-bottom: 15px;"><strong>Details for:</strong> ${data.label} | <strong>Value:</strong> ₹${data.value.toLocaleString()}</p>
-                <table class="table table-bordered table-sm">
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th style="text-align: right;">Rate</th>
-                      <th style="text-align: right;">Qty</th>
-                      <th style="text-align: right;">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>Fresho Guava Juice-160ml</td><td style="text-align: right;">155.22</td><td style="text-align: right;">100</td><td style="text-align: right;">15,522</td></tr>
-                    <tr><td>Fresho Litchi Juice-160ml</td><td style="text-align: right;">155.22</td><td style="text-align: right;">50</td><td style="text-align: right;">7,761</td></tr>
-                    <tr><td>Khan</td><td style="text-align: right;">106.68</td><td style="text-align: right;">30</td><td style="text-align: right;">3,200</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            `;
-            
-            frappe.msgprint({
-              title: 'Drill Down',
-              message: content,
-              wide: true
-            });
-            return;
-          }
-    
-          alert(`Drill Down Details\n\nDetails for: ${data.label}\nValue: ₹${data.value.toLocaleString()}\n${chartType ? `Chart: ${chartType}` : ''}`);
-        }
-      </script>
 
+<style>
+.section-container {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #059669;
+}
+
+.charts-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+</style>

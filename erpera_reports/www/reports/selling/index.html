@@ -4,13 +4,16 @@
     <div class="overview-cards">
         <div class="card">
             <div class="card-icon products">💰</div>
-            <div class="card-value">{{ total_sales }}</div>
+            <div class="card-value">{{ total_sales }} </div>
             <div class="card-label">Total Sales</div>
+            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
         </div>
         <div class="card">
             <div class="card-icon orders">📄</div>
-            <div class="card-value">{{ invoice_count }}</div>
+            <div class="card-value py-0">{{ invoice_count }} </div>
+            
             <div class="card-label">Total Invoices</div>
+            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
         </div>
         <div class="card">
             <div class="card-icon stock">👥</div>
@@ -19,8 +22,9 @@
         </div>
         <div class="card">
             <div class="card-icon out-of-stock">📊</div>
-            <div class="card-value">{{ avg_invoice_value }}</div>
+            <div class="card-value">{{ avg_invoice_value }} </div>
             <div class="card-label">Average Sale Value</div>
+            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_month }})</p>
         </div>
     </div>
 
@@ -113,7 +117,7 @@
             {% set title = 'Top Customers by Branch' %}
             {% set backgroundColor = '#7c3aed' %}
             {% set chart_type = 'bar' %}
-            {% set width = 12%}
+            {% set width = 12 %}
             {% set data_url = 'erpera_reports.selling.get_top_customers_by_branch' %}
             {% set filters = [
                 { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },

@@ -192,7 +192,7 @@
   {% if filters %}
   <div class="filter-container" id="{{ chart_id }}_filters">
     <button class="filter-toggle" onclick="toggleFilters_{{ chart_id }}()">
-      <i class="fa fa-filter"></i> Filters
+      <div class="card-icon filter">🔽</div>
     </button>
     
     <div class="filter-content" id="{{ chart_id }}_filter_content">
@@ -226,9 +226,8 @@
   </div>
   {% endif %}
 
-  <div id="{{ chart_id }}_container">
+  <div id="{{ chart_id }}_container" style="width: 100%;">
     <div class="loading-spinner">
-      <i class="fa fa-spinner fa-spin"></i> Loading charts...
     </div>
   </div>
 </div>
@@ -289,7 +288,7 @@
           options: {
             plugins: {
               legend: {
-                position: 'bottom',
+                position: 'left',
                 labels: {
                   boxWidth: 12,
                   padding: 8,

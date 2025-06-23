@@ -1,26 +1,272 @@
 {% extends 'erpera_reports/templates/pages/base.html' %}
 
 {% block page_content %}
+    <div class="overview-cards">
+        <div class="card">
+            <div class="card-icon products">📦</div>
+            <div class="card-value">{{ total_items }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_fiscal_year }})</span></div>
+            <div class="card-label">Total Items</div>
+        </div>
+        <div class="card">
+            <div class="card-icon orders">🏪</div>
+            <div class="card-value">{{ total_warehouses }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_fiscal_year }})</span></div>
+            <div class="card-label">Total Warehouses</div>
+        </div>
+        <div class="card">
+            <div class="card-icon stock">📊</div>
+            <div class="card-value">{{ total_stock_value }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_fiscal_year }})</span></div>
+            <div class="card-label">Total Stock Value</div>
+        </div>
+        <div class="card">
+            <div class="card-icon out-of-stock">⚠️</div>
+            <div class="card-value">{{ low_stock_items }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_month }})</span></div>
+            <div class="card-label">Low Stock Items</div>
+        </div>
+    </div>
+
     <div class="section-container">
         <h2 class="section-title">Total Stock</h2>
         <div class="charts-row">
-            {% set chart_id = 'branchWiseStock' %}
-            {% set title = 'Branch Wise Stock' %}
-            {% set backgroundColor = '#2ca02c' %}
+            {% set chart_id = 'warehouseWiseStock' %}
+            {% set title = 'Warehouse Wise Stock' %}
+            {% set backgroundColor = '#7c3aed' %}
             {% set chart_type = 'bar' %}
-            {% set width = 6 %}
-            {% set data_url = 'erpera_reports.stock.get_branch_wise_stock' %}
-            {% include "erpera_reports/templates/includes/raw_bar.html" %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_warehouse_wise_stock' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
 
             {% set chart_id = 'companyWiseStock' %}
             {% set title = 'Company Wise Stock' %}
-            {% set backgroundColor = '#1f77b4' %}
+            {% set backgroundColor = '#7c3aed' %}
             {% set chart_type = 'bar' %}
-            {% set width = 6 %}
+            {% set width = 12 %}
             {% set data_url = 'erpera_reports.stock.get_company_wise_stock' %}
-            {% include "erpera_reports/templates/includes/raw_bar.html" %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+
+            {% set chart_id = 'stockSummary' %}
+            {% set title = 'Stock Summary' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_stock_summary' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
     </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Consolidated Total Stock</h2>
+        <div class="charts-row">
+            {% set chart_id = 'consolidatedTotalStock' %}
+            {% set title = 'Consolidated Total Stock' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_consolidated_stock' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+
+            {% set chart_id = 'entityWiseStock' %}
+            {% set title = 'Entity Wise Stock' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_entity_wise_stock' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+
+            {% set chart_id = 'consolidatedExpiryStock' %}
+            {% set title = 'Consolidated Expiry Stock' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_consolidated_expiry_stock' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Expiry Stock</h2>
+        <div class="charts-row">
+            {% set chart_id = 'warehouseWiseExpiryStock' %}
+            {% set title = 'Warehouse Wise Expiry Stock' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_warehouse_wise_expiry_stock' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+
+            {% set chart_id = 'companyWiseExpiryStock' %}
+            {% set title = 'Company Wise Expiry Stock' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_company_wise_expiry_stock' %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+
+            {% set chart_id = 'expiryStockSummary' %}
+            {% set title = 'Expiry Stock Summary' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_expiry_stock_summary' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
+
+    <!-- Stock Transfer Opportunities Section -->
+    <div class="section-container">
+        <h2 class="section-title">Stock Transfer Opportunities</h2>
+        <div class="charts-row">
+            {% set chart_id = 'expiryDemandComparison' %}
+            {% set title = 'Comparison Chart - Expiry vs Demand' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_expiry_demand_comparison' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
+
+    <!-- Consolidate Expired Items Section -->
+    <div class="section-container">
+        <h2 class="section-title">Consolidate Expired Items</h2>
+        <div class="charts-row">
+            {% set chart_id = 'consolidatedExpiredItems' %}
+            {% set title = 'All Company Expired Stock - Bar Chart' %}
+            {% set backgroundColor = '#dc2626' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_consolidated_expired_items' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
+
+    <!-- In & Out Quantity Movement Section -->
+    <div class="section-container">
+        <h2 class="section-title">In & Out Quantity Movement</h2>
+        <div class="charts-row">
+            {% set chart_id = 'branchWiseInOutQuantity' %}
+            {% set title = 'Branch Wise In & Out Quantity Movement' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_branch_wise_in_out_quantity' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+
+            {% set chart_id = 'companyWiseInOutQuantity' %}
+            {% set title = 'Company Wise In & Out Quantity Movement' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_company_wise_in_out_quantity' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+
+            {% set chart_id = 'consolidateInOutQuantity' %}
+            {% set title = 'Consolidate In & Out Quantity - All Companies & Branches' %}
+            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.stock.get_consolidate_in_out_quantity' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
+
+    <!-- Space for future sections -->
+
 {% endblock %}
 
 <style>
@@ -38,7 +284,7 @@
     color: #1a1a1a;
     margin-bottom: 1.5rem;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid #28a745;
+    border-bottom: 2px solid #7c3aed;
 }
 
 .charts-row {
