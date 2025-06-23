@@ -1,4 +1,14 @@
 <style>
+  /* Global modal override for drill-down */
+  .modal-dialog,
+  .msgprint .modal-dialog,
+  .modal .modal-dialog,
+  .frappe-msgprint .modal-dialog {
+    max-width: 95vw !important;
+    width: 95vw !important;
+    margin: 1vh auto !important;
+  }
+  
   .chart-container {
     background: #fff;
     border-radius: 12px;
@@ -445,7 +455,6 @@ function showDrillDownModal(clickData, chartTitle) {
   // Show loading message
   frappe.msgprint({
     title: 'Drill Down',
-    message: '<div style="text-align: center; padding: 20px;"><i class="fa fa-spinner fa-spin"></i> Loading data...</div>',
     wide: true
   });
   
@@ -612,30 +621,47 @@ function showDrillDownModal(clickData, chartTitle) {
           indicator: 'green'
         });
         
-        // Apply custom class to modal after it's rendered
-        setTimeout(() => {
-          const modal = document.querySelector('.msgprint');
-          const modalDialog = document.querySelector('.modal-dialog');
-          const modalContent = document.querySelector('.modal-content');
+        // Apply custom styles immediately and repeatedly
+        const applyModalStyles = () => {
+          // Target all possible modal selectors
+          const selectors = [
+            '.modal-dialog',
+            '.msgprint .modal-dialog',
+            '.modal .modal-dialog',
+            '.frappe-msgprint .modal-dialog'
+          ];
           
-          if (modal) {
-            modal.classList.add('drill-down-modal');
-          }
-          if (modalDialog) {
-            modalDialog.parentElement.classList.add('drill-down-modal');
-          }
-          if (modalContent) {
-            modalContent.parentElement.parentElement.classList.add('drill-down-modal');
-          }
+          selectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+              el.style.setProperty('max-width', '95vw', 'important');
+              el.style.setProperty('width', '95vw', 'important');
+              el.style.setProperty('margin', '1vh auto', 'important');
+            });
+          });
           
-          // Force width directly as fallback
-          const dialogElement = document.querySelector('.modal-dialog');
-          if (dialogElement) {
-            dialogElement.style.maxWidth = '95vw';
-            dialogElement.style.width = '95vw';
-            dialogElement.style.margin = '1vh auto';
-          }
-        }, 100);
+          // Also target modal content for height
+          const contentSelectors = [
+            '.modal-content',
+            '.msgprint .modal-content',
+            '.modal .modal-content'
+          ];
+          
+          contentSelectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+              el.style.setProperty('height', '95vh', 'important');
+              el.style.setProperty('display', 'flex', 'important');
+              el.style.setProperty('flex-direction', 'column', 'important');
+            });
+          });
+        };
+        
+        // Apply styles multiple times to ensure they stick
+        setTimeout(applyModalStyles, 0);
+        setTimeout(applyModalStyles, 50);
+        setTimeout(applyModalStyles, 100);
+        setTimeout(applyModalStyles, 200);
         
       } else {
         frappe.msgprint({

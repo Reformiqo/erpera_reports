@@ -1,4 +1,14 @@
 <style>
+  /* Global modal override for drill-down */
+  .modal-dialog,
+  .msgprint .modal-dialog,
+  .modal .modal-dialog,
+  .frappe-msgprint .modal-dialog {
+    max-width: 95vw !important;
+    width: 95vw !important;
+    margin: 1vh auto !important;
+  }
+  
   .multi-pie-container {
     background: #fff;
     border-radius: 12px;
@@ -192,7 +202,7 @@
   {% if filters %}
   <div class="filter-container" id="{{ chart_id }}_filters">
     <button class="filter-toggle" onclick="toggleFilters_{{ chart_id }}()">
-      <div class="card-icon filter">🔽</div>
+      <i class="fa fa-filter"></i>
     </button>
     
     <div class="filter-content" id="{{ chart_id }}_filter_content">
