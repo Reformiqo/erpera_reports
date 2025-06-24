@@ -4,13 +4,15 @@
     <div class="overview-cards">
         <div class="card">
             <div class="card-icon products">💰</div>
-            <div class="card-value">{{ total_purchase }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_fiscal_year }})</span></div>
+            <div class="card-value">{{ total_purchase }} </div>
             <div class="card-label">Total Purchase</div>
+            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>   
         </div>
         <div class="card">
             <div class="card-icon orders">📄</div>
-            <div class="card-value">{{ invoice_count }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_fiscal_year }})</span></div>
+            <div class="card-value">{{ invoice_count }} </div>
             <div class="card-label">Total Invoices</div>
+            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>   
         </div>
         <div class="card">
             <div class="card-icon stock">🏢</div>
@@ -19,8 +21,9 @@
         </div>
         <div class="card">
             <div class="card-icon out-of-stock">📊</div>
-            <div class="card-value">{{ avg_invoice_value }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_month }})</span></div>
+            <div class="card-value">{{ avg_invoice_value }} </div>
             <div class="card-label">Average Purchase Value</div>
+            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_month }})</p>
         </div>
     </div>
 

@@ -4,23 +4,27 @@
     <div class="overview-cards">
         <div class="card">
             <div class="card-icon products">📦</div>
-            <div class="card-value">{{ total_items }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_fiscal_year }})</span></div>
+            <div class="card-value">{{ total_items }}</div>
             <div class="card-label">Total Items</div>
+            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
         </div>
         <div class="card">
             <div class="card-icon orders">🏪</div>
-            <div class="card-value">{{ total_warehouses }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_fiscal_year }})</span></div>
+            <div class="card-value">{{ total_warehouses }} </div>
             <div class="card-label">Total Warehouses</div>
+            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
         </div>
         <div class="card">
             <div class="card-icon stock">📊</div>
-            <div class="card-value">{{ total_stock_value }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_fiscal_year }})</span></div>
+            <div class="card-value">{{ total_stock_value }} </div>
             <div class="card-label">Total Stock Value</div>
+            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
         </div>
         <div class="card">
             <div class="card-icon out-of-stock">⚠️</div>
-            <div class="card-value">{{ low_stock_items }} <span style="color: #dc2626; font-size: 0.8em; font-weight: 500;">({{ current_month }})</span></div>
+            <div class="card-value">{{ low_stock_items }} </div>
             <div class="card-label">Low Stock Items</div>
+            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_month }})</p>
         </div>
     </div>
 

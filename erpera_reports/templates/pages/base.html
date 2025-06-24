@@ -332,7 +332,8 @@
                 <h3>{{frappe.session.user}}</h3>
             </div>
             <ul class="nav-menu">
-               
+
+                <a href="/reports/index"><li class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">🏠 Dashboard</li></a>
                 <a href="/reports/selling/index"><li class="nav-item {% if active_page == 'selling' %}active{% endif %}">🛒 Selling</li></a>
                 <a href="/reports/buying/index"><li class="nav-item {% if active_page == 'buying' %}active{% endif %}">📋 Buying</li></a>
                 <a href="/reports/stock/index"><li class="nav-item {% if active_page == 'stock' %}active{% endif %}">📦 Stock</li></a>
