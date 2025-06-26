@@ -2052,7 +2052,7 @@ def get_expiry_demand_comparison(filters=None):
         demand_result = frappe.db.sql(demand_query, demand_params, as_dict=True)
         
         # Prepare data for chart
-                labels = []
+        labels = []
         data = []
         backgroundColor = []
         tooltips = []
