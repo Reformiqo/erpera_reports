@@ -224,7 +224,7 @@
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
