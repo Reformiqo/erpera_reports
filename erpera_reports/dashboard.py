@@ -12,6 +12,8 @@ def apply_filters_to_query(base_query, filters):
         filters = json.loads(filters)
     
     filters = filters or {}
+    # Clean filters: remove empty string, None, or empty list values
+    filters = {k: v for k, v in filters.items() if v not in (None, '', [])}
     conditions = []
     params = {}
     
@@ -52,6 +54,8 @@ def apply_filters_to_item_query(base_query, filters):
         filters = json.loads(filters)
     
     filters = filters or {}
+    # Clean filters: remove empty string, None, or empty list values
+    filters = {k: v for k, v in filters.items() if v not in (None, '', [])}
     conditions = []
     params = {}
     
@@ -458,6 +462,9 @@ def get_branch_growth_trend(filters=None):
 
 @frappe.whitelist(allow_guest=True)
 def get_daily_sales_snapshot(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get daily sales snapshot across all branches"""
     if not filters:
         filters = {}
@@ -472,7 +479,7 @@ def get_daily_sales_snapshot(filters=None):
     try:
         data = frappe.db.sql(f"""
             SELECT 
-                COALESCE(cost_center) as branch,
+                COALESCE(cost_center, 'No Branch') as branch,
                 SUM(grand_total) as total_sales,
                 COUNT(name) as invoice_count,
                 AVG(grand_total) as avg_invoice_value
@@ -488,6 +495,8 @@ def get_daily_sales_snapshot(filters=None):
         # If no data found, return sample data
         if not data:
             data = []
+        # Filter out any rows with empty or None branch
+        data = [d for d in data if d.get('branch') not in (None, '', ' ')]
     except Exception as e:
         frappe.log_error(f"Error in get_daily_sales_snapshot: {str(e)}")
         # Return empty data in case of error
@@ -504,6 +513,9 @@ def get_daily_sales_snapshot(filters=None):
 
 @frappe.whitelist()
 def get_sales_by_branch(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get daily sales by branch"""
     base_query = """
         SELECT 
@@ -545,6 +557,9 @@ def get_sales_by_branch(filters=None):
 
 @frappe.whitelist()
 def get_payment_mode_breakdown(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get payment mode breakdown for today's sales"""
     if not filters:
         filters = {}
@@ -593,6 +608,9 @@ def get_payment_mode_breakdown(filters=None):
 
 @frappe.whitelist()
 def get_hourly_sales_trend(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get hourly sales trend for today"""
     if not filters:
         filters = {}
@@ -652,6 +670,9 @@ def get_hourly_sales_trend(filters=None):
 
 @frappe.whitelist()
 def get_daily_sales_stats(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get daily sales summary statistics"""
     if not filters:
         filters = {}
@@ -715,6 +736,9 @@ def get_daily_sales_stats(filters=None):
 
 @frappe.whitelist()
 def get_monthly_purchase_trend(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get monthly purchase trend data"""
     if not filters:
         filters = {}
@@ -755,6 +779,9 @@ def get_monthly_purchase_trend(filters=None):
 
 @frappe.whitelist()
 def get_top_suppliers(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get top suppliers data"""
     if not filters:
         filters = {}
@@ -787,6 +814,9 @@ def get_top_suppliers(filters=None):
 
 @frappe.whitelist()
 def get_purchase_by_status(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get purchase orders by status"""
     if not filters:
         filters = {}
@@ -817,6 +847,9 @@ def get_purchase_by_status(filters=None):
 
 @frappe.whitelist()
 def get_outstanding_by_supplier(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get outstanding amounts by supplier"""
     if not filters:
         filters = {}
@@ -883,6 +916,9 @@ def get_aging_analysis(filters=None):
 
 @frappe.whitelist()
 def get_company_wise_purchases(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get company wise purchase data"""
     if not filters:
         filters = {}
@@ -937,30 +973,20 @@ def get_top_selling_skus(filters=None):
         INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
         INNER JOIN `tabItem` i ON sii.item_code = i.name
         INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
-        WHERE 
-            si.docstatus = 1
-            AND si.status NOT IN ('Cancelled', 'Return')
-            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
-    
     try:
-        # Apply filters for item queries
         query, params = apply_filters_to_item_query(base_query, filters)
         query += """
         GROUP BY sii.item_code, sii.item_name
         ORDER BY total_qty DESC
         LIMIT 20
         """
-        
         data = frappe.db.sql(query, params, as_dict=True)
-        
-        # If no data found, return empty data
         if not data:
             data = []
     except Exception as e:
         frappe.log_error(f"Error in get_top_selling_skus: {str(e)}")
         data = []
-    
     return {
         'labels': [f"{d['item_code']}" for d in data],
         'datasets': [{
@@ -985,14 +1011,8 @@ def get_low_performing_skus(filters=None):
         INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
         INNER JOIN `tabItem` i ON sii.item_code = i.name
         INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
-        WHERE 
-            si.docstatus = 1
-            AND si.status NOT IN ('Cancelled', 'Return')
-            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
-    
     try:
-        # Apply filters for item queries
         query, params = apply_filters_to_item_query(base_query, filters)
         query += """
         GROUP BY sii.item_code, sii.item_name
@@ -1000,16 +1020,12 @@ def get_low_performing_skus(filters=None):
         ORDER BY total_qty ASC
         LIMIT 20
         """
-        
         data = frappe.db.sql(query, params, as_dict=True)
-        
-        # If no data found, return empty data
         if not data:
             data = []
     except Exception as e:
         frappe.log_error(f"Error in get_low_performing_skus: {str(e)}")
         data = []
-    
     return {
         'labels': [f"{d['item_code']}" for d in data],
         'datasets': [{
@@ -1021,23 +1037,8 @@ def get_low_performing_skus(filters=None):
 
 @frappe.whitelist()
 def get_top_revenue_items(filters=None):
-    """Get top 20 items by revenue"""
-    if not filters:
-        filters = {}
-    
-    from_date = filters.get('from_date', add_months(today(), -1))
-    to_date = filters.get('to_date', today())
-    company = filters.get('company')
-    branch = filters.get('branch')
-    
-    conditions = ""
-    if company:
-        conditions += " AND si.company = %(company)s"
-    if branch:
-        conditions += " AND si.branch = %(branch)s"
-    
     try:
-        data = frappe.db.sql(f"""
+        base_query = """
             SELECT 
                 sii.item_code,
                 sii.item_name,
@@ -1049,28 +1050,21 @@ def get_top_revenue_items(filters=None):
             INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
             INNER JOIN `tabItem` i ON sii.item_code = i.name
             INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
-            WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
-            AND si.docstatus = 1
             AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
-            {conditions}
-            GROUP BY sii.item_code, sii.item_name
-            ORDER BY total_amount DESC
-            LIMIT 20
-        """, {
-            'from_date': from_date,
-            'to_date': to_date,
-            'company': company,
-            'branch': branch
-        }, as_dict=True)
-        
-        # If no data found, return sample data
+        """
+        query, params = apply_filters_to_item_query(base_query, filters)
+        query += """
+        GROUP BY sii.item_code, sii.item_name
+        HAVING total_qty > 0
+        ORDER BY total_amount DESC
+        LIMIT 20
+        """
+        data = frappe.db.sql(query, params, as_dict=True)
         if not data:
             data = []
     except Exception as e:
         frappe.log_error(f"Error in get_top_revenue_items: {str(e)}")
-        # Return sample data in case of error
         data = []
-    
     return {
         'labels': [f"{d['item_code']}" for d in data],
         'datasets': [{
@@ -1082,54 +1076,30 @@ def get_top_revenue_items(filters=None):
 
 @frappe.whitelist()
 def get_item_category_performance(filters=None):
-    """Get item category performance"""
-    if not filters:
-        filters = {}
-    
-    from_date = filters.get('from_date', add_months(today(), -1))
-    to_date = filters.get('to_date', today())
-    company = filters.get('company')
-    branch = filters.get('branch')
-    
-    conditions = ""
-    if company:
-        conditions += " AND si.company = %(company)s"
-    if branch:
-        conditions += " AND si.cost_center = %(branch)s"
-    
+    base_query = """
+        SELECT 
+            COALESCE(i.item_group, 'Others') as item_group,
+            SUM(sii.amount) as total_amount,
+            SUM(sii.qty) as total_qty,
+            COUNT(DISTINCT sii.item_code) as unique_items
+        FROM `tabSales Invoice Item` sii
+        INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
+        INNER JOIN `tabItem` i ON i.name = sii.item_code
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
+    """
     try:
-        data = frappe.db.sql(f"""
-            SELECT 
-                COALESCE(i.item_group, 'Others') as item_group,
-                SUM(sii.amount) as total_amount,
-                SUM(sii.qty) as total_qty,
-                COUNT(DISTINCT sii.item_code) as unique_items
-            FROM `tabSales Invoice Item` sii
-            INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
-            INNER JOIN `tabItem` i ON i.name = sii.item_code
-            INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
-            WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
-            AND si.docstatus = 1
-            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
-            {conditions}
-            GROUP BY i.item_group
-            ORDER BY total_amount DESC
-            LIMIT 10
-        """, {
-            'from_date': from_date,
-            'to_date': to_date,
-            'company': company,
-            'branch': branch
-        }, as_dict=True)
-        
-        # If no data found, return sample data
+        query, params = apply_filters_to_item_query(base_query, filters)
+        query += """
+        GROUP BY i.item_group
+        ORDER BY total_amount DESC
+        LIMIT 10
+        """
+        data = frappe.db.sql(query, params, as_dict=True)
         if not data:
             data = []
     except Exception as e:
         frappe.log_error(f"Error in get_item_category_performance: {str(e)}")
-        # Return empty data in case of error
         data = []
-    
     labels = [d['item_group'] for d in data]
     data_values = [d['total_amount'] for d in data]
     colors = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#f97316']
@@ -1141,6 +1111,9 @@ def get_item_category_performance(filters=None):
 
 @frappe.whitelist()
 def get_sku_velocity_trend(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get SKU velocity trend for top 10 items over 30 days"""
     if not filters:
         filters = {}
@@ -1154,7 +1127,7 @@ def get_sku_velocity_trend(filters=None):
     if company:
         conditions += " AND si.company = %(company)s"
     if branch:
-        conditions += " AND si.branch = %(branch)s"
+        conditions += " AND si.cost_center = %(branch)s"
     
     try:
         # First get top 10 items
@@ -1252,6 +1225,9 @@ def get_sku_velocity_trend(filters=None):
 # Purchase vs Sales Consumption Report functions
 @frappe.whitelist()
 def get_purchase_vs_sales_overview(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get monthly purchase vs sales overview"""
     if not filters:
         filters = {}
@@ -1352,6 +1328,9 @@ def get_purchase_vs_sales_overview(filters=None):
 
 @frappe.whitelist()
 def get_item_wise_consumption(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get item-wise purchase vs sales analysis"""
     if not filters:
         filters = {}
@@ -1451,6 +1430,9 @@ def get_item_wise_consumption(filters=None):
 
 @frappe.whitelist()
 def get_overconsumption_items(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get items with overconsumption risk (sales > purchases)"""
     if not filters:
         filters = {}
@@ -1526,6 +1508,9 @@ def get_overconsumption_items(filters=None):
 
 @frappe.whitelist()
 def get_understock_risk_items(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get items with understock risk (purchases > sales by large margin)"""
     if not filters:
         filters = {}
@@ -1599,6 +1584,9 @@ def get_understock_risk_items(filters=None):
 
 @frappe.whitelist()
 def get_consumption_ratio(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get purchase to sales ratio by category"""
     if not filters:
         filters = {}
@@ -1687,6 +1675,9 @@ def get_consumption_ratio(filters=None):
 
 @frappe.whitelist(allow_guest=True)
 def get_inventory_turnover_analysis(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get inventory turnover analysis"""
     if not filters:
         filters = {}
@@ -1768,6 +1759,9 @@ def get_inventory_turnover_analysis(filters=None):
 
 @frappe.whitelist()
 def get_stock_efficiency_score(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get overall stock efficiency score"""
     if not filters:
         filters = {}
@@ -1879,6 +1873,9 @@ def get_stock_efficiency_score(filters=None):
 # KPI Functions for Number Cards
 @frappe.whitelist()
 def get_branch_performance_kpis(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get key performance indicators for branch performance"""
     if not filters:
         filters = {}
@@ -1973,6 +1970,9 @@ def get_branch_performance_kpis(filters=None):
 
 @frappe.whitelist()
 def get_sku_performance_kpis(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get key performance indicators for SKU performance"""
     if not filters:
         filters = {}
@@ -2068,6 +2068,9 @@ def get_sku_performance_kpis(filters=None):
 
 @frappe.whitelist()
 def get_purchase_sales_kpis(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get key performance indicators for purchase vs sales"""
     if not filters:
         filters = {}
@@ -2155,6 +2158,9 @@ def get_purchase_sales_kpis(filters=None):
 
 @frappe.whitelist()
 def get_daily_sales_kpis(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get key performance indicators for daily sales"""
     if not filters:
         filters = {}
@@ -2244,6 +2250,9 @@ def get_daily_sales_kpis(filters=None):
 
 @frappe.whitelist()
 def get_purchase_kpis(filters=None):
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    filters = filters or {}
     """Get key performance indicators for purchases"""
     if not filters:
         filters = {}

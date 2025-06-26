@@ -144,7 +144,7 @@
 
     
     <div class="section-container">
-        <h2 class="section-title">Daily Sales Summary Report</h2>
+        <h2 class="section-title">Sales Summary Report</h2>
         <div class="charts-row">
             {% set chart_id = 'dailySalesSnapshot' %}
             {% set title = 'Sales Snapshot Across All Branches' %}
@@ -162,24 +162,7 @@
        
     </div>
 
-    <div class="section-container">
-        <h2 class="section-title">Monthly Purchase Summary</h2>
-        <div class="charts-row">
-            {% set chart_id = 'monthlyPurchaseTrend' %}
-            {% set title = 'Monthly Purchase Trend' %}
-            {% set backgroundColor = '#667eea' %}
-            {% set chart_type = 'line' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_monthly_purchase_trend' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-            { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-        </div>
-    </div>
+   
 
     <div class="section-container">
         <h2 class="section-title">Purchase Analytics</h2>
@@ -227,24 +210,7 @@
         </div>
     </div>
 
-    <div class="section-container">
-        <h2 class="section-title">Purchase Performance</h2>
-        <div class="charts-row">
-            {% set chart_id = 'companyWisePurchases' %}
-            {% set title = 'Company Wise Purchases' %}
-            {% set backgroundColor = '#06b6d4' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_company_wise_purchases' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-        </div>
-    </div>
+    
 
     <div class="section-container">
         <h2 class="section-title">Franchise Performance</h2>
