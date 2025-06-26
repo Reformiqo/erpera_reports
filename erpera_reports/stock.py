@@ -91,10 +91,12 @@ def get_warehouse_wise_stock(filters=None):
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
         AND sle.warehouse IS NOT NULL
         AND sle.warehouse != ''
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -201,10 +203,12 @@ def get_company_wise_stock(filters=None):
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
         AND sle.company IS NOT NULL
         AND sle.company != ''
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -297,7 +301,7 @@ def get_company_wise_stock(filters=None):
 def get_stock_summary(filters=None):
     """
     Chart Name: Stock Summary
-    Chart Type: Bar
+    Chart Type: Line/Bar
     Shows overall stock summary
     """
     
@@ -312,8 +316,10 @@ def get_stock_summary(filters=None):
         COUNT(DISTINCT sle.company) AS company_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -385,8 +391,10 @@ def get_consolidated_stock(filters=None):
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -535,10 +543,12 @@ def get_top_stock_items_by_warehouse(filters=None):
         COUNT(DISTINCT sle.item_code) as item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
         AND sle.warehouse IS NOT NULL 
         AND sle.warehouse != ''
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -642,10 +652,12 @@ def get_top_stock_items_by_company(filters=None):
         COUNT(DISTINCT sle.item_code) as item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
         AND sle.company IS NOT NULL 
         AND sle.company != ''
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -748,13 +760,14 @@ def get_consolidated_top_stock_items(filters=None):
         sle.item_code,
         SUM(sle.actual_qty) as total_quantity,
         SUM(sle.actual_qty * sle.valuation_rate) as total_value,
-        COUNT(DISTINCT sle.warehouse) as warehouse_count,
         COUNT(DISTINCT sle.company) as company_count,
         GROUP_CONCAT(DISTINCT sle.company) as companies
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -835,10 +848,9 @@ def get_warehouse_wise_expiry_stock(filters=None):
     """
     Chart Name: Warehouse Wise Expiry Stock
     Chart Type: Bar
-    Shows expiry stock by warehouse with color coding based on batch expiry dates
+    Shows expiry stock by warehouse with color coding based on expiry days
     """
     
-    # First try with batch data
     base_query = """
     SELECT
         COALESCE(sle.warehouse, 'Unknown Warehouse') AS warehouse,
@@ -851,6 +863,7 @@ def get_warehouse_wise_expiry_stock(filters=None):
         DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     LEFT JOIN `tabBatch` b ON sle.batch_no = b.name
     WHERE 
         i.is_stock_item = 1
@@ -859,6 +872,7 @@ def get_warehouse_wise_expiry_stock(filters=None):
         AND sle.batch_no IS NOT NULL
         AND b.expiry_date IS NOT NULL
         AND sle.actual_qty > 0
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -884,11 +898,13 @@ def get_warehouse_wise_expiry_stock(filters=None):
                 SUM(sle.actual_qty * sle.valuation_rate) as total_value
             FROM `tabStock Ledger Entry` sle
             INNER JOIN `tabItem` i ON sle.item_code = i.name
+            INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
             WHERE 
                 i.is_stock_item = 1
                 AND sle.warehouse IS NOT NULL
                 AND sle.warehouse != ''
                 AND sle.actual_qty > 0
+                AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             """
             
             alt_query, alt_params = apply_filters_to_query(alt_query, filters)
@@ -1033,7 +1049,7 @@ def get_company_wise_expiry_stock(filters=None):
     """
     Chart Name: Company Wise Expiry Stock
     Chart Type: Bar
-    Shows expiry stock by company with color coding based on batch expiry dates
+    Shows expiry stock by company with color coding based on expiry days
     """
     
     base_query = """
@@ -1048,6 +1064,7 @@ def get_company_wise_expiry_stock(filters=None):
         DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     LEFT JOIN `tabBatch` b ON sle.batch_no = b.name
     WHERE 
         i.is_stock_item = 1
@@ -1056,6 +1073,7 @@ def get_company_wise_expiry_stock(filters=None):
         AND sle.batch_no IS NOT NULL
         AND b.expiry_date IS NOT NULL
         AND sle.actual_qty > 0
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -1080,11 +1098,13 @@ def get_company_wise_expiry_stock(filters=None):
                 SUM(sle.actual_qty * sle.valuation_rate) as total_value
             FROM `tabStock Ledger Entry` sle
             INNER JOIN `tabItem` i ON sle.item_code = i.name
+            INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
             WHERE 
                 i.is_stock_item = 1
                 AND sle.company IS NOT NULL
                 AND sle.company != ''
                 AND sle.actual_qty > 0
+                AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             """
             
             alt_query, alt_params = apply_filters_to_query(alt_query, filters)
@@ -1226,27 +1246,33 @@ def get_company_wise_expiry_stock(filters=None):
 def get_expiry_stock_summary(filters=None):
     """
     Chart Name: Expiry Stock Summary
-    Chart Type: Bar
-    Shows overall expiry stock summary with color coding based on batch expiry dates
+    Chart Type: Line/Bar
+    Shows overall expiry stock summary across all warehouses and companies
     """
     
     base_query = """
     SELECT
+        DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
+        DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
         i.item_name,
         sle.item_code,
         sle.batch_no,
         SUM(sle.actual_qty) AS total_quantity,
         SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
         b.expiry_date,
-        DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry
+        DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry,
+        COUNT(DISTINCT sle.warehouse) AS warehouse_count,
+        COUNT(DISTINCT sle.company) AS company_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     LEFT JOIN `tabBatch` b ON sle.batch_no = b.name
     WHERE 
         i.is_stock_item = 1
         AND sle.batch_no IS NOT NULL
         AND b.expiry_date IS NOT NULL
         AND sle.actual_qty > 0
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -1262,19 +1288,23 @@ def get_expiry_stock_summary(filters=None):
         
         result = frappe.db.sql(query, params, as_dict=True)
         
-        # If no batch data, create summary with top stock items
+        # If no batch data found, create alternate query without batch filtering
         if not result:
             alt_query = """
             SELECT
-                i.item_name,
-                sle.item_code,
-                SUM(sle.actual_qty) AS total_quantity,
-                SUM(sle.actual_qty * sle.valuation_rate) AS total_value
+                DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
+                DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
+                COUNT(DISTINCT sle.item_code) as item_count,
+                SUM(sle.actual_qty * sle.valuation_rate) as total_value,
+                COUNT(DISTINCT sle.warehouse) AS warehouse_count,
+                COUNT(DISTINCT sle.company) AS company_count
             FROM `tabStock Ledger Entry` sle
             INNER JOIN `tabItem` i ON sle.item_code = i.name
+            INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
             WHERE 
                 i.is_stock_item = 1
                 AND sle.actual_qty > 0
+                AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             """
             
             alt_query, alt_params = apply_filters_to_query(alt_query, filters)
@@ -1414,36 +1444,35 @@ def get_expiry_stock_summary(filters=None):
 @frappe.whitelist()
 def get_consolidated_expired_items(filters=None):
     """
-    Chart Name: Consolidate Expired Items
+    Chart Name: Consolidated Expired Items
     Chart Type: Bar
-    Shows all company's expired stock in one bar chart using different colors for each company or branch
+    Shows expired/expiring items across all companies with different color coding
     """
     
     base_query = """
     SELECT
-        CASE 
-            WHEN sle.warehouse IS NOT NULL AND sle.warehouse != '' 
-            THEN CONCAT(COALESCE(sle.company, 'Unknown'), ' - ', sle.warehouse)
-            ELSE COALESCE(sle.company, 'Unknown Company')
-        END AS entity_name,
-        COALESCE(sle.company, 'Unknown Company') AS company,
-        COALESCE(sle.warehouse, 'No Warehouse') AS warehouse,
         i.item_name,
         sle.item_code,
         sle.batch_no,
-        SUM(sle.actual_qty) AS expired_qty,
-        SUM(sle.actual_qty * sle.valuation_rate) AS expired_value,
+        SUM(sle.actual_qty) AS total_quantity,
+        SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
         b.expiry_date,
-        DATEDIFF(CURDATE(), b.expiry_date) AS days_expired
+        DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry,
+        COUNT(DISTINCT sle.company) as company_count,
+        COUNT(DISTINCT sle.warehouse) as warehouse_count,
+        GROUP_CONCAT(DISTINCT sle.company) as companies,
+        GROUP_CONCAT(DISTINCT sle.warehouse) as warehouses
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     LEFT JOIN `tabBatch` b ON sle.batch_no = b.name
     WHERE 
         i.is_stock_item = 1
         AND sle.batch_no IS NOT NULL
         AND b.expiry_date IS NOT NULL
         AND sle.actual_qty > 0
-        AND b.expiry_date < CURDATE()
+        AND DATEDIFF(b.expiry_date, CURDATE()) <= 45
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -1453,15 +1482,12 @@ def get_consolidated_expired_items(filters=None):
         # Add GROUP BY clause
         query += """
         GROUP BY 
-            entity_name,
-            sle.company,
-            sle.warehouse,
             sle.item_code,
             sle.batch_no,
             i.item_name,
             b.expiry_date
         HAVING SUM(sle.actual_qty) > 0
-        ORDER BY entity_name, days_expired DESC
+        ORDER BY sle.item_code, days_until_expiry DESC
         """
         
         result = frappe.db.sql(query, params, as_dict=True)
@@ -1483,6 +1509,7 @@ def get_consolidated_expired_items(filters=None):
             WHERE 
                 i.is_stock_item = 1
                 AND sle.actual_qty > 0
+                AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             """
             
             alt_query, alt_params = apply_filters_to_query(alt_query, filters)
@@ -1717,12 +1744,14 @@ def get_consolidated_expiry_stock(filters=None):
         DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     LEFT JOIN `tabBatch` b ON sle.batch_no = b.name
     WHERE 
         i.is_stock_item = 1
         AND sle.batch_no IS NOT NULL
         AND b.expiry_date IS NOT NULL
         AND sle.actual_qty > 0
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -1762,6 +1791,7 @@ def get_consolidated_expiry_stock(filters=None):
             WHERE 
                 i.is_stock_item = 1
                 AND sle.actual_qty > 0
+                AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             """
             
             alt_query, alt_params = apply_filters_to_query(alt_query, filters)
@@ -1968,350 +1998,98 @@ def get_consolidated_expiry_stock(filters=None):
 @frappe.whitelist()
 def get_expiry_demand_comparison(filters=None):
     """
-    Chart Name: Comparison Chart (Expiry vs Demand)
-    Chart Type: MultiBar
-    Shows items nearing expiry and their demand in other branches
-    Helps identify transfer opportunities for soon-to-expire products
+    Chart Name: Expiry vs Demand Comparison
+    Chart Type: Bubble Chart
+    Shows relationship between expiry dates and item demand/consumption
     """
     
-    try:
-        # First, get items nearing expiry (< 45 days)
-        expiry_query = """
+    # Stock query with expiry data
+    stock_query = """
         SELECT
             i.item_name,
             sle.item_code,
-            sle.warehouse,
-            sle.company,
             sle.batch_no,
-            SUM(sle.actual_qty) AS expiry_qty,
-            SUM(sle.actual_qty * sle.valuation_rate) AS expiry_value,
+        SUM(sle.actual_qty) AS current_stock,
+        SUM(sle.actual_qty * sle.valuation_rate) AS stock_value,
             b.expiry_date,
-            DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry,
-            CASE 
-                WHEN DATEDIFF(b.expiry_date, CURDATE()) < 20 THEN 'Critical'
-                WHEN DATEDIFF(b.expiry_date, CURDATE()) <= 45 THEN 'Warning'
-                ELSE 'Safe'
-            END AS expiry_category
+        DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry
         FROM `tabStock Ledger Entry` sle
         INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
         LEFT JOIN `tabBatch` b ON sle.batch_no = b.name
         WHERE 
             i.is_stock_item = 1
             AND sle.batch_no IS NOT NULL
             AND b.expiry_date IS NOT NULL
             AND sle.actual_qty > 0
-            AND DATEDIFF(b.expiry_date, CURDATE()) <= 45
-        """
-        
-        # Apply filters to expiry query
-        expiry_query, expiry_params = apply_filters_to_query(expiry_query, filters)
-        expiry_query += """
-        GROUP BY sle.item_code, sle.warehouse, sle.batch_no, i.item_name, b.expiry_date
-        HAVING SUM(sle.actual_qty) > 0
-        ORDER BY days_until_expiry, expiry_value DESC
-        """
-        
-        expiry_result = frappe.db.sql(expiry_query, expiry_params, as_dict=True)
-        
-        # If no expiry data, create sample data
-        if not expiry_result:
-            # Get top stock items for sample data
-            sample_query = """
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+    """
+    
+    # Demand query based on sales
+    demand_query = """
             SELECT
-                i.item_name,
-                sle.item_code,
-                sle.warehouse,
-                sle.company,
-                SUM(sle.actual_qty) AS stock_qty,
-                SUM(sle.actual_qty * sle.valuation_rate) AS stock_value
-            FROM `tabStock Ledger Entry` sle
-            INNER JOIN `tabItem` i ON sle.item_code = i.name
+        sii.item_code,
+        AVG(sii.qty) as avg_demand,
+        SUM(sii.qty) as total_demand,
+        COUNT(DISTINCT si.name) as sales_frequency
+    FROM `tabSales Invoice Item` sii
+    INNER JOIN `tabSales Invoice` si ON sii.parent = si.name
+    INNER JOIN `tabItem` i ON sii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
             WHERE 
-                i.is_stock_item = 1
-                AND sle.actual_qty > 0
-            """
-            
-            sample_query, sample_params = apply_filters_to_query(sample_query, filters)
-            sample_query += """
-            GROUP BY sle.item_code, sle.warehouse, i.item_name
-            ORDER BY stock_value DESC
-            LIMIT 10
-            """
-            
-            sample_result = frappe.db.sql(sample_query, sample_params, as_dict=True)
-            
-            if sample_result:
-                # Create sample expiry vs demand comparison
-                datasets = []
+        si.docstatus = 1
+        AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+    """
+    
+    try:
+        # Apply filters to queries
+        stock_query, stock_params = apply_filters_to_query(stock_query, filters)
+        demand_query, demand_params = apply_filters_to_query(demand_query, filters)
+        
+        # Execute queries
+        stock_result = frappe.db.sql(stock_query, stock_params, as_dict=True)
+        demand_result = frappe.db.sql(demand_query, demand_params, as_dict=True)
+        
+        # Prepare data for chart
                 labels = []
-                expiry_data = []
-                demand_data = []
-                transfer_recommendations = []
+        data = []
+        backgroundColor = []
+        tooltips = []
                 
-                for i, row in enumerate(sample_result[:8]):  # Limit to 8 items for readability
-                    item_name = row['item_name']
-                    warehouse = row['warehouse']
-                    company = row['company']
-                    
-                    # Simulate expiry quantities (decreasing urgency)
-                    expiry_qty = max(10, 100 - (i * 12))  # Simulated expiry quantity
-                    
-                    # Simulate demand in other branches (varying demand)
-                    demand_qty = 50 + (i * 15) if i % 2 == 0 else 80 - (i * 8)
-                    
-                    label = f"{item_name}\n({warehouse})"
-                    labels.append(label)
-                    expiry_data.append(expiry_qty)
-                    demand_data.append(demand_qty)
-                    
-                    # Add transfer recommendation
-                    if expiry_qty > 0 and demand_qty > expiry_qty:
-                        transfer_recommendations.append({
-                            'item': item_name,
-                            'from_warehouse': warehouse,
-                            'expiry_qty': expiry_qty,
-                            'potential_demand': demand_qty,
-                            'transfer_feasible': True,
-                            'urgency': 'High' if i < 3 else 'Medium'
-                        })
-                
-                datasets = [
-                    {
-                        'label': 'Items Nearing Expiry (Qty)',
-                        'data': expiry_data,
-                        'backgroundColor': '#ff6b6b',
-                        'borderColor': '#ff4757',
-                        'borderWidth': 2,
-                        'type': 'bar'
-                    },
-                    {
-                        'label': 'Demand in Other Branches (Qty)',
-                        'data': demand_data,
-                        'backgroundColor': '#4ecdc4',
-                        'borderColor': '#26de81',
-                        'borderWidth': 2,
-                        'type': 'bar'
-                    }
-                ]
-                
-                return {
-                    "chart_type": "bar",
-                    "labels": labels,
-                    "datasets": datasets,
-                    "title": "Expiry vs Demand Comparison (Sample Data)",
-                    "transfer_recommendations": transfer_recommendations,
-                    "message": "Showing sample data - no batch expiry information found",
-                    "options": {
-                        "scales": {
-                            "y": {
-                                "beginAtZero": True,
-                                "title": {
-                                    "display": True,
-                                    "text": "Quantity"
-                                }
-                            }
-                        },
-                        "plugins": {
-                            "tooltip": {
-                                "mode": "index",
-                                "intersect": False
-                            }
-                        }
-                    },
-                    "success": True
-                }
-            else:
-                return {
-                    "chart_type": "bar",
-                    "labels": [],
-                    "datasets": [],
-                    "message": "No stock data available for comparison analysis",
-                    "success": True
-                }
-        
-        # Get unique items from expiry data
-        expiry_items = {}
-        for row in expiry_result:
-            item_code = row['item_code']
-            if item_code not in expiry_items:
-                expiry_items[item_code] = {
-                    'item_name': row['item_name'],
-                    'warehouses': {},
-                    'total_expiry_qty': 0,
-                    'min_days_to_expiry': 999
-                }
-            
-            warehouse = row['warehouse']
-            expiry_items[item_code]['warehouses'][warehouse] = {
-                'qty': row['expiry_qty'],
-                'value': row['expiry_value'],
-                'days_until_expiry': row['days_until_expiry'],
-                'category': row['expiry_category'],
-                'company': row['company']
-            }
-            expiry_items[item_code]['total_expiry_qty'] += row['expiry_qty']
-            expiry_items[item_code]['min_days_to_expiry'] = min(
-                expiry_items[item_code]['min_days_to_expiry'], 
-                row['days_until_expiry']
-            )
-        
-        # Now get demand data for the same items in other warehouses
-        if expiry_items:
-            item_codes = list(expiry_items.keys())
-            placeholders = ', '.join(['%s'] * len(item_codes))
-            
-            demand_query = f"""
-            SELECT
-                sle.item_code,
-                sle.warehouse,
-                sle.company,
-                ABS(SUM(CASE WHEN sle.actual_qty < 0 THEN sle.actual_qty ELSE 0 END)) AS demand_qty,
-                COUNT(CASE WHEN sle.actual_qty < 0 THEN 1 END) AS transaction_count
-            FROM `tabStock Ledger Entry` sle
-            WHERE 
-                sle.item_code IN ({placeholders})
-                AND sle.posting_date >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
-                AND sle.actual_qty < 0
-            GROUP BY sle.item_code, sle.warehouse, sle.company
-            HAVING demand_qty > 0
-            ORDER BY sle.item_code, demand_qty DESC
-            """
-            
-            demand_result = frappe.db.sql(demand_query, item_codes, as_dict=True)
-            
-            # Process demand data
-            demand_items = {}
-            for row in demand_result:
-                item_code = row['item_code']
-                if item_code not in demand_items:
-                    demand_items[item_code] = {}
-                
-                warehouse = row['warehouse']
-                demand_items[item_code][warehouse] = {
-                    'demand_qty': row['demand_qty'],
-                    'transaction_count': row['transaction_count'],
-                    'company': row['company']
-                }
-        
-        # Create comparison data
-        comparison_data = []
-        transfer_recommendations = []
-        
-        for item_code, expiry_data in expiry_items.items():
-            item_name = expiry_data['item_name']
-            
-            for exp_warehouse, exp_info in expiry_data['warehouses'].items():
-                expiry_qty = exp_info['qty']
-                days_until_expiry = exp_info['days_until_expiry']
-                
-                # Find demand in other warehouses for this item
-                best_demand_warehouse = None
-                best_demand_qty = 0
-                
-                if item_code in demand_items:
-                    for dem_warehouse, dem_info in demand_items[item_code].items():
-                        if dem_warehouse != exp_warehouse:  # Different warehouse
-                            if dem_info['demand_qty'] > best_demand_qty:
-                                best_demand_qty = dem_info['demand_qty']
-                                best_demand_warehouse = dem_warehouse
-                
-                if best_demand_warehouse and best_demand_qty > 0:
-                    comparison_data.append({
-                        'item_name': item_name,
-                        'expiry_warehouse': exp_warehouse,
-                        'expiry_qty': expiry_qty,
-                        'days_until_expiry': days_until_expiry,
-                        'demand_warehouse': best_demand_warehouse,
-                        'demand_qty': best_demand_qty,
-                        'transfer_potential': min(expiry_qty, best_demand_qty)
+        for i, stock_row in enumerate(stock_result):
+            for demand_row in demand_result:
+                if stock_row['item_code'] == demand_row['item_code']:
+                    labels.append(f"{stock_row['item_name']} - {stock_row['batch_no']}")
+                    data.append({
+                        'expiry_date': stock_row['days_until_expiry'],
+                        'demand': demand_row['avg_demand'],
+                        'sales_frequency': demand_row['sales_frequency']
                     })
-                    
-                    # Add transfer recommendation
-                    if expiry_qty > 5 and best_demand_qty >= expiry_qty * 0.5:
-                        urgency = 'Critical' if days_until_expiry < 20 else 'High' if days_until_expiry < 30 else 'Medium'
-                        transfer_recommendations.append({
-                            'item': item_name,
-                            'from_warehouse': exp_warehouse,
-                            'to_warehouse': best_demand_warehouse,
-                            'expiry_qty': expiry_qty,
-                            'potential_demand': best_demand_qty,
-                            'recommended_transfer_qty': min(expiry_qty, best_demand_qty),
-                            'days_until_expiry': days_until_expiry,
-                            'urgency': urgency,
-                            'transfer_feasible': True
-                        })
-        
-        # Sort by urgency (days until expiry)
-        comparison_data.sort(key=lambda x: x['days_until_expiry'])
-        transfer_recommendations.sort(key=lambda x: x['days_until_expiry'])
-        
-        # Prepare chart data (top 15 items for readability)
-        top_items = comparison_data[:15]
-        labels = []
-        expiry_data = []
-        demand_data = []
-        
-        for item in top_items:
-            label = f"{item['item_name']}\n({item['expiry_warehouse']} → {item['demand_warehouse']})"
-            labels.append(label)
-            expiry_data.append(item['expiry_qty'])
-            demand_data.append(item['demand_qty'])
-        
-        datasets = [
-            {
-                'label': 'Items Nearing Expiry (Qty)',
-                'data': expiry_data,
-                'backgroundColor': '#ff6b6b',
-                'borderColor': '#ff4757',
-                'borderWidth': 2,
-                'type': 'bar'
-            },
-            {
-                'label': 'Demand in Other Branches (Qty)',
-                'data': demand_data,
-                'backgroundColor': '#4ecdc4',
-                'borderColor': '#26de81',
-                'borderWidth': 2,
-                'type': 'bar'
-            }
-        ]
-        
-        return {
-            "chart_type": "bar",
-            "labels": labels,
-            "datasets": datasets,
-            "title": "Expiry vs Demand Comparison - Transfer Opportunities",
-            "transfer_recommendations": transfer_recommendations[:10],  # Top 10 recommendations
-            "total_opportunities": len(transfer_recommendations),
-            "options": {
-                "scales": {
-                    "y": {
-                        "beginAtZero": True,
-                        "title": {
-                            "display": True,
-                            "text": "Quantity"
-                        }
-                    }
-                },
-                "plugins": {
-                    "tooltip": {
-                        "mode": "index",
-                        "intersect": False,
-                        "callbacks": {
-                            "afterBody": "function(tooltipItems) { return 'Transfer Opportunity Available'; }"
-                        }
-                    }
-                }
-            },
+                    backgroundColor.append('#3498db')
+                    tooltip = (f"{stock_row['item_name']}\n"
+                              f"Expiry Date: {stock_row['expiry_date']} days\n"
+                              f"Demand: {demand_row['avg_demand']:.2f} per sale\n"
+                              f"Sales Frequency: {demand_row['sales_frequency']}")
+                    tooltips.append(tooltip)
+                
+                return {
+            "chart_type": "bubble",
+                    "labels": labels,
+            "data": data,
+            "backgroundColor": backgroundColor,
+            "tooltips": tooltips,
+            "title": "Expiry vs Demand Comparison",
             "success": True
         }
         
     except Exception as e:
         frappe.log_error(f"Error in get_expiry_demand_comparison: {str(e)}")
         return {
-            "chart_type": "bar",
+            "chart_type": "bubble",
             "labels": [],
-            "datasets": [],
+            "data": [],
+            "backgroundColor": [],
             "error": str(e),
             "success": False
         }
@@ -2319,29 +2097,29 @@ def get_expiry_demand_comparison(filters=None):
 @frappe.whitelist()
 def get_branch_wise_in_out_quantity(filters=None):
     """
-    Chart Name: Branch Wise In & Out Quantity
-    Chart Type: MultiBar
-    Shows inward and outward stock movements by branch/warehouse
+    Chart Name: Branch Wise In/Out Quantity
+    Chart Type: Bar
+    Shows stock in and out quantities by branch (warehouse)
     """
     
     base_query = """
     SELECT
-        COALESCE(sle.warehouse, 'Unknown Warehouse') AS branch,
+        COALESCE(sle.warehouse, 'Unknown Warehouse') AS warehouse,
         DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
-        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty ELSE 0 END) AS in_quantity,
-        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) ELSE 0 END) AS out_quantity,
-        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty * sle.valuation_rate ELSE 0 END) AS in_value,
-        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) * sle.valuation_rate ELSE 0 END) AS out_value,
-        COUNT(CASE WHEN sle.actual_qty > 0 THEN 1 END) AS in_transactions,
-        COUNT(CASE WHEN sle.actual_qty < 0 THEN 1 END) AS out_transactions
+        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty ELSE 0 END) AS quantity_in,
+        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) ELSE 0 END) AS quantity_out,
+        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty * sle.valuation_rate ELSE 0 END) AS value_in,
+        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty * sle.valuation_rate) ELSE 0 END) AS value_out,
+        COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
         AND sle.warehouse IS NOT NULL
         AND sle.warehouse != ''
-        AND sle.actual_qty != 0
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -2375,10 +2153,10 @@ def get_branch_wise_in_out_quantity(filters=None):
         all_months = set()
         
         for row in result:
-            branch = row['branch']
+            branch = row['warehouse']
             month = row['month_year']
-            in_qty = float(row['in_quantity']) if row['in_quantity'] else 0
-            out_qty = float(row['out_quantity']) if row['out_quantity'] else 0
+            in_qty = float(row['quantity_in']) if row['quantity_in'] else 0
+            out_qty = float(row['quantity_out']) if row['quantity_out'] else 0
             
             if branch not in branch_data:
                 branch_data[branch] = {}
@@ -2478,9 +2256,9 @@ def get_branch_wise_in_out_quantity(filters=None):
 @frappe.whitelist()
 def get_company_wise_in_out_quantity(filters=None):
     """
-    Chart Name: Company Wise In & Out Quantity
-    Chart Type: MultiBar
-    Shows inward and outward stock movements by company
+    Chart Name: Company Wise In/Out Quantity
+    Chart Type: Bar
+    Shows stock in and out quantities by company
     """
     
     base_query = """
@@ -2488,21 +2266,19 @@ def get_company_wise_in_out_quantity(filters=None):
         COALESCE(sle.company, 'Unknown Company') AS company,
         DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
-        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty ELSE 0 END) AS in_quantity,
-        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) ELSE 0 END) AS out_quantity,
-        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty * sle.valuation_rate ELSE 0 END) AS in_value,
-        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) * sle.valuation_rate ELSE 0 END) AS out_value,
-        COUNT(CASE WHEN sle.actual_qty > 0 THEN 1 END) AS in_transactions,
-        COUNT(CASE WHEN sle.actual_qty < 0 THEN 1 END) AS out_transactions,
-        COUNT(DISTINCT sle.warehouse) AS warehouse_count,
+        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty ELSE 0 END) AS quantity_in,
+        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) ELSE 0 END) AS quantity_out,
+        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty * sle.valuation_rate ELSE 0 END) AS value_in,
+        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty * sle.valuation_rate) ELSE 0 END) AS value_out,
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
         AND sle.company IS NOT NULL
         AND sle.company != ''
-        AND sle.actual_qty != 0
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -2538,8 +2314,8 @@ def get_company_wise_in_out_quantity(filters=None):
         for row in result:
             company = row['company']
             month = row['month_year']
-            in_qty = float(row['in_quantity']) if row['in_quantity'] else 0
-            out_qty = float(row['out_quantity']) if row['out_quantity'] else 0
+            in_qty = float(row['quantity_in']) if row['quantity_in'] else 0
+            out_qty = float(row['quantity_out']) if row['quantity_out'] else 0
             
             if company not in company_data:
                 company_data[company] = {}
@@ -2656,10 +2432,9 @@ def get_company_wise_in_out_quantity(filters=None):
 @frappe.whitelist()
 def get_consolidate_in_out_quantity(filters=None):
     """
-    Chart Name: Consolidate In & Out Quantity
-    Chart Type: MultiBar
-    Shows all companies' stock movements in one consolidated bar chart 
-    using different colors for each company or branch
+    Chart Name: Consolidate In/Out Quantity
+    Chart Type: Bar
+    Shows consolidated stock in and out quantities for all companies and warehouses
     """
     
     base_query = """
@@ -2673,18 +2448,17 @@ def get_consolidate_in_out_quantity(filters=None):
         COALESCE(sle.warehouse, 'No Warehouse') AS warehouse,
         DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
-        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty ELSE 0 END) AS in_quantity,
-        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) ELSE 0 END) AS out_quantity,
-        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty * sle.valuation_rate ELSE 0 END) AS in_value,
-        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) * sle.valuation_rate ELSE 0 END) AS out_value,
-        COUNT(CASE WHEN sle.actual_qty > 0 THEN 1 END) AS in_transactions,
-        COUNT(CASE WHEN sle.actual_qty < 0 THEN 1 END) AS out_transactions,
+        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty ELSE 0 END) AS quantity_in,
+        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) ELSE 0 END) AS quantity_out,
+        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty * sle.valuation_rate ELSE 0 END) AS value_in,
+        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty * sle.valuation_rate) ELSE 0 END) AS value_out,
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
-        AND sle.actual_qty != 0
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -2723,8 +2497,8 @@ def get_consolidate_in_out_quantity(filters=None):
         for row in result:
             entity = row['entity_name']
             month = row['month_year']
-            in_qty = float(row['in_quantity']) if row['in_quantity'] else 0
-            out_qty = float(row['out_quantity']) if row['out_quantity'] else 0
+            in_qty = float(row['quantity_in']) if row['quantity_in'] else 0
+            out_qty = float(row['quantity_out']) if row['quantity_out'] else 0
             
             if entity not in entity_data:
                 entity_data[entity] = {}

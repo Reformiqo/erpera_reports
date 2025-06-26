@@ -11,49 +11,69 @@ def get_context(context):
 
 @frappe.whitelist()
 def get_dashboard_data():
-    """Get dashboard summary data"""
-    
-    # Get current month date range
+    """Get dashboard summary data for sales, purchase, and stock"""
     today = getdate(nowdate())
     start_of_month = today.replace(day=1)
     end_of_month = add_months(start_of_month, 1) - timedelta(days=1)
-    
-    # Get previous month for comparison
     prev_month_start = add_months(start_of_month, -1)
     prev_month_end = start_of_month - timedelta(days=1)
-    
+
     try:
-        # Purchase Orders data
-        purchase_orders = get_purchase_orders_summary(start_of_month, end_of_month, prev_month_start, prev_month_end)
-        
-        # Purchase Receipts data
-        purchase_receipts = get_purchase_receipts_summary(start_of_month, end_of_month, prev_month_start, prev_month_end)
-        
-        # Purchase Invoices data
-        purchase_invoices = get_purchase_invoices_summary(start_of_month, end_of_month, prev_month_start, prev_month_end)
-        
-        # Suppliers data
-        suppliers = get_suppliers_summary()
-        
-        # Outstanding data
-        outstanding = get_outstanding_summary()
-        
+        # Sales summary
+        sales = frappe.db.sql("""
+            SELECT 
+                COALESCE(SUM(grand_total), 0) as total_sales,
+                COUNT(*) as total_invoices,
+                COALESCE(AVG(grand_total), 0) as avg_invoice_value
+            FROM `tabSales Invoice`
+            WHERE posting_date BETWEEN %s AND %s
+            AND docstatus = 1
+        """, (start_of_month, end_of_month), as_dict=True)[0]
+
+        # Purchase summary
+        purchase = frappe.db.sql("""
+            SELECT 
+                COALESCE(SUM(grand_total), 0) as total_amount,
+                COUNT(DISTINCT supplier) as unique_suppliers,
+                COALESCE(SUM(outstanding_amount), 0) as total_outstanding
+            FROM `tabPurchase Invoice`
+            WHERE posting_date BETWEEN %s AND %s
+            AND docstatus = 1
+        """, (start_of_month, end_of_month), as_dict=True)[0]
+
+        # Stock summary (SKUs, stock value, efficiency)
+        total_skus = frappe.db.sql("""
+            SELECT COUNT(DISTINCT item_code) as total_skus
+            FROM `tabItem`
+            WHERE disabled = 0
+        """, as_dict=True)[0].total_skus
+        # For demo, use 0 for total_stock_value and efficiency_score
+        total_stock_value = 0
+        efficiency_score = 0
+
         return {
-            "purchase_orders": purchase_orders,
-            "purchase_receipts": purchase_receipts,
-            "purchase_invoices": purchase_invoices,
-            "suppliers": suppliers,
-            "outstanding": outstanding
+            "sales": {
+                "total_sales": int(sales.total_sales or 0),
+                "total_invoices": int(sales.total_invoices or 0),
+                "avg_invoice_value": int(sales.avg_invoice_value or 0)
+            },
+            "purchase": {
+                "total_amount": int(purchase.total_amount or 0),
+                "unique_suppliers": int(purchase.unique_suppliers or 0),
+                "total_outstanding": int(purchase.total_outstanding or 0)
+            },
+            "stock": {
+                "total_skus": int(total_skus or 0),
+                "total_stock_value": int(total_stock_value),
+                "efficiency_score": int(efficiency_score)
+            }
         }
-        
     except Exception as e:
         frappe.log_error(f"Error in get_dashboard_data: {str(e)}")
         return {
-            "purchase_orders": {"count": 0, "amount_growth": 0},
-            "purchase_receipts": {"count": 0, "amount_growth": 0},
-            "purchase_invoices": {"count": 0, "amount_growth": 0},
-            "suppliers": {"total_suppliers": 0, "active_suppliers": 0},
-            "outstanding": {"total_outstanding": 0, "overdue_count": 0}
+            "sales": {"total_sales": 0, "total_invoices": 0, "avg_invoice_value": 0},
+            "purchase": {"total_amount": 0, "unique_suppliers": 0, "total_outstanding": 0},
+            "stock": {"total_skus": 0, "total_stock_value": 0, "efficiency_score": 0}
         }
 
 def get_purchase_orders_summary(start_date, end_date, prev_start, prev_end):

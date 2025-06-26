@@ -25,14 +25,14 @@ def get_context(context):
     items = frappe.get_all(
         "Item",
         fields=["name as value", "item_name as label"],
-        filters={"is_stock_item": 1}
+        filters={"is_stock_item": 1, "item_group": ["!=", "Raw Material", "Services", "Sub Assemblies", "Consumable", "Furniture", "EXPENSE", "FIXED ASSET"]}
     )
     
     # Fetch item groups
     item_groups = frappe.get_all(
         "Item Group",
         fields=["name as value", "name as label"],
-        filters={"is_group": 0}
+        filters={"is_group": 0, "item_group_name": ["!=", "Raw Material", "Services", "Sub Assemblies", "Consumable", "Furniture", "EXPENSE", "FIXED ASSET"]}
     )
     
     # Fetch suppliers

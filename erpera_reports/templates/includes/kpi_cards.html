@@ -1,0 +1,287 @@
+<!-- KPI Cards Template -->
+<div class="kpi-cards-container" style="margin-bottom: 2rem;">
+    <div class="kpi-cards-row" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+        <!-- KPI cards will be dynamically inserted here -->
+    </div>
+</div>
+
+<style>
+.kpi-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 1.5rem;
+    color: white;
+    flex: 1;
+    min-width: 220px;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.3);
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(20px, -20px);
+}
+
+.kpi-card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+.kpi-card-value {
+    font-size: 2.2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+}
+
+.kpi-card-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 0.8rem;
+}
+
+.kpi-card-change {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    width: fit-content;
+}
+
+.kpi-card-change.positive {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.kpi-card-change.negative {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* Different color themes for cards */
+.kpi-card.revenue {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
+}
+
+.kpi-card.revenue:hover {
+    box-shadow: 0 12px 35px rgba(16, 185, 129, 0.3);
+}
+
+.kpi-card.sales {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+}
+
+.kpi-card.sales:hover {
+    box-shadow: 0 12px 35px rgba(59, 130, 246, 0.3);
+}
+
+.kpi-card.customers {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2);
+}
+
+.kpi-card.customers:hover {
+    box-shadow: 0 12px 35px rgba(139, 92, 246, 0.3);
+}
+
+.kpi-card.inventory {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.2);
+}
+
+.kpi-card.inventory:hover {
+    box-shadow: 0 12px 35px rgba(245, 158, 11, 0.3);
+}
+
+.kpi-card.efficiency {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.2);
+}
+
+.kpi-card.efficiency:hover {
+    box-shadow: 0 12px 35px rgba(6, 182, 212, 0.3);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .kpi-cards-row {
+        flex-direction: column;
+    }
+    
+    .kpi-card {
+        min-width: 100%;
+    }
+    
+    .kpi-card-value {
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .kpi-card {
+        padding: 1rem;
+    }
+    
+    .kpi-card-value {
+        font-size: 1.6rem;
+    }
+    
+    .kpi-card-icon {
+        font-size: 2rem;
+    }
+}
+</style>
+
+<script>
+// Function to load and display KPI cards
+function loadKPICards(containerId, dataUrl, filters = {}) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const kpiContainer = container.querySelector('.kpi-cards-row');
+    if (!kpiContainer) return;
+    
+    // Show loading state
+    kpiContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">Loading KPI data...</div>';
+    
+    // Fetch KPI data
+    frappe.call({
+        method: dataUrl,
+        args: { filters: filters },
+        callback: function(response) {
+            if (response.message) {
+                displayKPICards(kpiContainer, response.message);
+            } else {
+                kpiContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">No KPI data available</div>';
+            }
+        },
+        error: function(error) {
+            console.error('Error loading KPI data:', error);
+            kpiContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: #f56565;">Error loading KPI data</div>';
+        }
+    });
+}
+
+// Function to display KPI cards
+function displayKPICards(container, data) {
+    let cardsHTML = '';
+    
+    // Define card configurations based on data type
+    const cardConfigs = {
+        'total_revenue': { icon: '💰', label: 'Total Revenue', theme: 'revenue', format: 'currency' },
+        'total_sales': { icon: '💰', label: 'Total Sales', theme: 'revenue', format: 'currency' },
+        'total_amount': { icon: '💰', label: 'Total Amount', theme: 'revenue', format: 'currency' },
+        'total_purchases': { icon: '🛒', label: 'Total Purchases', theme: 'inventory', format: 'currency' },
+        'total_invoices': { icon: '📋', label: 'Total Invoices', theme: 'sales', format: 'number' },
+        'sales_count': { icon: '📋', label: 'Sales Count', theme: 'sales', format: 'number' },
+        'purchase_count': { icon: '📋', label: 'Purchase Count', theme: 'inventory', format: 'number' },
+        'avg_invoice_value': { icon: '📊', label: 'Avg Invoice Value', theme: 'efficiency', format: 'currency' },
+        'unique_customers': { icon: '👥', label: 'Unique Customers', theme: 'customers', format: 'number' },
+        'unique_suppliers': { icon: '🏪', label: 'Unique Suppliers', theme: 'customers', format: 'number' },
+        'active_branches': { icon: '🏢', label: 'Active Branches', theme: 'customers', format: 'number' },
+        'efficiency_ratio': { icon: '⚡', label: 'Efficiency Ratio', theme: 'efficiency', format: 'percentage' },
+        'total_skus': { icon: '📦', label: 'Total SKUs', theme: 'inventory', format: 'number' },
+        'total_qty_sold': { icon: '📈', label: 'Total Qty Sold', theme: 'sales', format: 'number' },
+        'total_outstanding': { icon: '⏳', label: 'Total Outstanding', theme: 'revenue', format: 'currency' },
+        'total_orders': { icon: '📋', label: 'Total Orders', theme: 'sales', format: 'number' }
+    };
+    
+    // Create cards for each KPI
+    Object.keys(data).forEach(key => {
+        const config = cardConfigs[key];
+        if (!config) return;
+        
+        const kpi = data[key];
+        const value = kpi.value || 0;
+        const change = kpi.change || 0;
+        const isPositive = change >= 0;
+        
+        // Format value based on type
+        let formattedValue = value;
+        if (config.format === 'currency') {
+            formattedValue = new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        } else if (config.format === 'percentage') {
+            formattedValue = `${value}%`;
+        } else if (config.format === 'number') {
+            formattedValue = new Intl.NumberFormat('en-IN').format(value);
+        }
+        
+        // Special handling for top SKU
+        if (key === 'top_sku_qty' && kpi.item_code) {
+            config.label = `Top SKU (${kpi.item_code})`;
+        }
+        
+        cardsHTML += `
+            <div class="kpi-card ${config.theme}">
+                <div class="kpi-card-icon">${config.icon}</div>
+                <div class="kpi-card-value">${formattedValue}</div>
+                <div class="kpi-card-label">${config.label}</div>
+                ${change !== 0 ? `
+                    <div class="kpi-card-change ${isPositive ? 'positive' : 'negative'}">
+                        <span>${isPositive ? '↗' : '↘'}</span>
+                        <span>${Math.abs(change)}%</span>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    container.innerHTML = cardsHTML;
+}
+
+// Function to initialize KPI cards for a section
+function initKPICards(sectionId, dataUrl, filters = {}) {
+    // Add KPI container if it doesn't exist
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    
+    const existingContainer = section.querySelector('.kpi-cards-container');
+    if (existingContainer) {
+        loadKPICards(sectionId, dataUrl, filters);
+        return;
+    }
+    
+    // Create KPI container
+    const kpiHTML = `
+        <div class="kpi-cards-container" style="margin-bottom: 2rem;">
+            <div class="kpi-cards-row" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                <!-- KPI cards will be loaded here -->
+            </div>
+        </div>
+    `;
+    
+    // Insert after section title
+    const sectionTitle = section.querySelector('.section-title');
+    if (sectionTitle) {
+        sectionTitle.insertAdjacentHTML('afterend', kpiHTML);
+    } else {
+        section.insertAdjacentHTML('afterbegin', kpiHTML);
+    }
+    
+    // Load KPI data
+    loadKPICards(sectionId, dataUrl, filters);
+}
+</script> 

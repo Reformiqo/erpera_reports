@@ -2,59 +2,171 @@ import frappe
 from frappe import _
 from datetime import datetime, timedelta
 from frappe.utils import nowdate, add_months, add_days, getdate, today, formatdate
+import json
+
+def apply_filters_to_query(base_query, filters):
+    """
+    Helper function to apply filters to SQL queries
+    """
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    
+    filters = filters or {}
+    conditions = []
+    params = {}
+    
+    # Date range filters (with defaults if not provided)
+    from_date = filters.get('from_date', add_months(today(), -3))  # Default to last 3 months
+    to_date = filters.get('to_date', today())  # Default to today
+    
+    conditions.append("si.posting_date >= %(from_date)s")
+    params['from_date'] = from_date
+    
+    conditions.append("si.posting_date <= %(to_date)s")
+    params['to_date'] = to_date
+    
+    # Company filter
+    if filters.get('company'):
+        conditions.append("si.company = %(company)s")
+        params['company'] = filters['company']
+    
+    # Branch filter (using cost_center)
+    if filters.get('branch'):
+        conditions.append("si.cost_center = %(branch)s")
+        params['branch'] = filters['branch']
+    
+    # Add existing conditions
+    if conditions:
+        if "where" in base_query.lower():
+            base_query += " AND " + " AND ".join(conditions)
+        else:
+            base_query += " WHERE " + " AND ".join(conditions)
+    
+    return base_query, params
+
+def apply_filters_to_item_query(base_query, filters):
+    """
+    Helper function to apply filters to SQL queries with Sales Invoice Item
+    """
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+    
+    filters = filters or {}
+    conditions = []
+    params = {}
+    
+    # Date range filters (with defaults if not provided)
+    from_date = filters.get('from_date', add_months(today(), -3))  # Default to last 3 months
+    to_date = filters.get('to_date', today())  # Default to today
+    
+    conditions.append("si.posting_date >= %(from_date)s")
+    params['from_date'] = from_date
+    
+    conditions.append("si.posting_date <= %(to_date)s")
+    params['to_date'] = to_date
+    
+    # Item filter
+    if filters.get('item'):
+        conditions.append("sii.item_code = %(item)s")
+        params['item'] = filters['item']
+    
+    # Item group filter
+    if filters.get('item_group'):
+        conditions.append("i.item_group = %(item_group)s")
+        params['item_group'] = filters['item_group']
+    
+    # Company filter
+    if filters.get('company'):
+        conditions.append("si.company = %(company)s")
+        params['company'] = filters['company']
+    
+    # Branch filter (using cost_center)
+    if filters.get('branch'):
+        conditions.append("si.cost_center = %(branch)s")
+        params['branch'] = filters['branch']
+    
+    # Custom filters
+    if filters.get('warehouse'):
+        conditions.append("sii.warehouse = %(warehouse)s")
+        params['warehouse'] = filters['warehouse']
+    
+    # Add existing conditions
+    if conditions:
+        if "where" in base_query.lower():
+            base_query += " AND " + " AND ".join(conditions)
+        else:
+            base_query += " WHERE " + " AND ".join(conditions)
+    
+    return base_query, params
 
 # Chart API functions for dashboard
+
+@frappe.whitelist()
+def test_dashboard_connection():
+    """Test function to check if dashboard endpoints are working"""
+    try:
+        # Check basic database connection
+        current_time = frappe.db.sql("SELECT NOW() as current_time", as_dict=True)
+        
+        # Check if we have any Sales Invoice data
+        si_count = frappe.db.sql("SELECT COUNT(*) as count FROM `tabSales Invoice` WHERE docstatus = 1", as_dict=True)
+        
+        # Check recent Sales Invoice data (last month)
+        from_date = add_months(today(), -1)
+        recent_si = frappe.db.sql("""
+            SELECT COUNT(*) as count 
+            FROM `tabSales Invoice` 
+            WHERE docstatus = 1 
+            AND posting_date >= %(from_date)s
+        """, {'from_date': from_date}, as_dict=True)
+        
+        return {
+            'success': True,
+            'current_time': current_time[0]['current_time'] if current_time else None,
+            'total_sales_invoices': si_count[0]['count'] if si_count else 0,
+            'recent_sales_invoices': recent_si[0]['count'] if recent_si else 0,
+            'test_date_range': f"{from_date} to {today()}"
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
 
 # Branch-Wise Performance Report functions
 @frappe.whitelist()
 def get_branch_revenue_comparison(filters=None):
     """Get branch revenue comparison"""
-    if not filters:
-        filters = {}
-    
-    from_date = filters.get('from_date', add_months(today(), -1))
-    to_date = filters.get('to_date', today())
-    company = filters.get('company')
-    
-    conditions = ""
-    if company:
-        conditions += " AND company = %(company)s"
+    base_query = """
+        SELECT 
+            COALESCE(si.cost_center, 'No Branch') as branch,
+            SUM(si.grand_total) as total_revenue,
+            SUM(si.grand_total * 0.4) as profit,
+            (SUM(si.grand_total * 0.4) / SUM(si.grand_total)) * 100 as margin,
+            MAX(si.cost_center) as region
+        FROM `tabSales Invoice` si
+        WHERE 
+            si.docstatus = 1
+            AND si.status NOT IN ('Cancelled', 'Return')
+    """
     
     try:
-        data = frappe.db.sql(f"""
-            SELECT 
-                COALESCE(branch, 'No Branch') as branch,
-                SUM(grand_total) as total_revenue,
-                COUNT(name) as invoice_count,
-                AVG(grand_total) as avg_invoice_value
-            FROM `tabSales Invoice`
-            WHERE posting_date BETWEEN %(from_date)s AND %(to_date)s
-            AND docstatus = 1
-            {conditions}
-            GROUP BY branch
-            ORDER BY total_revenue DESC
-        """, {
-            'from_date': from_date,
-            'to_date': to_date,
-            'company': company
-        }, as_dict=True)
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY si.cost_center
+        ORDER BY total_revenue DESC
+        """
         
-        # If no data found, return sample data
+        data = frappe.db.sql(query, params, as_dict=True)
+        
+        # If no data found, return empty data
         if not data:
-            data = [
-                {'branch': 'Main Branch', 'total_revenue': 150000},
-                {'branch': 'Branch 2', 'total_revenue': 120000},
-                {'branch': 'Branch 3', 'total_revenue': 95000},
-                {'branch': 'Branch 4', 'total_revenue': 80000}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_branch_revenue_comparison: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'branch': 'Main Branch', 'total_revenue': 150000},
-            {'branch': 'Branch 2', 'total_revenue': 120000},
-            {'branch': 'Branch 3', 'total_revenue': 95000}
-        ]
+        # Return empty data in case of error
+        data = []
     
     return {
         'labels': [d['branch'] for d in data],
@@ -100,20 +212,11 @@ def get_branch_profit_comparison(filters=None):
         
         # If no data found, return sample data
         if not data:
-            data = [
-                {'branch': 'Main Branch', 'estimated_profit': 30000},
-                {'branch': 'Branch 2', 'estimated_profit': 24000},
-                {'branch': 'Branch 3', 'estimated_profit': 19000},
-                {'branch': 'Branch 4', 'estimated_profit': 16000}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_branch_profit_comparison: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'branch': 'Main Branch', 'estimated_profit': 30000},
-            {'branch': 'Branch 2', 'estimated_profit': 24000},
-            {'branch': 'Branch 3', 'estimated_profit': 19000}
-        ]
+        # Return empty data in case of error
+        data = []
     
     return {
         'labels': [d['branch'] for d in data],
@@ -158,20 +261,11 @@ def get_branch_footfall_comparison(filters=None):
         
         # If no data found, return sample data
         if not data:
-            data = [
-                {'branch': 'Main Branch', 'unique_customers': 245},
-                {'branch': 'Branch 2', 'unique_customers': 198},
-                {'branch': 'Branch 3', 'unique_customers': 165},
-                {'branch': 'Branch 4', 'unique_customers': 142}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_branch_footfall_comparison: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'branch': 'Main Branch', 'unique_customers': 245},
-            {'branch': 'Branch 2', 'unique_customers': 198},
-            {'branch': 'Branch 3', 'unique_customers': 165}
-        ]
+        # Return empty data in case of error
+        data = []
     
     return {
         'labels': [d['branch'] for d in data],
@@ -217,20 +311,11 @@ def get_branch_avg_bill_value(filters=None):
         
         # If no data found, return sample data
         if not data:
-            data = [
-                {'branch': 'Main Branch', 'avg_bill_value': 612.50},
-                {'branch': 'Branch 2', 'avg_bill_value': 586.75},
-                {'branch': 'Branch 3', 'avg_bill_value': 575.25},
-                {'branch': 'Branch 4', 'avg_bill_value': 563.80}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_branch_avg_bill_value: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'branch': 'Main Branch', 'avg_bill_value': 612.50},
-            {'branch': 'Branch 2', 'avg_bill_value': 586.75},
-            {'branch': 'Branch 3', 'avg_bill_value': 575.25}
-        ]
+        # Return empty data in case of error
+        data = []
     
     return {
         'labels': [d['branch'] for d in data],
@@ -276,20 +361,11 @@ def get_branch_performance_matrix(filters=None):
         
         # If no data found, return sample data
         if not data:
-            data = [
-                {'branch': 'Main Branch', 'total_revenue': 150000, 'unique_customers': 245},
-                {'branch': 'Branch 2', 'total_revenue': 120000, 'unique_customers': 198},
-                {'branch': 'Branch 3', 'total_revenue': 95000, 'unique_customers': 165},
-                {'branch': 'Branch 4', 'total_revenue': 80000, 'unique_customers': 142}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_branch_performance_matrix: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'branch': 'Main Branch', 'total_revenue': 150000, 'unique_customers': 245},
-            {'branch': 'Branch 2', 'total_revenue': 120000, 'unique_customers': 198},
-            {'branch': 'Branch 3', 'total_revenue': 95000, 'unique_customers': 165}
-        ]
+        # Return empty data in case of error
+        data = []
     
     return {
         'labels': [d['branch'] for d in data],
@@ -361,25 +437,15 @@ def get_branch_growth_trend(filters=None):
         
         # If no data, return sample data
         if not growth_data:
-            growth_data = [
-                {'branch': 'Main Branch', 'growth': 15.5},
-                {'branch': 'Branch 2', 'growth': 12.3},
-                {'branch': 'Branch 3', 'growth': 8.7},
-                {'branch': 'Branch 4', 'growth': -2.1}
-            ]
+            growth_data = []
         
         # Sort by growth
         growth_data.sort(key=lambda x: x['growth'], reverse=True)
         
     except Exception as e:
         frappe.log_error(f"Error in get_branch_growth_trend: {str(e)}")
-        # Return sample data in case of error
-        growth_data = [
-            {'branch': 'Main Branch', 'growth': 15.5},
-            {'branch': 'Branch 2', 'growth': 12.3},
-            {'branch': 'Branch 3', 'growth': 8.7},
-            {'branch': 'Branch 4', 'growth': -2.1}
-        ]
+        # Return empty data in case of error
+        growth_data = []
     
     return {
         'labels': [d['branch'] for d in growth_data],
@@ -390,7 +456,7 @@ def get_branch_growth_trend(filters=None):
         }]
     }
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_daily_sales_snapshot(filters=None):
     """Get daily sales snapshot across all branches"""
     if not filters:
@@ -406,37 +472,26 @@ def get_daily_sales_snapshot(filters=None):
     try:
         data = frappe.db.sql(f"""
             SELECT 
-                COALESCE(branch, 'No Branch') as branch,
+                COALESCE(cost_center, 'No Branch') as branch,
                 SUM(grand_total) as total_sales,
                 COUNT(name) as invoice_count,
                 AVG(grand_total) as avg_invoice_value
             FROM `tabSales Invoice`
-            WHERE posting_date = %(date)s
-            AND docstatus = 1
+            WHERE docstatus = 1
             {conditions}
-            GROUP BY branch
+            GROUP BY cost_center
             ORDER BY total_sales DESC
         """, {
-            'date': date,
             'company': company
         }, as_dict=True)
         
         # If no data found, return sample data
         if not data:
-            data = [
-                {'branch': 'Main Branch', 'total_sales': 45000, 'invoice_count': 75, 'avg_invoice_value': 600},
-                {'branch': 'Branch 2', 'total_sales': 32000, 'invoice_count': 55, 'avg_invoice_value': 582},
-                {'branch': 'Branch 3', 'total_sales': 28000, 'invoice_count': 48, 'avg_invoice_value': 583},
-                {'branch': 'Branch 4', 'total_sales': 21000, 'invoice_count': 35, 'avg_invoice_value': 600}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_daily_sales_snapshot: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'branch': 'Main Branch', 'total_sales': 45000, 'invoice_count': 75, 'avg_invoice_value': 600},
-            {'branch': 'Branch 2', 'total_sales': 32000, 'invoice_count': 55, 'avg_invoice_value': 582},
-            {'branch': 'Branch 3', 'total_sales': 28000, 'invoice_count': 48, 'avg_invoice_value': 583}
-        ]
+        # Return empty data in case of error
+        data = []
     
     return {
         'labels': [d['branch'] for d in data],
@@ -449,55 +504,40 @@ def get_daily_sales_snapshot(filters=None):
 
 @frappe.whitelist()
 def get_sales_by_branch(filters=None):
-    """Get sales by branch for a specific date"""
-    if not filters:
-        filters = {}
-    
-    date = filters.get('date', today())
-    company = filters.get('company')
-    
-    conditions = ""
-    if company:
-        conditions += " AND company = %(company)s"
+    """Get daily sales by branch"""
+    base_query = """
+        SELECT 
+            COALESCE(si.branch, 'No Branch') as branch,
+            SUM(si.grand_total) as total_sales,
+            COUNT(si.name) as invoice_count
+        FROM `tabSales Invoice` si
+        WHERE 
+            si.docstatus = 1
+            AND si.status NOT IN ('Cancelled', 'Return')
+    """
     
     try:
-        data = frappe.db.sql(f"""
-            SELECT 
-                COALESCE(branch, 'No Branch') as branch,
-                SUM(grand_total) as total_sales,
-                COUNT(name) as invoice_count
-            FROM `tabSales Invoice`
-            WHERE posting_date = %(date)s
-            AND docstatus = 1
-            {conditions}
-            GROUP BY branch
-            ORDER BY total_sales DESC
-        """, {
-            'date': date,
-            'company': company
-        }, as_dict=True)
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY si.branch
+        ORDER BY total_sales DESC
+        """
         
-        # If no data found, return sample data
+        data = frappe.db.sql(query, params, as_dict=True)
+        
+        # If no data found, return empty data
         if not data:
-            data = [
-                {'branch': 'Main Branch', 'total_sales': 45000},
-                {'branch': 'Branch 2', 'total_sales': 32000},
-                {'branch': 'Branch 3', 'total_sales': 28000},
-                {'branch': 'Branch 4', 'total_sales': 21000}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_sales_by_branch: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'branch': 'Main Branch', 'total_sales': 45000},
-            {'branch': 'Branch 2', 'total_sales': 32000},
-            {'branch': 'Branch 3', 'total_sales': 28000}
-        ]
+        # Return empty data in case of error
+        data = []
     
     return {
         'labels': [d['branch'] for d in data],
         'datasets': [{
-            'label': 'Today\'s Sales (₹)',
+            'label': 'Sales (₹)',
             'data': [d['total_sales'] for d in data],
             'backgroundColor': '#10b981'
         }]
@@ -536,20 +576,11 @@ def get_payment_mode_breakdown(filters=None):
         
         # If no data found, return sample data
         if not data:
-            data = [
-                {'payment_mode': 'Cash', 'total_amount': 65000},
-                {'payment_mode': 'Card', 'total_amount': 45000},
-                {'payment_mode': 'UPI', 'total_amount': 15000},
-                {'payment_mode': 'Bank Transfer', 'total_amount': 1000}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_payment_mode_breakdown: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'payment_mode': 'Cash', 'total_amount': 65000},
-            {'payment_mode': 'Card', 'total_amount': 45000},
-            {'payment_mode': 'UPI', 'total_amount': 15000}
-        ]
+        # Return empty data in case of error
+        data = []
     
     return {
         'labels': [d['payment_mode'] for d in data],
@@ -592,18 +623,7 @@ def get_hourly_sales_trend(filters=None):
         
         # If no data found, return sample data for business hours
         if not data:
-            data = [
-                {'hour': 9, 'total_sales': 8500},
-                {'hour': 10, 'total_sales': 12000},
-                {'hour': 11, 'total_sales': 15500},
-                {'hour': 12, 'total_sales': 18000},
-                {'hour': 13, 'total_sales': 14000},
-                {'hour': 14, 'total_sales': 16500},
-                {'hour': 15, 'total_sales': 19000},
-                {'hour': 16, 'total_sales': 17500},
-                {'hour': 17, 'total_sales': 13000},
-                {'hour': 18, 'total_sales': 12000}
-            ]
+            data = []
         
         # Fill missing hours with 0
         hours_dict = {d['hour']: d['total_sales'] for d in data}
@@ -616,19 +636,8 @@ def get_hourly_sales_trend(filters=None):
             
     except Exception as e:
         frappe.log_error(f"Error in get_hourly_sales_trend: {str(e)}")
-        # Return sample data in case of error
-        full_data = [
-            {'hour': '9:00', 'total_sales': 8500},
-            {'hour': '10:00', 'total_sales': 12000},
-            {'hour': '11:00', 'total_sales': 15500},
-            {'hour': '12:00', 'total_sales': 18000},
-            {'hour': '13:00', 'total_sales': 14000},
-            {'hour': '14:00', 'total_sales': 16500},
-            {'hour': '15:00', 'total_sales': 19000},
-            {'hour': '16:00', 'total_sales': 17500},
-            {'hour': '17:00', 'total_sales': 13000},
-            {'hour': '18:00', 'total_sales': 12000}
-        ]
+        # Return empty data in case of error
+        full_data = []
     
     return {
         'labels': [d['hour'] for d in full_data],
@@ -660,8 +669,7 @@ def get_daily_sales_stats(filters=None):
                 COUNT(name) as total_invoices,
                 SUM(grand_total) as total_sales,
                 AVG(grand_total) as avg_invoice,
-                MAX(grand_total) as max_invoice,
-                MIN(grand_total) as min_invoice
+                MAX(grand_total) as max_invoice
             FROM `tabSales Invoice`
             WHERE posting_date = %(date)s
             AND docstatus = 1
@@ -674,21 +682,21 @@ def get_daily_sales_stats(filters=None):
         if summary and summary[0]['total_invoices']:
             stats = summary[0]
         else:
-            # Sample data if no records found
+            # Return empty stats if no records found
             stats = {
-                'total_invoices': 213,
-                'total_sales': 126000,
-                'avg_invoice': 592,
-                'max_invoice': 2450
+                'total_invoices': 0,
+                'total_sales': 0,
+                'avg_invoice': 0,
+                'max_invoice': 0
             }
     except Exception as e:
         frappe.log_error(f"Error in get_daily_sales_stats: {str(e)}")
-        # Return sample data in case of error
+        # Return empty stats in case of error
         stats = {
-            'total_invoices': 213,
-            'total_sales': 126000,
-            'avg_invoice': 592,
-            'max_invoice': 2450
+            'total_invoices': 0,
+            'total_sales': 0,
+            'avg_invoice': 0,
+            'max_invoice': 0
         }
     
     return {
@@ -917,68 +925,41 @@ def get_company_wise_purchases(filters=None):
 @frappe.whitelist()
 def get_top_selling_skus(filters=None):
     """Get top 20 fast-moving items by quantity"""
-    if not filters:
-        filters = {}
-    
-    from_date = filters.get('from_date', add_months(today(), -1))
-    to_date = filters.get('to_date', today())
-    company = filters.get('company')
-    branch = filters.get('branch')
-    
-    conditions = ""
-    if company:
-        conditions += " AND si.company = %(company)s"
-    if branch:
-        conditions += " AND si.branch = %(branch)s"
+    base_query = """
+        SELECT 
+            sii.item_code,
+            sii.item_name,
+            SUM(sii.qty) as total_qty,
+            SUM(sii.amount) as total_amount,
+            AVG(sii.rate) as avg_rate,
+            COUNT(DISTINCT si.name) as invoice_count
+        FROM `tabSales Invoice Item` sii
+        INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
+        INNER JOIN `tabItem` i ON sii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
+        WHERE 
+            si.docstatus = 1
+            AND si.status NOT IN ('Cancelled', 'Return')
+            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+    """
     
     try:
-        data = frappe.db.sql(f"""
-            SELECT 
-                sii.item_code,
-                sii.item_name,
-                SUM(sii.qty) as total_qty,
-                SUM(sii.amount) as total_amount,
-                AVG(sii.rate) as avg_rate,
-                COUNT(DISTINCT si.name) as invoice_count
-            FROM `tabSales Invoice Item` sii
-            INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
-            WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
-            AND si.docstatus = 1
-            {conditions}
-            GROUP BY sii.item_code, sii.item_name
-            ORDER BY total_qty DESC
-            LIMIT 20
-        """, {
-            'from_date': from_date,
-            'to_date': to_date,
-            'company': company,
-            'branch': branch
-        }, as_dict=True)
+        # Apply filters for item queries
+        query, params = apply_filters_to_item_query(base_query, filters)
+        query += """
+        GROUP BY sii.item_code, sii.item_name
+        ORDER BY total_qty DESC
+        LIMIT 20
+        """
         
-        # If no data found, return sample data
+        data = frappe.db.sql(query, params, as_dict=True)
+        
+        # If no data found, return empty data
         if not data:
-            data = [
-                {'item_code': 'ITEM-001', 'item_name': 'Product A', 'total_qty': 850},
-                {'item_code': 'ITEM-002', 'item_name': 'Product B', 'total_qty': 720},
-                {'item_code': 'ITEM-003', 'item_name': 'Product C', 'total_qty': 680},
-                {'item_code': 'ITEM-004', 'item_name': 'Product D', 'total_qty': 625},
-                {'item_code': 'ITEM-005', 'item_name': 'Product E', 'total_qty': 580},
-                {'item_code': 'ITEM-006', 'item_name': 'Product F', 'total_qty': 540},
-                {'item_code': 'ITEM-007', 'item_name': 'Product G', 'total_qty': 495},
-                {'item_code': 'ITEM-008', 'item_name': 'Product H', 'total_qty': 465},
-                {'item_code': 'ITEM-009', 'item_name': 'Product I', 'total_qty': 420},
-                {'item_code': 'ITEM-010', 'item_name': 'Product J', 'total_qty': 380}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_top_selling_skus: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'item_code': 'ITEM-001', 'item_name': 'Product A', 'total_qty': 850},
-            {'item_code': 'ITEM-002', 'item_name': 'Product B', 'total_qty': 720},
-            {'item_code': 'ITEM-003', 'item_name': 'Product C', 'total_qty': 680},
-            {'item_code': 'ITEM-004', 'item_name': 'Product D', 'total_qty': 625},
-            {'item_code': 'ITEM-005', 'item_name': 'Product E', 'total_qty': 580}
-        ]
+        data = []
     
     return {
         'labels': [f"{d['item_code']}" for d in data],
@@ -992,69 +973,42 @@ def get_top_selling_skus(filters=None):
 @frappe.whitelist()
 def get_low_performing_skus(filters=None):
     """Get bottom 20 slow-moving items by quantity"""
-    if not filters:
-        filters = {}
-    
-    from_date = filters.get('from_date', add_months(today(), -3))  # Extended period for slow movers
-    to_date = filters.get('to_date', today())
-    company = filters.get('company')
-    branch = filters.get('branch')
-    
-    conditions = ""
-    if company:
-        conditions += " AND si.company = %(company)s"
-    if branch:
-        conditions += " AND si.branch = %(branch)s"
+    base_query = """
+        SELECT 
+            sii.item_code,
+            sii.item_name,
+            SUM(sii.qty) as total_qty,
+            SUM(sii.amount) as total_amount,
+            AVG(sii.rate) as avg_rate,
+            COUNT(DISTINCT si.name) as invoice_count
+        FROM `tabSales Invoice Item` sii
+        INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
+        INNER JOIN `tabItem` i ON sii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
+        WHERE 
+            si.docstatus = 1
+            AND si.status NOT IN ('Cancelled', 'Return')
+            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+    """
     
     try:
-        data = frappe.db.sql(f"""
-            SELECT 
-                sii.item_code,
-                sii.item_name,
-                SUM(sii.qty) as total_qty,
-                SUM(sii.amount) as total_amount,
-                AVG(sii.rate) as avg_rate,
-                COUNT(DISTINCT si.name) as invoice_count
-            FROM `tabSales Invoice Item` sii
-            INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
-            WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
-            AND si.docstatus = 1
-            {conditions}
-            GROUP BY sii.item_code, sii.item_name
-            HAVING total_qty > 0
-            ORDER BY total_qty ASC
-            LIMIT 20
-        """, {
-            'from_date': from_date,
-            'to_date': to_date,
-            'company': company,
-            'branch': branch
-        }, as_dict=True)
+        # Apply filters for item queries
+        query, params = apply_filters_to_item_query(base_query, filters)
+        query += """
+        GROUP BY sii.item_code, sii.item_name
+        HAVING total_qty > 0
+        ORDER BY total_qty ASC
+        LIMIT 20
+        """
         
-        # If no data found, return sample data
+        data = frappe.db.sql(query, params, as_dict=True)
+        
+        # If no data found, return empty data
         if not data:
-            data = [
-                {'item_code': 'ITEM-991', 'item_name': 'Slow Product A', 'total_qty': 5},
-                {'item_code': 'ITEM-992', 'item_name': 'Slow Product B', 'total_qty': 8},
-                {'item_code': 'ITEM-993', 'item_name': 'Slow Product C', 'total_qty': 12},
-                {'item_code': 'ITEM-994', 'item_name': 'Slow Product D', 'total_qty': 15},
-                {'item_code': 'ITEM-995', 'item_name': 'Slow Product E', 'total_qty': 18},
-                {'item_code': 'ITEM-996', 'item_name': 'Slow Product F', 'total_qty': 22},
-                {'item_code': 'ITEM-997', 'item_name': 'Slow Product G', 'total_qty': 25},
-                {'item_code': 'ITEM-998', 'item_name': 'Slow Product H', 'total_qty': 28},
-                {'item_code': 'ITEM-999', 'item_name': 'Slow Product I', 'total_qty': 32},
-                {'item_code': 'ITEM-1000', 'item_name': 'Slow Product J', 'total_qty': 35}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_low_performing_skus: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'item_code': 'ITEM-991', 'item_name': 'Slow Product A', 'total_qty': 5},
-            {'item_code': 'ITEM-992', 'item_name': 'Slow Product B', 'total_qty': 8},
-            {'item_code': 'ITEM-993', 'item_name': 'Slow Product C', 'total_qty': 12},
-            {'item_code': 'ITEM-994', 'item_name': 'Slow Product D', 'total_qty': 15},
-            {'item_code': 'ITEM-995', 'item_name': 'Slow Product E', 'total_qty': 18}
-        ]
+        data = []
     
     return {
         'labels': [f"{d['item_code']}" for d in data],
@@ -1093,8 +1047,11 @@ def get_top_revenue_items(filters=None):
                 COUNT(DISTINCT si.name) as invoice_count
             FROM `tabSales Invoice Item` sii
             INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
+            INNER JOIN `tabItem` i ON sii.item_code = i.name
+            INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
             WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
             AND si.docstatus = 1
+            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             {conditions}
             GROUP BY sii.item_code, sii.item_name
             ORDER BY total_amount DESC
@@ -1108,28 +1065,11 @@ def get_top_revenue_items(filters=None):
         
         # If no data found, return sample data
         if not data:
-            data = [
-                {'item_code': 'ITEM-001', 'item_name': 'High Value Product A', 'total_amount': 125000},
-                {'item_code': 'ITEM-002', 'item_name': 'High Value Product B', 'total_amount': 98000},
-                {'item_code': 'ITEM-003', 'item_name': 'High Value Product C', 'total_amount': 87000},
-                {'item_code': 'ITEM-004', 'item_name': 'High Value Product D', 'total_amount': 76000},
-                {'item_code': 'ITEM-005', 'item_name': 'High Value Product E', 'total_amount': 68000},
-                {'item_code': 'ITEM-006', 'item_name': 'High Value Product F', 'total_amount': 59000},
-                {'item_code': 'ITEM-007', 'item_name': 'High Value Product G', 'total_amount': 52000},
-                {'item_code': 'ITEM-008', 'item_name': 'High Value Product H', 'total_amount': 48000},
-                {'item_code': 'ITEM-009', 'item_name': 'High Value Product I', 'total_amount': 43000},
-                {'item_code': 'ITEM-010', 'item_name': 'High Value Product J', 'total_amount': 39000}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_top_revenue_items: {str(e)}")
         # Return sample data in case of error
-        data = [
-            {'item_code': 'ITEM-001', 'item_name': 'High Value Product A', 'total_amount': 125000},
-            {'item_code': 'ITEM-002', 'item_name': 'High Value Product B', 'total_amount': 98000},
-            {'item_code': 'ITEM-003', 'item_name': 'High Value Product C', 'total_amount': 87000},
-            {'item_code': 'ITEM-004', 'item_name': 'High Value Product D', 'total_amount': 76000},
-            {'item_code': 'ITEM-005', 'item_name': 'High Value Product E', 'total_amount': 68000}
-        ]
+        data = []
     
     return {
         'labels': [f"{d['item_code']}" for d in data],
@@ -1155,7 +1095,7 @@ def get_item_category_performance(filters=None):
     if company:
         conditions += " AND si.company = %(company)s"
     if branch:
-        conditions += " AND si.branch = %(branch)s"
+        conditions += " AND si.cost_center = %(branch)s"
     
     try:
         data = frappe.db.sql(f"""
@@ -1166,9 +1106,11 @@ def get_item_category_performance(filters=None):
                 COUNT(DISTINCT sii.item_code) as unique_items
             FROM `tabSales Invoice Item` sii
             INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
-            LEFT JOIN `tabItem` i ON i.name = sii.item_code
+            INNER JOIN `tabItem` i ON i.name = sii.item_code
+            INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
             WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
             AND si.docstatus = 1
+            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             {conditions}
             GROUP BY i.item_group
             ORDER BY total_amount DESC
@@ -1182,34 +1124,19 @@ def get_item_category_performance(filters=None):
         
         # If no data found, return sample data
         if not data:
-            data = [
-                {'item_group': 'Electronics', 'total_amount': 185000},
-                {'item_group': 'Clothing', 'total_amount': 142000},
-                {'item_group': 'Home & Garden', 'total_amount': 98000},
-                {'item_group': 'Books & Media', 'total_amount': 76000},
-                {'item_group': 'Sports & Outdoors', 'total_amount': 59000},
-                {'item_group': 'Beauty & Health', 'total_amount': 43000},
-                {'item_group': 'Automotive', 'total_amount': 32000},
-                {'item_group': 'Toys & Games', 'total_amount': 28000}
-            ]
+            data = []
     except Exception as e:
         frappe.log_error(f"Error in get_item_category_performance: {str(e)}")
-        # Return sample data in case of error
-        data = [
-            {'item_group': 'Electronics', 'total_amount': 185000},
-            {'item_group': 'Clothing', 'total_amount': 142000},
-            {'item_group': 'Home & Garden', 'total_amount': 98000},
-            {'item_group': 'Books & Media', 'total_amount': 76000},
-            {'item_group': 'Sports & Outdoors', 'total_amount': 59000}
-        ]
+        # Return empty data in case of error
+        data = []
     
+    labels = [d['item_group'] for d in data]
+    data_values = [d['total_amount'] for d in data]
+    colors = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#f97316']
     return {
-        'labels': [d['item_group'] for d in data],
-        'datasets': [{
-            'label': 'Revenue (₹)',
-            'data': [d['total_amount'] for d in data],
-            'backgroundColor': ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4', '#84cc16', '#f97316']
-        }]
+        'labels': labels,
+        'data': data_values,
+        'backgroundColor': colors[:len(labels)]
     }
 
 @frappe.whitelist()
@@ -1237,8 +1164,11 @@ def get_sku_velocity_trend(filters=None):
                 SUM(sii.qty) as total_qty
             FROM `tabSales Invoice Item` sii
             INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
+            INNER JOIN `tabItem` i ON sii.item_code = i.name
+            INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
             WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
             AND si.docstatus = 1
+            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             {conditions}
             GROUP BY sii.item_code
             ORDER BY total_qty DESC
@@ -1251,34 +1181,12 @@ def get_sku_velocity_trend(filters=None):
         }, as_dict=True)
         
         if not top_items:
-            # Sample data for trend
+            # Return empty chart data
             return {
-                'labels': ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                'datasets': [
-                    {
-                        'label': 'ITEM-001',
-                        'data': [180, 220, 195, 240],
-                        'borderColor': '#10b981',
-                        'backgroundColor': 'rgba(16, 185, 129, 0.1)',
-                        'fill': False
-                    },
-                    {
-                        'label': 'ITEM-002',
-                        'data': [150, 180, 165, 200],
-                        'borderColor': '#3b82f6',
-                        'backgroundColor': 'rgba(59, 130, 246, 0.1)',
-                        'fill': False
-                    },
-                    {
-                        'label': 'ITEM-003',
-                        'data': [120, 140, 135, 170],
-                        'borderColor': '#8b5cf6',
-                        'backgroundColor': 'rgba(139, 92, 246, 0.1)',
-                        'fill': False
-                    }
-                ]
+                'labels': [],
+                'datasets': []
             }
-        
+    
         # Get weekly data for each top item
         item_codes = [item['item_code'] for item in top_items[:5]]  # Limit to top 5 for clarity
         
@@ -1289,9 +1197,12 @@ def get_sku_velocity_trend(filters=None):
                 SUM(sii.qty) as weekly_qty
             FROM `tabSales Invoice Item` sii
             INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
+            INNER JOIN `tabItem` i ON sii.item_code = i.name
+            INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
             WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
             AND si.docstatus = 1
             AND sii.item_code IN %(item_codes)s
+            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             {conditions}
             GROUP BY sii.item_code, WEEK(si.posting_date)
             ORDER BY sii.item_code, week_num
@@ -1332,32 +1243,10 @@ def get_sku_velocity_trend(filters=None):
         
     except Exception as e:
         frappe.log_error(f"Error in get_sku_velocity_trend: {str(e)}")
-        # Return sample data in case of error
+        # Return empty chart data in case of error
         return {
-            'labels': ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-            'datasets': [
-                {
-                    'label': 'ITEM-001',
-                    'data': [180, 220, 195, 240],
-                    'borderColor': '#10b981',
-                    'backgroundColor': 'rgba(16, 185, 129, 0.1)',
-                    'fill': False
-                },
-                {
-                    'label': 'ITEM-002',
-                    'data': [150, 180, 165, 200],
-                    'borderColor': '#3b82f6',
-                    'backgroundColor': 'rgba(59, 130, 246, 0.1)',
-                    'fill': False
-                },
-                {
-                    'label': 'ITEM-003',
-                    'data': [120, 140, 135, 170],
-                    'borderColor': '#8b5cf6',
-                    'backgroundColor': 'rgba(139, 92, 246, 0.1)',
-                    'fill': False
-                }
-            ]
+            'labels': [],
+            'datasets': []
         }
 
 # Purchase vs Sales Consumption Report functions
@@ -1510,12 +1399,15 @@ def get_item_wise_consumption(filters=None):
             sales_data = frappe.db.sql(f"""
                 SELECT 
                     sii.item_code,
-                    SUM(sii.qty) as sold_qty
+                    SUM(sii.amount) as sales_amount
                 FROM `tabSales Invoice Item` sii
                 INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
+                INNER JOIN `tabItem` i ON i.name = sii.item_code
+                INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
                 WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
                 AND si.docstatus = 1
                 AND sii.item_code IN %(item_codes)s
+                AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
                 {conditions.replace('pi.', 'si.')}
                 GROUP BY sii.item_code
             """, {
@@ -1525,7 +1417,7 @@ def get_item_wise_consumption(filters=None):
                 'item_codes': item_codes
             }, as_dict=True)
             
-            sales_dict = {d['item_code']: d['sold_qty'] for d in sales_data}
+            sales_dict = {d['item_code']: d['sales_amount'] for d in sales_data}
             
             data = []
             for d in purchase_data:
@@ -1601,8 +1493,11 @@ def get_overconsumption_items(filters=None):
                         SUM(sii.qty) as sold_qty
                     FROM `tabSales Invoice Item` sii
                     INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
+                    INNER JOIN `tabItem` i ON sii.item_code = i.name
+                    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
                     WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
                     AND si.docstatus = 1
+                    AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
                     {conditions.replace('pi.', 'si.')}
                     GROUP BY sii.item_code
                 ) s ON p.item_code = s.item_code
@@ -1745,10 +1640,12 @@ def get_consumption_ratio(filters=None):
                     SUM(sii.amount) as sales_amount
                 FROM `tabSales Invoice Item` sii
                 INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
-                LEFT JOIN `tabItem` i ON i.name = sii.item_code
+                INNER JOIN `tabItem` i ON i.name = sii.item_code
+                INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
                 WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
                 AND si.docstatus = 1
                 AND i.item_group IN %(item_groups)s
+                AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
                 {conditions.replace('pi.', 'si.')}
                 GROUP BY i.item_group
             """, {
@@ -1788,7 +1685,7 @@ def get_consumption_ratio(filters=None):
         }]
     }
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_inventory_turnover_analysis(filters=None):
     """Get inventory turnover analysis"""
     if not filters:
@@ -1826,9 +1723,11 @@ def get_inventory_turnover_analysis(filters=None):
                         SUM(sii.amount) as sales_amount
                     FROM `tabSales Invoice Item` sii
                     INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
-                    LEFT JOIN `tabItem` i ON i.name = sii.item_code
+                    INNER JOIN `tabItem` i ON i.name = sii.item_code
+                    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
                     WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
                     AND si.docstatus = 1
+                    AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
                     {conditions}
                     GROUP BY i.item_group
                 ) s
@@ -1975,4 +1874,560 @@ def get_stock_efficiency_score(filters=None):
             'data': [d['percentage'] for d in efficiency_data],
             'backgroundColor': ['#10b981', '#ef4444', '#f59e0b']
         }]
+    }
+
+# KPI Functions for Number Cards
+@frappe.whitelist()
+def get_branch_performance_kpis(filters=None):
+    """Get key performance indicators for branch performance"""
+    if not filters:
+        filters = {}
+    
+    from_date = filters.get('from_date', add_months(today(), -1))
+    to_date = filters.get('to_date', today())
+    company = filters.get('company')
+    
+    conditions = ""
+    if company:
+        conditions += " AND company = %(company)s"
+    
+    try:
+        # Current period data
+        current_data = frappe.db.sql(f"""
+            SELECT 
+                COUNT(name) as total_invoices,
+                SUM(grand_total) as total_revenue,
+                AVG(grand_total) as avg_invoice_value,
+                COUNT(DISTINCT customer) as unique_customers,
+                COUNT(DISTINCT branch) as active_branches
+            FROM `tabSales Invoice`
+            WHERE posting_date BETWEEN %(from_date)s AND %(to_date)s
+            AND docstatus = 1
+            {conditions}
+        """, {
+            'from_date': from_date,
+            'to_date': to_date,
+            'company': company
+        }, as_dict=True)
+        
+        # Previous period for comparison
+        prev_from = add_months(getdate(from_date), -1)
+        prev_to = add_days(getdate(from_date), -1)
+        
+        prev_data = frappe.db.sql(f"""
+            SELECT 
+                COUNT(name) as total_invoices,
+                SUM(grand_total) as total_revenue,
+                AVG(grand_total) as avg_invoice_value,
+                COUNT(DISTINCT customer) as unique_customers
+            FROM `tabSales Invoice`
+            WHERE posting_date BETWEEN %(prev_from)s AND %(prev_to)s
+            AND docstatus = 1
+            {conditions}
+        """, {
+            'prev_from': prev_from,
+            'prev_to': prev_to,
+            'company': company
+        }, as_dict=True)
+        
+        current = current_data[0] if current_data else {}
+        previous = prev_data[0] if prev_data else {}
+        
+        def calculate_change(current_val, prev_val):
+            if prev_val and prev_val > 0:
+                return round(((current_val - prev_val) / prev_val) * 100, 1)
+            return 0
+        
+        return {
+            'total_revenue': {
+                'value': current.get('total_revenue', 0),
+                'change': calculate_change(current.get('total_revenue', 0), previous.get('total_revenue', 0))
+            },
+            'total_invoices': {
+                'value': current.get('total_invoices', 0),
+                'change': calculate_change(current.get('total_invoices', 0), previous.get('total_invoices', 0))
+            },
+            'avg_invoice_value': {
+                'value': current.get('avg_invoice_value', 0),
+                'change': calculate_change(current.get('avg_invoice_value', 0), previous.get('avg_invoice_value', 0))
+            },
+            'unique_customers': {
+                'value': current.get('unique_customers', 0),
+                'change': calculate_change(current.get('unique_customers', 0), previous.get('unique_customers', 0))
+            },
+            'active_branches': {
+                'value': current.get('active_branches', 0),
+                'change': 0
+            }
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_branch_performance_kpis: {str(e)}")
+        return {
+            'total_revenue': {'value': 0, 'change': 0},
+            'total_invoices': {'value': 0, 'change': 0},
+            'avg_invoice_value': {'value': 0, 'change': 0},
+            'unique_customers': {'value': 0, 'change': 0},
+            'active_branches': {'value': 0, 'change': 0}
+        }
+
+@frappe.whitelist()
+def get_sku_performance_kpis(filters=None):
+    """Get key performance indicators for SKU performance"""
+    if not filters:
+        filters = {}
+    
+    from_date = filters.get('from_date', add_months(today(), -1))
+    to_date = filters.get('to_date', today())
+    company = filters.get('company')
+    
+    conditions = ""
+    if company:
+        conditions += " AND si.company = %(company)s"
+    
+    try:
+        # Current period data
+        current_data = frappe.db.sql(f"""
+            SELECT 
+                COUNT(DISTINCT sii.item_code) as total_skus,
+                SUM(sii.qty) as total_qty_sold,
+                SUM(sii.amount) as total_sales_amount,
+                COUNT(DISTINCT si.name) as total_transactions
+            FROM `tabSales Invoice Item` sii
+            INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
+            INNER JOIN `tabItem` i ON sii.item_code = i.name
+            INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
+            WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
+            AND si.docstatus = 1
+            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            {conditions}
+        """, {
+            'from_date': from_date,
+            'to_date': to_date,
+            'company': company
+        }, as_dict=True)
+        
+        # Get top performing SKU
+        top_sku = frappe.db.sql(f"""
+            SELECT 
+                sii.item_code,
+                SUM(sii.qty) as total_qty
+            FROM `tabSales Invoice Item` sii
+            INNER JOIN `tabSales Invoice` si ON si.name = sii.parent
+            INNER JOIN `tabItem` i ON sii.item_code = i.name
+            INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
+            WHERE si.posting_date BETWEEN %(from_date)s AND %(to_date)s
+            AND si.docstatus = 1
+            AND ig.name NOT IN ('Raw Material', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            {conditions}
+            GROUP BY sii.item_code
+            ORDER BY total_qty DESC
+            LIMIT 1
+        """, {
+            'from_date': from_date,
+            'to_date': to_date,
+            'company': company
+        }, as_dict=True)
+        
+        current = current_data[0] if current_data else {}
+        top_item = top_sku[0] if top_sku else {}
+        
+        return {
+            'total_skus': {
+                'value': current.get('total_skus', 0),
+                'change': 0
+            },
+            'total_qty_sold': {
+                'value': current.get('total_qty_sold', 0),
+                'change': 0
+            },
+            'total_sales_amount': {
+                'value': current.get('total_sales_amount', 0),
+                'change': 0
+            },
+            'top_sku_qty': {
+                'value': top_item.get('total_qty', 0),
+                'change': 0,
+                'item_code': top_item.get('item_code', 'N/A')
+            },
+            'avg_qty_per_sku': {
+                'value': round(current.get('total_qty_sold', 0) / max(current.get('total_skus', 1), 1), 2),
+                'change': 0
+            }
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_sku_performance_kpis: {str(e)}")
+        return {
+            'total_skus': {'value': 0, 'change': 0},
+            'total_qty_sold': {'value': 0, 'change': 0},
+            'total_sales_amount': {'value': 0, 'change': 0},
+            'top_sku_qty': {'value': 0, 'change': 0, 'item_code': 'N/A'},
+            'avg_qty_per_sku': {'value': 0, 'change': 0}
+        }
+
+@frappe.whitelist()
+def get_purchase_sales_kpis(filters=None):
+    """Get key performance indicators for purchase vs sales"""
+    if not filters:
+        filters = {}
+    
+    from_date = filters.get('from_date', add_months(today(), -3))
+    to_date = filters.get('to_date', today())
+    company = filters.get('company')
+    
+    conditions = ""
+    if company:
+        conditions += " AND company = %(company)s"
+    
+    try:
+        # Purchase data
+        purchase_data = frappe.db.sql(f"""
+            SELECT 
+                SUM(grand_total) as total_purchases,
+                COUNT(name) as purchase_count
+            FROM `tabPurchase Invoice`
+            WHERE posting_date BETWEEN %(from_date)s AND %(to_date)s
+            AND docstatus = 1
+            {conditions}
+        """, {
+            'from_date': from_date,
+            'to_date': to_date,
+            'company': company
+        }, as_dict=True)
+        
+        # Sales data
+        sales_data = frappe.db.sql(f"""
+            SELECT 
+                SUM(grand_total) as total_sales,
+                COUNT(name) as sales_count
+            FROM `tabSales Invoice`
+            WHERE posting_date BETWEEN %(from_date)s AND %(to_date)s
+            AND docstatus = 1
+            {conditions}
+        """, {
+            'from_date': from_date,
+            'to_date': to_date,
+            'company': company
+        }, as_dict=True)
+        
+        purchase = purchase_data[0] if purchase_data else {}
+        sales = sales_data[0] if sales_data else {}
+        
+        total_purchases = purchase.get('total_purchases', 0)
+        total_sales = sales.get('total_sales', 0)
+        
+        # Calculate efficiency ratio
+        efficiency_ratio = (total_sales / total_purchases * 100) if total_purchases > 0 else 0
+        
+        return {
+            'total_purchases': {
+                'value': total_purchases,
+                'change': 0
+            },
+            'total_sales': {
+                'value': total_sales,
+                'change': 0
+            },
+            'purchase_count': {
+                'value': purchase.get('purchase_count', 0),
+                'change': 0
+            },
+            'sales_count': {
+                'value': sales.get('sales_count', 0),
+                'change': 0
+            },
+            'efficiency_ratio': {
+                'value': round(efficiency_ratio, 1),
+                'change': 0
+            }
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_purchase_sales_kpis: {str(e)}")
+        return {
+            'total_purchases': {'value': 0, 'change': 0},
+            'total_sales': {'value': 0, 'change': 0},
+            'purchase_count': {'value': 0, 'change': 0},
+            'sales_count': {'value': 0, 'change': 0},
+            'efficiency_ratio': {'value': 0, 'change': 0}
+        }
+
+@frappe.whitelist()
+def get_daily_sales_kpis(filters=None):
+    """Get key performance indicators for daily sales"""
+    if not filters:
+        filters = {}
+    
+    date = filters.get('date', today())
+    company = filters.get('company')
+    
+    conditions = ""
+    if company:
+        conditions += " AND company = %(company)s"
+    
+    try:
+        # Today's data
+        today_data = frappe.db.sql(f"""
+            SELECT 
+                COUNT(name) as total_invoices,
+                SUM(grand_total) as total_sales,
+                AVG(grand_total) as avg_invoice_value,
+                COUNT(DISTINCT customer) as unique_customers,
+                COUNT(DISTINCT branch) as active_branches
+            FROM `tabSales Invoice`
+            WHERE posting_date = %(date)s
+            AND docstatus = 1
+            {conditions}
+        """, {
+            'date': date,
+            'company': company
+        }, as_dict=True)
+        
+        # Yesterday's data for comparison
+        yesterday = add_days(getdate(date), -1)
+        yesterday_data = frappe.db.sql(f"""
+            SELECT 
+                COUNT(name) as total_invoices,
+                SUM(grand_total) as total_sales,
+                AVG(grand_total) as avg_invoice_value,
+                COUNT(DISTINCT customer) as unique_customers
+            FROM `tabSales Invoice`
+            WHERE posting_date = %(yesterday)s
+            AND docstatus = 1
+            {conditions}
+        """, {
+            'yesterday': yesterday,
+            'company': company
+        }, as_dict=True)
+        
+        today_stats = today_data[0] if today_data else {}
+        yesterday_stats = yesterday_data[0] if yesterday_data else {}
+        
+        def calculate_change(current_val, prev_val):
+            if prev_val and prev_val > 0:
+                return round(((current_val - prev_val) / prev_val) * 100, 1)
+            return 0
+        
+        return {
+            'total_sales': {
+                'value': today_stats.get('total_sales', 0),
+                'change': calculate_change(today_stats.get('total_sales', 0), yesterday_stats.get('total_sales', 0))
+            },
+            'total_invoices': {
+                'value': today_stats.get('total_invoices', 0),
+                'change': calculate_change(today_stats.get('total_invoices', 0), yesterday_stats.get('total_invoices', 0))
+            },
+            'avg_invoice_value': {
+                'value': today_stats.get('avg_invoice_value', 0),
+                'change': calculate_change(today_stats.get('avg_invoice_value', 0), yesterday_stats.get('avg_invoice_value', 0))
+            },
+            'unique_customers': {
+                'value': today_stats.get('unique_customers', 0),
+                'change': calculate_change(today_stats.get('unique_customers', 0), yesterday_stats.get('unique_customers', 0))
+            },
+            'active_branches': {
+                'value': today_stats.get('active_branches', 0),
+                'change': 0
+            }
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_daily_sales_kpis: {str(e)}")
+        return {
+            'total_sales': {'value': 0, 'change': 0},
+            'total_invoices': {'value': 0, 'change': 0},
+            'avg_invoice_value': {'value': 0, 'change': 0},
+            'unique_customers': {'value': 0, 'change': 0},
+            'active_branches': {'value': 0, 'change': 0}
+        }
+
+@frappe.whitelist()
+def get_purchase_kpis(filters=None):
+    """Get key performance indicators for purchases"""
+    if not filters:
+        filters = {}
+    
+    from_date = filters.get('from_date', add_months(today(), -1))
+    to_date = filters.get('to_date', today())
+    company = filters.get('company')
+    
+    conditions = ""
+    if company:
+        conditions += " AND company = %(company)s"
+    
+    try:
+        # Purchase Invoice data
+        purchase_data = frappe.db.sql(f"""
+            SELECT 
+                COUNT(name) as total_invoices,
+                SUM(grand_total) as total_amount,
+                AVG(grand_total) as avg_invoice_value,
+                COUNT(DISTINCT supplier) as unique_suppliers,
+                SUM(outstanding_amount) as total_outstanding
+            FROM `tabPurchase Invoice`
+            WHERE posting_date BETWEEN %(from_date)s AND %(to_date)s
+            AND docstatus = 1
+            {conditions}
+        """, {
+            'from_date': from_date,
+            'to_date': to_date,
+            'company': company
+        }, as_dict=True)
+        
+        # Purchase Order data
+        po_data = frappe.db.sql(f"""
+            SELECT 
+                COUNT(name) as total_orders,
+                SUM(grand_total) as total_po_amount
+            FROM `tabPurchase Order`
+            WHERE transaction_date BETWEEN %(from_date)s AND %(to_date)s
+            AND docstatus = 1
+            {conditions.replace('posting_date', 'transaction_date')}
+        """, {
+            'from_date': from_date,
+            'to_date': to_date,
+            'company': company
+        }, as_dict=True)
+        
+        purchase = purchase_data[0] if purchase_data else {}
+        po = po_data[0] if po_data else {}
+        
+        return {
+            'total_amount': {
+                'value': purchase.get('total_amount', 0),
+                'change': 0
+            },
+            'total_invoices': {
+                'value': purchase.get('total_invoices', 0),
+                'change': 0
+            },
+            'avg_invoice_value': {
+                'value': purchase.get('avg_invoice_value', 0),
+                'change': 0
+            },
+            'unique_suppliers': {
+                'value': purchase.get('unique_suppliers', 0),
+                'change': 0
+            },
+            'total_outstanding': {
+                'value': purchase.get('total_outstanding', 0),
+                'change': 0
+            },
+            'total_orders': {
+                'value': po.get('total_orders', 0),
+                'change': 0
+            }
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error in get_purchase_kpis: {str(e)}")
+        return {
+            'total_amount': {'value': 0, 'change': 0},
+            'total_invoices': {'value': 0, 'change': 0},
+            'avg_invoice_value': {'value': 0, 'change': 0},
+            'unique_suppliers': {'value': 0, 'change': 0},
+            'total_outstanding': {'value': 0, 'change': 0},
+            'total_orders': {'value': 0, 'change': 0}
+        }
+
+@frappe.whitelist()
+def get_branch_revenue_comparison_detailed(filters=None):
+    """Get branch revenue, profit, margin, and region for franchise performance chart"""
+    base_query = """
+        SELECT 
+            COALESCE(si.cost_center, 'No Branch') as branch,
+            SUM(si.grand_total) as total_revenue,
+            SUM(si.grand_total * 0.4) as profit,
+            (SUM(si.grand_total * 0.4) / NULLIF(SUM(si.grand_total),0)) * 100 as margin,
+            MAX(si.cost_center) as region
+        FROM `tabSales Invoice` si
+        WHERE 
+            si.docstatus = 1
+            AND si.status NOT IN ('Cancelled', 'Return')
+    """
+    try:
+        # Apply filters
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY si.cost_center
+        ORDER BY total_revenue DESC
+        """
+        data = frappe.db.sql(query, params, as_dict=True)
+        if not data:
+            data = []
+        labels = [d['branch'] for d in data]
+        revenue = [float(d['total_revenue'] or 0) for d in data]
+        profit = [float(d['profit'] or 0) for d in data]
+        margin = [float(d['margin'] or 0) for d in data]
+        region = [d['region'] or '' for d in data]
+    except Exception as e:
+        frappe.log_error(f"Error in get_branch_revenue_comparison_detailed: {str(e)}")
+        labels, revenue, profit, margin, region = [], [], [], [], []
+    return {
+        'labels': labels,
+        'datasets': [{
+            'label': 'Revenue (₹)',
+            'data': revenue,
+            'backgroundColor': '#10b981'
+        }],
+        'profit': profit,
+        'margin': margin,
+        'region': region
+    }
+
+@frappe.whitelist()
+def get_franchise_monthly_trend(filters=None):
+    """
+    Returns monthly revenue, profit, and margin for all branches combined.
+    """
+    base_query = """
+        SELECT 
+            DATE_FORMAT(si.posting_date, '%%b %%y') as month,
+            SUM(si.grand_total) as revenue,
+            SUM(si.grand_total * 0.4) as profit
+        FROM `tabSales Invoice` si
+        WHERE 
+            si.docstatus = 1
+            AND si.status NOT IN ('Cancelled', 'Return')
+    """
+    try:
+        query, params = apply_filters_to_query(base_query, filters)
+        query += """
+        GROUP BY DATE_FORMAT(si.posting_date, '%%Y-%%m')
+        ORDER BY DATE_FORMAT(si.posting_date, '%%Y-%%m')
+        """
+        data = frappe.db.sql(query, params, as_dict=True)
+        if not data:
+            data = []
+        labels = [d['month'] for d in data]
+        revenue = [float(d['revenue'] or 0) / 100000 for d in data]  # Convert to Lakhs
+        profit = [float(d['profit'] or 0) / 100000 for d in data]    # Convert to Lakhs
+        margin = [
+            (float(d['profit']) / float(d['revenue']) * 100) if d['revenue'] else 0
+            for d in data
+        ]
+    except Exception as e:
+        frappe.log_error(f"Error in get_franchise_monthly_trend: {str(e)}")
+        labels, revenue, profit, margin = [], [], [], []
+    return {
+        'labels': labels,
+        'revenue': revenue,
+        'profit': profit,
+        'margin': margin
+    }
+
+@frappe.whitelist()
+def get_sales_velocity_trends(filters=None):
+    """
+    Returns monthly sales velocity and growth rate for the chart.
+    """
+    # For now, use sample data. Replace with real query as needed.
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    velocity = [1100, 400, 300, 250, 200, 150, 140, 130, 120, 1250, 500, 600]
+    growth = [50, -30, 20, 10, 5, -10, 40, 30, 45, -20, -25, 10]
+    return {
+        'labels': months,
+        'velocity': velocity,
+        'growth': growth
     }

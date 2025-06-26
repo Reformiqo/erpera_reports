@@ -75,11 +75,13 @@ def get_total_branch_wise_selling(filters=None):
     FROM `tabSales Invoice` si
     INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
     INNER JOIN `tabItem` i ON sii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
         AND si.cost_center IS NOT NULL
         AND si.cost_center != ''
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     # Query for company-wise data
@@ -93,11 +95,13 @@ def get_total_branch_wise_selling(filters=None):
     FROM `tabSales Invoice` si
     INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
     INNER JOIN `tabItem` i ON sii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
         AND si.company IS NOT NULL
         AND si.company != ''
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     # Summary query for overall totals
@@ -112,9 +116,11 @@ def get_total_branch_wise_selling(filters=None):
     FROM `tabSales Invoice` si
     INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
     INNER JOIN `tabItem` i ON sii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -318,9 +324,11 @@ def consolidated_total_selling(filters=None):
     FROM `tabSales Invoice` si
     INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
     INNER JOIN `tabItem` i ON sii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     # Query to get entity totals for sorting
@@ -335,9 +343,11 @@ def consolidated_total_selling(filters=None):
     FROM `tabSales Invoice` si
     INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
     INNER JOIN `tabItem` i ON sii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -548,9 +558,13 @@ def get_top_customers_raw_bar(filters=None, branch=None, company=None, limit=10)
             SUM(si.net_total) as net_amount,
             AVG(si.total) as avg_invoice_value
         FROM `tabSales Invoice` si
+        INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+        INNER JOIN `tabItem` i ON sii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
         WHERE 
             si.docstatus = 1
             AND si.status NOT IN ('Cancelled', 'Return')
+            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -611,11 +625,15 @@ def get_top_customers_by_branch(filters=None):
             SUM(si.total) as total_amount,
             COUNT(DISTINCT si.name) as invoice_count
         FROM `tabSales Invoice` si
+        INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+        INNER JOIN `tabItem` i ON sii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.cost_center IS NOT NULL 
             AND si.cost_center != ''
+            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -704,11 +722,15 @@ def get_top_customers_by_company(filters=None):
             si.customer_name,
             SUM(si.total) as total_amount
         FROM `tabSales Invoice` si
+        INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+        INNER JOIN `tabItem` i ON sii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.company IS NOT NULL 
             AND si.company != ''
+            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -795,9 +817,13 @@ def get_consolidated_top_customers(filters=None):
             SUM(si.total) as total_amount,
             GROUP_CONCAT(DISTINCT si.company) as companies
         FROM `tabSales Invoice` si
+        INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
+        INNER JOIN `tabItem` i ON sii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
+            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -862,11 +888,13 @@ def get_top_selling_products_by_branch(filters=None):
         FROM `tabSales Invoice` si
         INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
         INNER JOIN `tabItem` i ON sii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.cost_center IS NOT NULL 
             AND si.cost_center != ''
+            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -972,11 +1000,13 @@ def get_top_selling_products_by_company(filters=None):
         FROM `tabSales Invoice` si
         INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
         INNER JOIN `tabItem` i ON sii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.company IS NOT NULL 
             AND si.company != ''
+            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -1085,9 +1115,11 @@ def get_consolidated_top_selling_products(filters=None):
         FROM `tabSales Invoice` si
         INNER JOIN `tabSales Invoice Item` sii ON si.name = sii.parent
         INNER JOIN `tabItem` i ON sii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
+            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:

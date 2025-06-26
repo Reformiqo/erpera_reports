@@ -1,0 +1,129 @@
+<style>
+  .chart-container-light {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    min-width: 260px;
+    color: #222;
+  }
+  .chart-title-light {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    color: #222;
+    letter-spacing: 0.01em;
+  }
+  .chart-canvas-light {
+    width: 100% !important;
+    height: 320px !important;
+    display: block;
+    background: #fff;
+  }
+</style>
+
+<div class="chart-container-light width-{{ width|default(12) }}">
+  <div class="chart-title-light">{{ title }}</div>
+  <canvas id="{{ chart_id }}" class="chart-canvas-light"></canvas>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  let currentChart_{{ chart_id }} = null;
+  frappe.call({
+    method: "erpera_reports.dashboard.get_franchise_monthly_trend",
+    callback: function(r) {
+      if (r.message && r.message.labels) {
+        const labels = r.message.labels;
+        const revenue = r.message.revenue;
+        const profit = r.message.profit;
+        const margin = r.message.margin;
+
+        if (currentChart_{{ chart_id }}) {
+          currentChart_{{ chart_id }}.destroy();
+        }
+        currentChart_{{ chart_id }} = new Chart(document.getElementById('{{ chart_id }}'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Revenue (₹L)',
+                data: revenue,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.10)',
+                fill: true,
+                yAxisID: 'y',
+                tension: 0.3,
+                borderWidth: 3,
+                pointRadius: 3
+              },
+              {
+                label: 'Profit (₹L)',
+                data: profit,
+                borderColor: '#22c55e',
+                backgroundColor: 'rgba(34,197,94,0.10)',
+                fill: true,
+                yAxisID: 'y',
+                tension: 0.3,
+                borderWidth: 3,
+                pointRadius: 3
+              },
+              {
+                label: 'Margin (%)',
+                data: margin,
+                borderColor: '#facc15',
+                borderDash: [8, 6],
+                fill: false,
+                yAxisID: 'y1',
+                borderWidth: 3,
+                pointRadius: 0
+              }
+            ]
+          },
+          options: {
+            plugins: {
+              legend: {
+                labels: { color: '#222', font: { size: 14 } }
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+                backgroundColor: '#fff',
+                titleColor: '#222',
+                bodyColor: '#222',
+                borderColor: '#e5e7eb',
+                borderWidth: 1
+              }
+            },
+            scales: {
+              y: {
+                type: 'linear',
+                position: 'left',
+                title: { display: true, text: 'Amount (₹ Lakhs)', color: '#222' },
+                ticks: { color: '#222' },
+                grid: { color: '#e5e7eb' }
+              },
+              y1: {
+                type: 'linear',
+                position: 'right',
+                title: { display: true, text: 'Margin (%)', color: '#facc15' },
+                ticks: { color: '#facc15' },
+                grid: { drawOnChartArea: false }
+              },
+              x: {
+                ticks: { color: '#222' },
+                grid: { color: '#e5e7eb' }
+              }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+          }
+        });
+      }
+    }
+  });
+});
+</script> 

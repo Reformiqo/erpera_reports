@@ -2,65 +2,62 @@
 
 {% block page_content %}
     <div class="overview-cards">
+        <!-- Sales Area -->
         <div class="card">
-            <div class="card-icon purchase-orders">🛒</div>
-            <div class="card-value">{{ summary_cards.purchase_orders.count or 0 }}</div>
-            <div class="card-label">Purchase Orders</div>
-            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">(This Month)</p>
-            {% if summary_cards.purchase_orders.amount_growth %}
-            <div class="growth-indicator {{ 'positive' if summary_cards.purchase_orders.amount_growth > 0 else 'negative' if summary_cards.purchase_orders.amount_growth < 0 else 'neutral' }}">
-                {{ "↗" if summary_cards.purchase_orders.amount_growth > 0 else "↘" if summary_cards.purchase_orders.amount_growth < 0 else "→" }} {{ summary_cards.purchase_orders.amount_growth|abs }}%
-            </div>
-            {% endif %}
+            <div class="card-icon sales">💸</div>
+            <div class="card-value">{{ summary_cards.sales.total_sales or 0 }}</div>
+            <div class="card-label">Total Sales</div>
+            <p style="color: #3b82f6; font-size: 12px; font-weight: 500;">(This Month)</p>
         </div>
-        
         <div class="card">
-            <div class="card-icon purchase-receipts">🚚</div>
-            <div class="card-value">{{ summary_cards.purchase_receipts.count or 0 }}</div>
-            <div class="card-label">Purchase Receipts</div>
-            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">(This Month)</p>
-            {% if summary_cards.purchase_receipts.amount_growth %}
-            <div class="growth-indicator {{ 'positive' if summary_cards.purchase_receipts.amount_growth > 0 else 'negative' if summary_cards.purchase_receipts.amount_growth < 0 else 'neutral' }}">
-                {{ "↗" if summary_cards.purchase_receipts.amount_growth > 0 else "↘" if summary_cards.purchase_receipts.amount_growth < 0 else "→" }} {{ summary_cards.purchase_receipts.amount_growth|abs }}%
-            </div>
-            {% endif %}
+            <div class="card-icon sales">🧾</div>
+            <div class="card-value">{{ summary_cards.sales.total_invoices or 0 }}</div>
+            <div class="card-label">Sales Invoices</div>
+            <p style="color: #3b82f6; font-size: 12px; font-weight: 500;">(This Month)</p>
         </div>
-        
         <div class="card">
-            <div class="card-icon purchase-invoices">💰</div>
-            <div class="card-value">{{ summary_cards.purchase_invoices.count or 0 }}</div>
-            <div class="card-label">Purchase Invoices</div>
-            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">(This Month)</p>
-            {% if summary_cards.purchase_invoices.amount_growth %}
-            <div class="growth-indicator {{ 'positive' if summary_cards.purchase_invoices.amount_growth > 0 else 'negative' if summary_cards.purchase_invoices.amount_growth < 0 else 'neutral' }}">
-                {{ "↗" if summary_cards.purchase_invoices.amount_growth > 0 else "↘" if summary_cards.purchase_invoices.amount_growth < 0 else "→" }} {{ summary_cards.purchase_invoices.amount_growth|abs }}%
-            </div>
-            {% endif %}
+            <div class="card-icon sales">📊</div>
+            <div class="card-value">₹{{ summary_cards.sales.avg_invoice_value or 0 }}</div>
+            <div class="card-label">Avg Invoice Value</div>
+            <p style="color: #3b82f6; font-size: 12px; font-weight: 500;">(This Month)</p>
         </div>
-        
+        <!-- Purchase Area -->
         <div class="card">
-            <div class="card-icon suppliers">👥</div>
-            <div class="card-value">{{ summary_cards.suppliers.total_suppliers or 0 }}</div>
-            <div class="card-label">Total Suppliers</div>
-            <p style="color: #10b981; font-size: 12px; font-weight: 500;">({{ summary_cards.suppliers.active_suppliers or 0 }} Active)</p>
+            <div class="card-icon purchase">💰</div>
+            <div class="card-value">₹{{ summary_cards.purchase.total_amount or 0 }}</div>
+            <div class="card-label">Total Purchase</div>
+            <p style="color: #10b981; font-size: 12px; font-weight: 500;">(This Month)</p>
         </div>
-        
         <div class="card">
-            <div class="card-icon outstanding">⚠️</div>
-            <div class="card-value">
-                {% set outstanding = summary_cards.outstanding.total_outstanding or 0 %}
-                {% if outstanding >= 10000000 %}
-                    ₹{{ "%.1f"|format(outstanding/10000000) }}Cr
-                {% elif outstanding >= 100000 %}
-                    ₹{{ "%.1f"|format(outstanding/100000) }}L
-                {% elif outstanding >= 1000 %}
-                    ₹{{ "%.1f"|format(outstanding/1000) }}K
-                {% else %}
-                    ₹{{ outstanding|int }}
-                {% endif %}
-            </div>
-            <div class="card-label">Outstanding Amount</div>
-            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ summary_cards.outstanding.overdue_count or 0 }} Overdue)</p>
+            <div class="card-icon purchase">👥</div>
+            <div class="card-value">{{ summary_cards.purchase.unique_suppliers or 0 }}</div>
+            <div class="card-label">Suppliers</div>
+            <p style="color: #10b981; font-size: 12px; font-weight: 500;">(Active)</p>
+        </div>
+        <div class="card">
+            <div class="card-icon purchase">📦</div>
+            <div class="card-value">₹{{ summary_cards.purchase.total_outstanding or 0 }}</div>
+            <div class="card-label">Outstanding Purchase</div>
+            <p style="color: #10b981; font-size: 12px; font-weight: 500;">(Due)</p>
+        </div>
+        <!-- Stock Area -->
+        <div class="card">
+            <div class="card-icon stock">📦</div>
+            <div class="card-value">{{ summary_cards.stock.total_skus or 0 }}</div>
+            <div class="card-label">Total SKUs</div>
+            <p style="color: #f59e0b; font-size: 12px; font-weight: 500;">(Active)</p>
+        </div>
+        <div class="card">
+            <div class="card-icon stock">🏷️</div>
+            <div class="card-value">₹{{ summary_cards.stock.total_stock_value or 0 }}</div>
+            <div class="card-label">Stock Value</div>
+            <p style="color: #f59e0b; font-size: 12px; font-weight: 500;">(Current)</p>
+        </div>
+        <div class="card">
+            <div class="card-icon stock">✅</div>
+            <div class="card-value">{{ summary_cards.stock.efficiency_score or 0 }}%</div>
+            <div class="card-label">Stock Efficiency</div>
+            <p style="color: #f59e0b; font-size: 12px; font-weight: 500;">(Optimal)</p>
         </div>
     </div>
 
@@ -145,86 +142,7 @@
         </div>
     </div>
 
-    <div class="section-container">
-        <h2 class="section-title">Purchase vs Sales Consumption Report</h2>
-        <p class="section-description">Track purchases vs actual sales to manage overbuying or understocking risks</p>
-        
-        <div class="charts-row">
-            {% set chart_id = 'purchaseVsSalesOverview' %}
-            {% set title = 'Purchase vs Sales Overview (Monthly)' %}
-            {% set backgroundColor = '#3b82f6' %}
-            {% set chart_type = 'line' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_purchase_vs_sales_overview' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
-            ] %}
-            {% include "erpera_reports/templates/includes/line.html" %}
-        </div>
-        
-      
-        
-        <div class="charts-row">
-            {% set chart_id = 'understockRiskItems' %}
-            {% set title = 'Understock Risk Items' %}
-            {% set backgroundColor = '#f59e0b' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_understock_risk_items' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'consumptionRatio' %}
-            {% set title = 'Purchase to Sales Ratio by Category' %}
-            {% set backgroundColor = '#8b5cf6' %}
-            {% set chart_type = 'doughnut' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_consumption_ratio' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
-            ] %}
-            {% include "erpera_reports/templates/includes/doughnut.html" %}
-        </div>
-        
-        <div class="charts-row">
-            {% set chart_id = 'inventoryTurnoverAnalysis' %}
-            {% set title = 'Inventory Turnover Analysis' %}
-            {% set backgroundColor = '#06b6d4' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_inventory_turnover_analysis' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'stockEfficiencyScore' %}
-            {% set title = 'Stock Efficiency Score' %}
-            {% set backgroundColor = '#84cc16' %}
-            {% set chart_type = 'doughnut' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_stock_efficiency_score' %}
-            {% set filters = [
-              { "label": "Period", "fieldtype": "Select", "fieldname": "period", "options": [
-                {"value": "month", "label": "This Month"},
-                {"value": "quarter", "label": "This Quarter"},
-                {"value": "year", "label": "This Year"}
-              ] }
-            ] %}
-            {% include "erpera_reports/templates/includes/doughnut.html" %}
-        </div>
-    </div>
-
+    
     <div class="section-container">
         <h2 class="section-title">Daily Sales Summary Report</h2>
         <div class="charts-row">
@@ -242,57 +160,7 @@
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
         
-        <div class="charts-row">
-            {% set chart_id = 'salesByBranch' %}
-            {% set title = 'Sales by Branch (Today)' %}
-            {% set backgroundColor = '#3b82f6' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_sales_by_branch' %}
-            {% set filters = [
-              { "label": "Date", "fieldtype": "Date", "fieldname": "date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'paymentModeBreakdown' %}
-            {% set title = 'Payment Mode Breakdown (Today)' %}
-            {% set backgroundColor = '#8b5cf6' %}
-            {% set chart_type = 'doughnut' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_payment_mode_breakdown' %}
-            {% set filters = [
-              { "label": "Date", "fieldtype": "Date", "fieldname": "date" },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": [] }
-            ] %}
-            {% include "erpera_reports/templates/includes/doughnut.html" %}
-        </div>
-        
-        <div class="charts-row">
-            {% set chart_id = 'hourlySales' %}
-            {% set title = 'Hourly Sales Trend (Today)' %}
-            {% set backgroundColor = '#f59e0b' %}
-            {% set chart_type = 'line' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_hourly_sales_trend' %}
-            {% set filters = [
-              { "label": "Date", "fieldtype": "Date", "fieldname": "date" },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": [] }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'salesSummaryStats' %}
-            {% set title = 'Daily Sales Summary Stats' %}
-            {% set backgroundColor = '#06b6d4' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.dashboard.get_daily_sales_stats' %}
-            {% set filters = [
-              { "label": "Date", "fieldtype": "Date", "fieldname": "date" },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": [] }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-        </div>
+       
     </div>
 
     <div class="section-container">
@@ -320,7 +188,7 @@
             {% set title = 'Top Suppliers This Month' %}
             {% set backgroundColor = '#10b981' %}
             {% set chart_type = 'bar' %}
-            {% set width = 6 %}
+            {% set width = 12 %}
             {% set data_url = 'erpera_reports.dashboard.get_top_suppliers' %}
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
@@ -333,17 +201,7 @@
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
-            {% set chart_id = 'purchaseByStatus' %}
-            {% set title = 'Purchase Orders by Status' %}
-            {% set backgroundColor = '#f59e0b' %}
-            {% set chart_type = 'doughnut' %}
-            {% set width = 6 %}
-            {% set data_url = 'erpera_reports.dashboard.get_purchase_by_status' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" }
-            ] %}
-            {% include "erpera_reports/templates/includes/doughnut.html" %}
+            
         </div>
     </div>
 
@@ -354,7 +212,7 @@
             {% set title = 'Outstanding by Supplier' %}
             {% set backgroundColor = '#ef4444' %}
             {% set chart_type = 'bar' %}
-            {% set width = 6 %}
+            {% set width = 12 %}
             {% set data_url = 'erpera_reports.dashboard.get_outstanding_by_supplier' %}
             {% set filters = [
               { "label": "Limit", "fieldtype": "Select", "fieldname": "limit", "options": [
@@ -365,13 +223,7 @@
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
-            {% set chart_id = 'agingAnalysis' %}
-            {% set title = 'Outstanding Aging Analysis' %}
-            {% set backgroundColor = '#8b5cf6' %}
-            {% set chart_type = 'doughnut' %}
-            {% set width = 6 %}
-            {% set data_url = 'erpera_reports.dashboard.get_aging_analysis' %}
-            {% include "erpera_reports/templates/includes/doughnut.html" %}
+            
         </div>
     </div>
 
@@ -390,6 +242,44 @@
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Franchise Performance</h2>
+        <div class="charts-row">
+            {% set chart_id = 'franchisePerformance' %}
+            {% set title = 'Franchise Performance' %}
+            {% set backgroundColor = '#10b981' %}
+            {% set chart_type = 'bar' %}
+            {% set width = 12 %}
+            {% set data_url = 'erpera_reports.dashboard.get_branch_revenue_comparison' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
+            ] %}
+            {% include "erpera_reports/templates/includes/bar.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Monthly Trend</h2>
+        <div class="charts-row">
+            {% set chart_id = 'franchiseMonthlyTrend' %}
+            {% set title = 'Monthly Trend' %}
+            {% set width = 12 %}
+            {% include "erpera_reports/templates/includes/line_franchise_performance.html" %}
+        </div>
+    </div>
+
+    <div class="section-container">
+        <h2 class="section-title">Sales Velocity Trends</h2>
+        <div class="charts-row">
+            {% set chart_id = 'salesVelocityTrends' %}
+            {% set title = 'Sales Velocity Trends' %}
+            {% set width = 12 %}
+            {% include "erpera_reports/templates/includes/line_sales_velocity_trends.html" %}
         </div>
     </div>
 

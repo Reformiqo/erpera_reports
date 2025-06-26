@@ -83,15 +83,12 @@ def get_total_branch_wise_buying(filters=None):
         COUNT(DISTINCT pi.name) AS invoice_count
     FROM `tabPurchase Invoice` pi
     INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-    LEFT JOIN `tabItem` i ON pii.item_code = i.name
+    INNER JOIN `tabItem` i ON pii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND (
-            i.is_stock_item = 1 
-            OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
-        )
-        AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
         AND pi.cost_center IS NOT NULL
         AND pi.cost_center != ''
     """
@@ -106,15 +103,12 @@ def get_total_branch_wise_buying(filters=None):
         COUNT(DISTINCT pi.name) AS invoice_count
     FROM `tabPurchase Invoice` pi
     INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-    LEFT JOIN `tabItem` i ON pii.item_code = i.name
+    INNER JOIN `tabItem` i ON pii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND (
-            i.is_stock_item = 1 
-            OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
-        )
-        AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
         AND pi.company IS NOT NULL
         AND pi.company != ''
     """
@@ -130,15 +124,12 @@ def get_total_branch_wise_buying(filters=None):
         COUNT(DISTINCT pi.company) AS company_count
     FROM `tabPurchase Invoice` pi
     INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-    LEFT JOIN `tabItem` i ON pii.item_code = i.name
+    INNER JOIN `tabItem` i ON pii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND (
-            i.is_stock_item = 1 
-            OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
-        )
-        AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -332,15 +323,12 @@ def get_top_buying_products_by_branch(filters=None):
             COUNT(DISTINCT pi.name) as invoice_count
         FROM `tabPurchase Invoice` pi
         INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-        LEFT JOIN `tabItem` i ON pii.item_code = i.name
+        INNER JOIN `tabItem` i ON pii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
         WHERE 
             pi.docstatus = 1
             AND pi.status NOT IN ('Cancelled', 'Return')
-            AND (
-                i.is_stock_item = 1 
-                OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
-            )
-            AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
+            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             AND pi.cost_center IS NOT NULL 
             AND pi.cost_center != ''
     """
@@ -448,15 +436,12 @@ def get_top_buying_products_by_company(filters=None):
             COUNT(DISTINCT pi.name) as invoice_count
         FROM `tabPurchase Invoice` pi
         INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-        LEFT JOIN `tabItem` i ON pii.item_code = i.name
+        INNER JOIN `tabItem` i ON pii.item_code = i.name
+        INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
         WHERE 
             pi.docstatus = 1 
             AND pi.status NOT IN ('Cancelled', 'Return')
-            AND (
-                i.is_stock_item = 1 
-                OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
-            )
-            AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
+            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             AND pi.company IS NOT NULL 
             AND pi.company != ''
     """
@@ -574,15 +559,12 @@ def consolidated_total_buying(filters=None):
         SUM(pii.qty) AS total_qty
     FROM `tabPurchase Invoice` pi
     INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-    LEFT JOIN `tabItem` i ON pii.item_code = i.name
+    INNER JOIN `tabItem` i ON pii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND (
-            i.is_stock_item = 1 
-            OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
-        )
-        AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     # Query to get entity totals for sorting
@@ -596,15 +578,12 @@ def consolidated_total_buying(filters=None):
         SUM(pii.amount) AS total_amount
     FROM `tabPurchase Invoice` pi
     INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-    LEFT JOIN `tabItem` i ON pii.item_code = i.name
+    INNER JOIN `tabItem` i ON pii.item_code = i.name
+    INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND (
-            i.is_stock_item = 1 
-            OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
-        )
-        AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES')
+        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -669,8 +648,7 @@ def consolidated_total_buying(filters=None):
         color_palette = [
             '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
             '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
-            '#ff9999', '#66b3ff', '#99ff99', '#ffcc99', '#ff99cc',
-            '#c2c2f0', '#ffb3e6', '#c4e17f', '#76d7c4', '#f7dc6f'
+            '#ff9999', '#66b3ff', '#99ff99', '#ffcc99', '#ff99cc'
         ]
         
         # Prepare datasets for each entity
