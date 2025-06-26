@@ -88,9 +88,9 @@ def get_total_branch_wise_buying(filters=None):
     WHERE 
         pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
         AND pi.cost_center IS NOT NULL
         AND pi.cost_center != ''
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     # Query for company-wise data
@@ -108,9 +108,9 @@ def get_total_branch_wise_buying(filters=None):
     WHERE 
         pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
         AND pi.company IS NOT NULL
         AND pi.company != ''
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     # Summary query for overall totals
@@ -129,7 +129,7 @@ def get_total_branch_wise_buying(filters=None):
     WHERE 
         pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -328,9 +328,9 @@ def get_top_buying_products_by_branch(filters=None):
         WHERE 
             pi.docstatus = 1
             AND pi.status NOT IN ('Cancelled', 'Return')
-            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             AND pi.cost_center IS NOT NULL 
             AND pi.cost_center != ''
+            AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -441,9 +441,9 @@ def get_top_buying_products_by_company(filters=None):
         WHERE 
             pi.docstatus = 1 
             AND pi.status NOT IN ('Cancelled', 'Return')
-            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
             AND pi.company IS NOT NULL 
             AND pi.company != ''
+            AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:
@@ -564,7 +564,7 @@ def consolidated_total_buying(filters=None):
     WHERE 
         pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     # Query to get entity totals for sorting
@@ -583,7 +583,7 @@ def consolidated_total_buying(filters=None):
     WHERE 
         pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
     """
     
     try:

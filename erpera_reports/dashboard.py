@@ -472,7 +472,7 @@ def get_daily_sales_snapshot(filters=None):
     try:
         data = frappe.db.sql(f"""
             SELECT 
-                COALESCE(cost_center, 'No Branch') as branch,
+                COALESCE(cost_center) as branch,
                 SUM(grand_total) as total_sales,
                 COUNT(name) as invoice_count,
                 AVG(grand_total) as avg_invoice_value

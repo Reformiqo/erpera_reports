@@ -75,8 +75,8 @@
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": [] }
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
@@ -89,8 +89,8 @@
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": [] }
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
@@ -105,8 +105,8 @@
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": [] }
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
@@ -119,8 +119,8 @@
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": [] }
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/doughnut.html" %}
         </div>
@@ -135,8 +135,8 @@
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": [] }
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/line.html" %}
         </div>
@@ -147,15 +147,14 @@
         <h2 class="section-title">Daily Sales Summary Report</h2>
         <div class="charts-row">
             {% set chart_id = 'dailySalesSnapshot' %}
-            {% set title = 'Daily Sales Snapshot Across All Branches' %}
+            {% set title = 'Sales Snapshot Across All Branches' %}
             {% set backgroundColor = '#22c55e' %}
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
             {% set data_url = 'erpera_reports.dashboard.get_daily_sales_snapshot' %}
             {% set filters = [
-              { "label": "Date", "fieldtype": "Date", "fieldname": "date" },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": [] },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
@@ -175,7 +174,8 @@
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
+            { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
@@ -239,7 +239,8 @@
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": [] }
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>

@@ -81,7 +81,8 @@ def get_total_branch_wise_selling(filters=None):
         AND si.status NOT IN ('Cancelled', 'Return')
         AND si.cost_center IS NOT NULL
         AND si.cost_center != ''
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     # Query for company-wise data
@@ -101,7 +102,8 @@ def get_total_branch_wise_selling(filters=None):
         AND si.status NOT IN ('Cancelled', 'Return')
         AND si.company IS NOT NULL
         AND si.company != ''
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     # Summary query for overall totals
@@ -120,7 +122,8 @@ def get_total_branch_wise_selling(filters=None):
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -328,7 +331,8 @@ def consolidated_total_selling(filters=None):
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     # Query to get entity totals for sorting
@@ -347,7 +351,8 @@ def consolidated_total_selling(filters=None):
     WHERE 
         si.docstatus = 1
         AND si.status NOT IN ('Cancelled', 'Return')
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -564,7 +569,8 @@ def get_top_customers_raw_bar(filters=None, branch=None, company=None, limit=10)
         WHERE 
             si.docstatus = 1
             AND si.status NOT IN ('Cancelled', 'Return')
-            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            
     """
     
     try:
@@ -633,7 +639,8 @@ def get_top_customers_by_branch(filters=None):
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.cost_center IS NOT NULL 
             AND si.cost_center != ''
-            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            
     """
     
     try:
@@ -730,7 +737,8 @@ def get_top_customers_by_company(filters=None):
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.company IS NOT NULL 
             AND si.company != ''
-            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            
     """
     
     try:
@@ -823,7 +831,8 @@ def get_consolidated_top_customers(filters=None):
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
-            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            
     """
     
     try:
@@ -894,7 +903,8 @@ def get_top_selling_products_by_branch(filters=None):
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.cost_center IS NOT NULL 
             AND si.cost_center != ''
-            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            
     """
     
     try:
@@ -1006,7 +1016,8 @@ def get_top_selling_products_by_company(filters=None):
             AND si.status NOT IN ('Cancelled', 'Return')
             AND si.company IS NOT NULL 
             AND si.company != ''
-            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            
     """
     
     try:
@@ -1119,7 +1130,8 @@ def get_consolidated_top_selling_products(filters=None):
         WHERE 
             si.docstatus = 1 
             AND si.status NOT IN ('Cancelled', 'Return')
-            AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            
     """
     
     try:

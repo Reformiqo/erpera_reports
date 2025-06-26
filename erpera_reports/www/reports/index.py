@@ -7,6 +7,39 @@ def get_context(context):
     """Get context data for the main dashboard page"""
     context.title = _("ERPera Reports Dashboard")
     context.summary_cards = get_dashboard_data()
+    companies = frappe.get_all(
+        "Company",
+        fields=["name as value", "company_name as label"],
+        filters={"is_group": 0}
+    )
+    
+    # Fetch branches (cost centers)
+    branches = frappe.get_all(
+        "Cost Center",
+        fields=["name as value", "cost_center_name as label"],
+        filters={"is_group": 0}
+    )
+    
+    # Fetch items
+    items = frappe.get_all(
+        "Item",
+        fields=["name as value", "item_name as label"],
+        filters={"is_stock_item": 1, "item_group": ["!=", "Raw Material", "Services", "Sub Assemblies", "Consumable", "Furniture", "EXPENSE", "FIXED ASSET"]}
+    )
+    
+    # Fetch item groups
+    item_groups = frappe.get_all(
+        "Item Group",
+        fields=["name as value", "name as label"],
+        filters={"is_group": 0, "item_group_name": ["!=", "Raw Material", "Services", "Sub Assemblies", "Consumable", "Furniture", "EXPENSE", "FIXED ASSET"]}
+    )
+    
+    # Add the lists to the context
+    context.company_list = companies
+    context.branch_list = branches
+    context.item_list = items
+    context.item_group_list = item_groups
+    
     return context
 
 @frappe.whitelist()
@@ -17,6 +50,7 @@ def get_dashboard_data():
     end_of_month = add_months(start_of_month, 1) - timedelta(days=1)
     prev_month_start = add_months(start_of_month, -1)
     prev_month_end = start_of_month - timedelta(days=1)
+    
 
     try:
         # Sales summary

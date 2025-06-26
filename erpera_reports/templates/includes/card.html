@@ -1,4 +1,4 @@
-{% macro summary_card(title, value, change_percentage, change_direction='down', width=3, gap='1.5rem') %}
+{% macro summary_card(title, value, change_percentage, change_direction='down', width=3, gap='1.5rem', drill_method=None, drill_args=None, drill_data=None) %}
   {% set width_map = {
     12: '100%',
     6: '50%',
@@ -8,15 +8,225 @@
     1: '8.33%'
   } %}
   {% if width == 12 %}
-    {% set style = 'width: 100%; display: inline-block; vertical-align: top; margin-right: 0; margin-bottom: ' ~ gap ~ '; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 1.5rem 2rem; min-width: 180px; box-sizing: border-box;' %}
+    {% set style = 'width: 100%; display: inline-block; vertical-align: top; margin-right: 0; margin-bottom: ' ~ gap ~ '; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 1.5rem 2rem; min-width: 180px; box-sizing: border-box; cursor: pointer;' %}
   {% else %}
-    {% set style = 'width: calc(' ~ width_map[width] ~ ' - ' ~ gap ~ '); display: inline-block; vertical-align: top; margin-right: ' ~ gap ~ '; margin-bottom: ' ~ gap ~ '; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 1.5rem 2rem; min-width: 180px; box-sizing: border-box;' %}
+    {% set style = 'width: calc(' ~ width_map[width] ~ ' - ' ~ gap ~ '); display: inline-block; vertical-align: top; margin-right: ' ~ gap ~ '; margin-bottom: ' ~ gap ~ '; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 1.5rem 2rem; min-width: 180px; box-sizing: border-box; cursor: pointer;' %}
   {% endif %}
-  <div style="{{ style }}" class="card">
+  <div style="{{ style }}" class="card summary-card" onclick="handleCardClick_{{ title|replace(' ', '')|replace('(', '')|replace(')', '')|replace('-', '')|replace('&', '')|replace('.', '')|replace(',', '')|replace('/', '')|replace(':', '')|replace('₹', '') }}(this)">
     <div><small style="color: #888;">{{ title }}</small></div>
     <h2 style="margin: 0.5rem 0 0 0; font-size: 2rem;">₹ {{ value }}</h2>
     <div style="color: {% if change_direction == 'down' %}#c0392b{% else %}#27ae60{% endif %}; font-size: 1.1rem;">
       {{ change_direction == 'down' and '↓' or '↑' }} {{ change_percentage }}%
     </div>
   </div>
+  <script>
+    function handleCardClick_{{ title|replace(' ', '')|replace('(', '')|replace(')', '')|replace('-', '')|replace('&', '')|replace('.', '')|replace(',', '')|replace('/', '')|replace(':', '')|replace('₹', '') }}(el) {
+      {% if drill_method %}
+      // Call backend for drill-down data
+      frappe.msgprint({
+        title: '{{ title }}',
+        message: '<div style="text-align:center;padding:20px;color:#6c757d;">Loading details...</div>',
+        wide: true
+      });
+      frappe.call({
+        method: '{{ drill_method }}',
+        args: {{ drill_args|tojson if drill_args else '{}' }},
+        callback: function(r) {
+          if (r.message && r.message.data && r.message.data.length > 0) {
+            showCardDrillModal(r.message.data, '{{ title }}', {{ value|tojson }});
+          } else {
+            frappe.msgprint({
+              title: '{{ title }}',
+              message: '<div style="text-align:center;padding:20px;color:#6c757d;">No detailed data found for this card.</div>',
+              wide: true,
+              indicator: 'blue'
+            });
+          }
+        }
+      });
+      {% elif drill_data %}
+      // Show provided drill data
+      showCardDrillModal({{ drill_data|tojson }}, '{{ title }}', {{ value|tojson }});
+      {% else %}
+      frappe.msgprint({
+        title: '{{ title }}',
+        message: '<div style="text-align:center;padding:20px;color:#6c757d;">No drill-down data available for this card.</div>',
+        wide: true,
+        indicator: 'blue'
+      });
+      {% endif %}
+    }
+    function showCardDrillModal(data, title, value) {
+      if (!data || data.length === 0) {
+        frappe.msgprint({
+          title: title,
+          message: '<div style="text-align:center;padding:20px;color:#6c757d;">No detailed data found for this card.</div>',
+          wide: true,
+          indicator: 'blue'
+        });
+        return;
+      }
+      // Build HTML table
+      let tableHtml = `
+        <style>
+          .drill-down-modal .modal-dialog,
+          .msgprint.drill-down-modal .modal-dialog,
+          .modal.drill-down-modal .modal-dialog {
+            max-width: 95vw !important;
+            width: 95vw !important;
+            margin: 1vh auto !important;
+          }
+          .drill-down-modal .modal-content,
+          .msgprint.drill-down-modal .modal-content,
+          .modal.drill-down-modal .modal-content {
+            height: 95vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .drill-down-modal .modal-body,
+          .msgprint.drill-down-modal .modal-body,
+          .modal.drill-down-modal .modal-body {
+            flex: 1 !important;
+            overflow: hidden !important;
+            padding: 15px !important;
+          }
+          .drill-down-table-container {
+            height: 100% !important;
+            overflow-y: auto !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 6px !important;
+          }
+          .drill-down-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            font-size: 0.85em !important;
+            margin: 0 !important;
+          }
+          .drill-down-table th {
+            padding: 12px 8px !important;
+            text-align: left !important;
+            border-bottom: 2px solid #e5e7eb !important;
+            font-weight: 600 !important;
+            color: #374151 !important;
+            background: #f9fafb !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 10 !important;
+            white-space: nowrap !important;
+          }
+          .drill-down-table td {
+            padding: 10px 8px !important;
+            border-bottom: 1px solid #f3f4f6 !important;
+            color: #374151 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 200px !important;
+          }
+          .drill-down-table tr:nth-child(even) {
+            background: #f9fafb !important;
+          }
+          .drill-down-table tr:hover {
+            background: #f3f4f6 !important;
+          }
+          .drill-down-summary {
+            margin-bottom: 15px !important;
+            padding: 15px !important;
+            background: #f8f9fa !important;
+            border-radius: 6px !important;
+            border: 1px solid #e9ecef !important;
+          }
+        </style>
+        <div class="drill-down-summary">
+          <h4 style="margin: 0 0 10px 0; color: #374151; font-size: 1.1em;">${title}</h4>
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <span style="color: #6b7280; font-size: 0.9em;">
+              <strong style="color: #374151;">Total Amount:</strong> ₹${value.toLocaleString()}
+            </span>
+            <span style="color: #6b7280; font-size: 0.9em;">
+              <strong style="color: #374151;">Records:</strong> ${data.length}
+            </span>
+            <span style="color: #6b7280; font-size: 0.9em;">
+              <strong style="color: #374151;">Card:</strong> ${title}
+            </span>
+          </div>
+        </div>
+        <div class="drill-down-table-container">
+          <table class="drill-down-table">
+            <thead>
+              <tr>`;
+      // Table headers (use first row to determine columns)
+      if (data.length > 0) {
+        const headers = Object.keys(data[0]);
+        headers.forEach(header => {
+          const displayHeader = header.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          tableHtml += `<th>${displayHeader}</th>`;
+        });
+      }
+      tableHtml += `</tr></thead><tbody>`;
+      // Table rows
+      data.forEach((row, index) => {
+        tableHtml += `<tr>`;
+        Object.values(row).forEach(value => {
+          let displayValue = value;
+          if (typeof value === 'number') {
+            if (value > 1000) {
+              displayValue = '₹' + value.toLocaleString();
+            } else {
+              displayValue = value.toLocaleString();
+            }
+          } else if (value && typeof value === 'string' && value.includes('-')) {
+            // Might be a date
+            const date = new Date(value);
+            if (!isNaN(date.getTime())) {
+              displayValue = date.toLocaleDateString();
+            }
+          }
+          tableHtml += `<td title="${displayValue || '-'}">${displayValue || '-'}</td>`;
+        });
+        tableHtml += `</tr>`;
+      });
+      tableHtml += `</tbody></table></div>`;
+      frappe.msgprint({
+        title: title,
+        message: tableHtml,
+        wide: true,
+        indicator: 'green'
+      });
+      // Apply custom styles immediately and repeatedly
+      const applyModalStyles = () => {
+        const selectors = [
+          '.modal-dialog',
+          '.msgprint .modal-dialog',
+          '.modal .modal-dialog',
+          '.frappe-msgprint .modal-dialog'
+        ];
+        selectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => {
+            el.style.setProperty('max-width', '95vw', 'important');
+            el.style.setProperty('width', '95vw', 'important');
+            el.style.setProperty('margin', '1vh auto', 'important');
+          });
+        });
+        const contentSelectors = [
+          '.modal-content',
+          '.msgprint .modal-content',
+          '.modal .modal-content'
+        ];
+        contentSelectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => {
+            el.style.setProperty('height', '95vh', 'important');
+            el.style.setProperty('display', 'flex', 'important');
+            el.style.setProperty('flex-direction', 'column', 'important');
+          });
+        });
+      };
+      setTimeout(applyModalStyles, 0);
+      setTimeout(applyModalStyles, 50);
+      setTimeout(applyModalStyles, 100);
+      setTimeout(applyModalStyles, 200);
+    }
+  </script>
 {% endmacro %}

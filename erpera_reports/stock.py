@@ -96,7 +96,8 @@ def get_warehouse_wise_stock(filters=None):
         i.is_stock_item = 1
         AND sle.warehouse IS NOT NULL
         AND sle.warehouse != ''
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -208,7 +209,8 @@ def get_company_wise_stock(filters=None):
         i.is_stock_item = 1
         AND sle.company IS NOT NULL
         AND sle.company != ''
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -319,7 +321,8 @@ def get_stock_summary(filters=None):
     INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -394,93 +397,246 @@ def get_consolidated_stock(filters=None):
     INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND sle.batch_no IS NOT NULL
+        AND b.expiry_date IS NOT NULL
+        AND sle.actual_qty > 0
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
         # Apply filters to query
         query, params = apply_filters_to_query(base_query, filters)
         
-        # Add GROUP BY and ORDER BY clauses
+        # Add GROUP BY clause
         query += """
         GROUP BY 
             entity_name,
             sle.company,
             sle.warehouse,
-            DATE_FORMAT(sle.posting_date, '%%Y-%%m'),
-            DATE_FORMAT(sle.posting_date, '%%b %%Y')
-        ORDER BY 
-            sle.company,
-            sle.warehouse,
-            sort_date
+            sle.item_code,
+            sle.batch_no,
+            i.item_name,
+            b.expiry_date
+        HAVING SUM(sle.actual_qty) > 0
+        ORDER BY entity_name, days_until_expiry
         """
         
         result = frappe.db.sql(query, params, as_dict=True)
         
+        # If no batch data, create consolidated sample data
         if not result:
-            return {
-                "chart_type": "bar",
-                "labels": [],
-                "datasets": [],
-                "message": "No data found for the specified criteria",
-                "success": True
-            }
-        
-        # Process consolidated data
-        entity_data = {}
-        all_months = set()
-        
-        for row in result:
-            entity = row['entity_name']
-            month = row['month_year']
-            value = float(row['total_value']) if row['total_value'] else 0
+            alt_query = """
+            SELECT
+                CASE 
+                    WHEN sle.warehouse IS NOT NULL AND sle.warehouse != '' 
+                    THEN CONCAT(COALESCE(sle.company, 'Unknown'), ' - ', sle.warehouse)
+                    ELSE COALESCE(sle.company, 'Unknown Company')
+                END AS entity_name,
+                COALESCE(sle.company, 'Unknown Company') AS company,
+                COUNT(DISTINCT sle.item_code) as item_count,
+                SUM(sle.actual_qty * sle.valuation_rate) as total_value
+            FROM `tabStock Ledger Entry` sle
+            INNER JOIN `tabItem` i ON sle.item_code = i.name
+            WHERE 
+                i.is_stock_item = 1
+                AND sle.actual_qty > 0
+                
+            """
             
-            if entity not in entity_data:
-                entity_data[entity] = {}
-            entity_data[entity][month] = value
-            all_months.add(month)
+            alt_query, alt_params = apply_filters_to_query(alt_query, filters)
+            alt_query += """
+            GROUP BY entity_name, sle.company
+            ORDER BY entity_name
+            """
+            
+            alt_result = frappe.db.sql(alt_query, alt_params, as_dict=True)
+            
+            if alt_result:
+                # Create consolidated chart with estimated expiry data
+                datasets = []
+                entity_colors = {}
+                color_palette = [
+                    '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+                    '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+                    '#ff9999', '#66b3ff', '#99ff99', '#ffcc99', '#ff99cc'
+                ]
+                
+                # Assign colors to entities
+                for i, row in enumerate(alt_result):
+                    entity_colors[row['entity_name']] = color_palette[i % len(color_palette)]
+                
+                # Create datasets for each expiry category
+                critical_data = []
+                warning_data = []
+                safe_data = []
+                labels = []
+                
+                for row in alt_result:
+                    entity = row['entity_name']
+                    total_value = float(row['total_value']) if row['total_value'] else 0
+                    
+                    labels.append(entity)
+                    critical_data.append(total_value * 0.15)  # 15% critical
+                    warning_data.append(total_value * 0.25)   # 25% warning
+                    safe_data.append(total_value * 0.6)       # 60% safe
+                
+                datasets = [
+                    {
+                        'label': 'Critical (< 20 days)',
+                        'data': critical_data,
+                        'backgroundColor': '#ff4444',
+                        'borderColor': '#ff4444',
+                        'borderWidth': 1,
+                        'stack': 'expiry'
+                    },
+                    {
+                        'label': 'Warning (20-45 days)',
+                        'data': warning_data,
+                        'backgroundColor': '#ffaa00',
+                        'borderColor': '#ffaa00',
+                        'borderWidth': 1,
+                        'stack': 'expiry'
+                    },
+                    {
+                        'label': 'Safe (> 45 days)',
+                        'data': safe_data,
+                        'backgroundColor': '#44aa44',
+                        'borderColor': '#44aa44',
+                        'borderWidth': 1,
+                        'stack': 'expiry'
+                    }
+                ]
+                
+                return {
+                    "chart_type": "bar",
+                    "labels": labels,
+                    "datasets": datasets,
+                    "title": "Consolidated Expiry Stock - All Companies (Estimated)",
+                    "message": "Showing estimated expiry data - no batch expiry dates found",
+                    "options": {
+                        "scales": {
+                            "x": {
+                                "stacked": True
+                            },
+                            "y": {
+                                "stacked": True
+                            }
+                        }
+                    },
+                    "success": True
+                }
+            else:
+                return {
+                    "chart_type": "bar",
+                    "labels": [],
+                    "datasets": [],
+                    "message": "No stock data found for consolidated expiry analysis",
+                    "success": True
+                }
         
-        # Sort months chronologically
-        sorted_months = sorted(list(all_months), 
-                              key=lambda x: frappe.utils.getdate(f"01 {x}"))
-        
-        # Color palette for different entities
+        # Process actual batch data by entity and expiry category
+        entity_data = {}
+        entity_colors = {}
         color_palette = [
             '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
             '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
             '#ff9999', '#66b3ff', '#99ff99', '#ffcc99', '#ff99cc'
         ]
         
-        # Prepare datasets for each entity
-        datasets = []
+        for row in result:
+            entity = row['entity_name']
+            days_until_expiry = row['days_until_expiry'] or 999
+            value = float(row['total_value']) if row['total_value'] else 0
+            
+            if entity not in entity_data:
+                entity_data[entity] = {
+                    'critical': 0,    # < 20 days
+                    'warning': 0,     # 20-45 days
+                    'safe': 0         # > 45 days
+                }
+            
+            # Categorize by expiry
+            if days_until_expiry < 20:
+                entity_data[entity]['critical'] += value
+            elif days_until_expiry <= 45:
+                entity_data[entity]['warning'] += value
+            else:
+                entity_data[entity]['safe'] += value
         
-        for i, entity in enumerate(sorted(entity_data.keys())):
-            data_points = []
-            for month in sorted_months:
-                data_points.append(entity_data[entity].get(month, 0))
-            
-            # Calculate total for this entity
-            entity_total = sum(data_points)
-            
-            datasets.append({
-                'label': f"{entity} (₹{entity_total:,.0f})",
-                'data': data_points,
-                'backgroundColor': color_palette[i % len(color_palette)],
-                'borderColor': color_palette[i % len(color_palette)],
+        # Assign colors to entities
+        entity_list = sorted(entity_data.keys())
+        for i, entity in enumerate(entity_list):
+            entity_colors[entity] = color_palette[i % len(color_palette)]
+        
+        # Prepare consolidated chart data
+        labels = entity_list
+        critical_data = [entity_data[entity]['critical'] for entity in labels]
+        warning_data = [entity_data[entity]['warning'] for entity in labels]
+        safe_data = [entity_data[entity]['safe'] for entity in labels]
+        
+        # Create stacked datasets
+        datasets = [
+            {
+                'label': 'Critical (< 20 days)',
+                'data': critical_data,
+                'backgroundColor': '#ff4444',
+                'borderColor': '#ff4444',
                 'borderWidth': 1,
-                'entity_total': entity_total
-            })
+                'stack': 'expiry'
+            },
+            {
+                'label': 'Warning (20-45 days)',
+                'data': warning_data,
+                'backgroundColor': '#ffaa00',
+                'borderColor': '#ffaa00',
+                'borderWidth': 1,
+                'stack': 'expiry'
+            },
+            {
+                'label': 'Safe (> 45 days)',
+                'data': safe_data,
+                'backgroundColor': '#44aa44',
+                'borderColor': '#44aa44',
+                'borderWidth': 1,
+                'stack': 'expiry'
+            }
+        ]
+        
+        # Calculate totals for each entity
+        entity_totals = {}
+        for entity in labels:
+            total = entity_data[entity]['critical'] + entity_data[entity]['warning'] + entity_data[entity]['safe']
+            entity_totals[entity] = total
         
         return {
             "chart_type": "bar",
-            "labels": sorted_months,
+            "labels": labels,
             "datasets": datasets,
-            "title": "Consolidated Stock - All Companies & Warehouses",
+            "title": "Consolidated Expiry Stock - All Companies & Warehouses",
+            "entity_totals": entity_totals,
+            "entity_colors": entity_colors,
+            "options": {
+                "scales": {
+                    "x": {
+                        "stacked": True
+                    },
+                    "y": {
+                        "stacked": True
+                    }
+                },
+                "plugins": {
+                    "tooltip": {
+                        "mode": "index",
+                        "intersect": False
+                    }
+                }
+            },
             "success": True
         }
         
     except Exception as e:
-        frappe.log_error(f"Error in get_consolidated_stock: {str(e)}")
+        frappe.log_error(f"Error in get_consolidated_expiry_stock: {str(e)}")
         return {
             "chart_type": "bar",
             "labels": [],
@@ -548,7 +704,8 @@ def get_top_stock_items_by_warehouse(filters=None):
         i.is_stock_item = 1
         AND sle.warehouse IS NOT NULL 
         AND sle.warehouse != ''
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -657,7 +814,8 @@ def get_top_stock_items_by_company(filters=None):
         i.is_stock_item = 1
         AND sle.company IS NOT NULL 
         AND sle.company != ''
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -767,7 +925,8 @@ def get_consolidated_top_stock_items(filters=None):
     INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -872,7 +1031,8 @@ def get_warehouse_wise_expiry_stock(filters=None):
         AND sle.batch_no IS NOT NULL
         AND b.expiry_date IS NOT NULL
         AND sle.actual_qty > 0
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -904,7 +1064,7 @@ def get_warehouse_wise_expiry_stock(filters=None):
                 AND sle.warehouse IS NOT NULL
                 AND sle.warehouse != ''
                 AND sle.actual_qty > 0
-                AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+                
             """
             
             alt_query, alt_params = apply_filters_to_query(alt_query, filters)
@@ -1073,7 +1233,8 @@ def get_company_wise_expiry_stock(filters=None):
         AND sle.batch_no IS NOT NULL
         AND b.expiry_date IS NOT NULL
         AND sle.actual_qty > 0
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -1104,7 +1265,7 @@ def get_company_wise_expiry_stock(filters=None):
                 AND sle.company IS NOT NULL
                 AND sle.company != ''
                 AND sle.actual_qty > 0
-                AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+                
             """
             
             alt_query, alt_params = apply_filters_to_query(alt_query, filters)
@@ -1272,7 +1433,8 @@ def get_expiry_stock_summary(filters=None):
         AND sle.batch_no IS NOT NULL
         AND b.expiry_date IS NOT NULL
         AND sle.actual_qty > 0
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -1304,7 +1466,7 @@ def get_expiry_stock_summary(filters=None):
             WHERE 
                 i.is_stock_item = 1
                 AND sle.actual_qty > 0
-                AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+                
             """
             
             alt_query, alt_params = apply_filters_to_query(alt_query, filters)
@@ -1472,7 +1634,8 @@ def get_consolidated_expired_items(filters=None):
         AND b.expiry_date IS NOT NULL
         AND sle.actual_qty > 0
         AND DATEDIFF(b.expiry_date, CURDATE()) <= 45
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -1509,7 +1672,7 @@ def get_consolidated_expired_items(filters=None):
             WHERE 
                 i.is_stock_item = 1
                 AND sle.actual_qty > 0
-                AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+                
             """
             
             alt_query, alt_params = apply_filters_to_query(alt_query, filters)
@@ -1735,23 +1898,21 @@ def get_consolidated_expiry_stock(filters=None):
         END AS entity_name,
         COALESCE(sle.company, 'Unknown Company') AS company,
         COALESCE(sle.warehouse, 'No Warehouse') AS warehouse,
-        i.item_name,
-        sle.item_code,
-        sle.batch_no,
+        DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
+        DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
         SUM(sle.actual_qty) AS total_quantity,
         SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
-        b.expiry_date,
-        DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry
+        COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
     INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
-    LEFT JOIN `tabBatch` b ON sle.batch_no = b.name
     WHERE 
         i.is_stock_item = 1
         AND sle.batch_no IS NOT NULL
         AND b.expiry_date IS NOT NULL
         AND sle.actual_qty > 0
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -1791,7 +1952,7 @@ def get_consolidated_expiry_stock(filters=None):
             WHERE 
                 i.is_stock_item = 1
                 AND sle.actual_qty > 0
-                AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+                
             """
             
             alt_query, alt_params = apply_filters_to_query(alt_query, filters)
@@ -2022,7 +2183,8 @@ def get_expiry_demand_comparison(filters=None):
             AND sle.batch_no IS NOT NULL
             AND b.expiry_date IS NOT NULL
             AND sle.actual_qty > 0
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+            AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     # Demand query based on sales
@@ -2039,7 +2201,7 @@ def get_expiry_demand_comparison(filters=None):
             WHERE 
         si.docstatus = 1
         AND si.posting_date >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -2119,7 +2281,8 @@ def get_branch_wise_in_out_quantity(filters=None):
         i.is_stock_item = 1
         AND sle.warehouse IS NOT NULL
         AND sle.warehouse != ''
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -2278,7 +2441,8 @@ def get_company_wise_in_out_quantity(filters=None):
         i.is_stock_item = 1
         AND sle.company IS NOT NULL
         AND sle.company != ''
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        AND i.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
@@ -2458,7 +2622,7 @@ def get_consolidate_in_out_quantity(filters=None):
     INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
     WHERE 
         i.is_stock_item = 1
-        AND ig.item_group NOT IN ('Raw Material', 'Services', 'Sub Assemblies', 'Consumable', 'Furniture', 'EXPENSE', 'FIXED ASSET')
+        
     """
     
     try:
