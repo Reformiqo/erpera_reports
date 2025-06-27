@@ -147,4 +147,105 @@ def get_context(context):
     context.supplier_count = f"{unique_suppliers:,}"
     context.avg_invoice_value = f"₹{avg_purchase:,.0f}"
     
+    # Get detailed data for each cost center for modal display
+    context.cost_center_details = get_cost_center_details(fy_start, fy_end, current_month_start, current_month_end)
+    
     return context
+
+def get_cost_center_details(fy_start, fy_end, month_start, month_end):
+    """
+    Get detailed statistics for each cost center to display in modal
+    """
+    # Query for fiscal year data by cost center
+    fy_by_cost_center_query = """
+        SELECT 
+            pi.cost_center,
+            cc.cost_center_name,
+            SUM(pii.amount) AS total_purchase,
+            COUNT(DISTINCT pi.name) AS invoice_count,
+            COUNT(DISTINCT pi.supplier) AS supplier_count
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        LEFT JOIN `tabItem` i ON pii.item_code = i.name
+        LEFT JOIN `tabCost Center` cc ON pi.cost_center = cc.name
+        WHERE pi.docstatus = 1 
+        AND pi.status NOT IN ('Cancelled', 'Return')
+        AND pi.posting_date BETWEEN %s AND %s
+        AND pi.cost_center IS NOT NULL
+        AND (
+            i.is_stock_item = 1 
+            OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
+        )
+        GROUP BY pi.cost_center, cc.cost_center_name
+        ORDER BY total_purchase DESC
+    """
+    
+    fy_by_cost_center = frappe.db.sql(fy_by_cost_center_query, (fy_start, fy_end), as_dict=True)
+    
+    # Query for current month data by cost center
+    month_by_cost_center_query = """
+        SELECT 
+            pi.cost_center,
+            cc.cost_center_name,
+            COALESCE(AVG(pi.grand_total), 0) AS avg_invoice_value
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        LEFT JOIN `tabItem` i ON pii.item_code = i.name
+        LEFT JOIN `tabCost Center` cc ON pi.cost_center = cc.name
+        WHERE pi.docstatus = 1 
+        AND pi.status NOT IN ('Cancelled', 'Return')
+        AND pi.posting_date BETWEEN %s AND %s
+        AND pi.cost_center IS NOT NULL
+        AND (
+            i.is_stock_item = 1 
+            OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
+        )
+        GROUP BY pi.cost_center, cc.cost_center_name
+        ORDER BY avg_invoice_value DESC
+    """
+    
+    month_by_cost_center = frappe.db.sql(month_by_cost_center_query, (month_start, month_end), as_dict=True)
+    
+    # Create a dictionary to combine the data
+    cost_center_data = {}
+    
+    # Process fiscal year data
+    for row in fy_by_cost_center:
+        cost_center = row.get('cost_center', 'Unknown')
+        cost_center_data[cost_center] = {
+            'name': cost_center,
+            'display_name': row.get('cost_center_name', cost_center),
+            'total_purchase': row.get('total_purchase', 0),
+            'invoice_count': row.get('invoice_count', 0),
+            'supplier_count': row.get('supplier_count', 0),
+            'avg_invoice_value': 0
+        }
+    
+    # Process current month data
+    for row in month_by_cost_center:
+        cost_center = row.get('cost_center', 'Unknown')
+        if cost_center not in cost_center_data:
+            cost_center_data[cost_center] = {
+                'name': cost_center,
+                'display_name': row.get('cost_center_name', cost_center),
+                'total_purchase': 0,
+                'invoice_count': 0,
+                'supplier_count': 0,
+                'avg_invoice_value': 0
+            }
+        
+        cost_center_data[cost_center]['avg_invoice_value'] = row.get('avg_invoice_value', 0)
+    
+    # Convert to list and format values
+    result = []
+    for cost_center, data in cost_center_data.items():
+        result.append({
+            'name': data['name'],
+            'display_name': data['display_name'],
+            'total_purchase': f"₹{data['total_purchase']:,.0f}",
+            'invoice_count': f"{data['invoice_count']:,}",
+            'supplier_count': f"{data['supplier_count']:,}",
+            'avg_invoice_value': f"₹{data['avg_invoice_value']:,.0f}"
+        })
+    
+    return result

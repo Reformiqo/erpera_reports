@@ -2,24 +2,24 @@
 
 {% block page_content %}
     <div class="overview-cards">
-        <div class="card">
+        <div class="card clickable-card" onclick="showCostCenterModal('total_purchase')">
             <div class="card-icon products">💰</div>
             <div class="card-value">{{ total_purchase }} </div>
             <div class="card-label">Total Purchase</div>
             <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>   
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showCostCenterModal('invoice_count')">
             <div class="card-icon orders">📄</div>
             <div class="card-value">{{ invoice_count }} </div>
             <div class="card-label">Total Invoices</div>
             <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>   
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showCostCenterModal('supplier_count')">
             <div class="card-icon stock">🏢</div>
             <div class="card-value">{{ supplier_count }}</div>
             <div class="card-label">Unique Suppliers</div>
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showCostCenterModal('avg_invoice_value')">
             <div class="card-icon out-of-stock">📊</div>
             <div class="card-value">{{ avg_invoice_value }} </div>
             <div class="card-label">Average Purchase Value</div>
@@ -214,30 +214,141 @@
 
     <!-- Space for future sections -->
 
+    <style>
+    .section-container {
+        margin: 2rem 0;
+        padding: 1rem;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #059669;
+    }
+
+    .charts-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .clickable-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .clickable-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .cost-center-modal-content {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .cost-center-modal-content .overview-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        padding: 1rem 0;
+    }
+
+    .cost-center-modal-content .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .cost-center-modal-content .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .cost-center-modal-content .card-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .cost-center-modal-content .card-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .cost-center-modal-content .card-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
+    </style>
+
+    <script>
+    // Store cost center data from server
+    const costCenterData = JSON.parse('{{ cost_center_details | tojson | safe }}');
+
+    function showCostCenterModal(metricType) {
+        const metricTitles = {
+            'total_purchase': 'Total Purchase by Cost Center',
+            'invoice_count': 'Total Invoices by Cost Center', 
+            'supplier_count': 'Unique Suppliers by Cost Center',
+            'avg_invoice_value': 'Average Purchase Value by Cost Center'
+        };
+        
+        const metricLabels = {
+            'total_purchase': 'Total Purchase',
+            'invoice_count': 'Total Invoices',
+            'supplier_count': 'Unique Suppliers', 
+            'avg_invoice_value': 'Average Purchase Value'
+        };
+        
+        const metricIcons = {
+            'total_purchase': '💰',
+            'invoice_count': '📄',
+            'supplier_count': '🏢',
+            'avg_invoice_value': '📊'
+        };
+        
+        const title = metricTitles[metricType];
+        const label = metricLabels[metricType];
+        const icon = metricIcons[metricType];
+        
+        // Create number cards HTML
+        let cardsHTML = '<div class="cost-center-modal-content">';
+        cardsHTML += '<div class="overview-cards">';
+        
+        // Add number cards for each cost center
+        costCenterData.forEach(function(item) {
+            const value = item[metricType];
+            cardsHTML += '<div class="card">';
+            cardsHTML += '<div class="card-icon products">' + icon + '</div>';
+            cardsHTML += '<div class="card-value">' + value + '</div>';
+            cardsHTML += '<div class="card-label">' + item.display_name + '</div>';
+            cardsHTML += '</div>';
+        });
+        
+        cardsHTML += '</div></div>';
+        
+        // Show modal using frappe.msgprint
+        frappe.msgprint({
+            title: title,
+            message: cardsHTML,
+            wide: true,
+            indicator: 'blue'
+        });
+    }
+    </script>
+
 {% endblock %}
-
-<style>
-.section-container {
-    margin: 2rem 0;
-    padding: 1rem;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.section-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #059669;
-}
-
-.charts-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-</style>

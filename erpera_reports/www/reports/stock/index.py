@@ -120,4 +120,103 @@ def get_context(context):
     context.total_stock_value = f"₹{total_stock_value:,.0f}"
     context.low_stock_items = f"{low_stock_items:,}"
     
+    # Get detailed data for each warehouse for modal display
+    context.warehouse_details = get_warehouse_details(fy_start, fy_end, current_month_start, current_month_end)
+    
     return context
+
+def get_warehouse_details(fy_start, fy_end, month_start, month_end):
+    """
+    Get detailed statistics for each warehouse to display in modal
+    """
+    # Query for fiscal year data by warehouse
+    fy_by_warehouse_query = """
+        SELECT 
+            sle.warehouse,
+            w.warehouse_name,
+            COUNT(DISTINCT sle.item_code) AS total_items,
+            COUNT(DISTINCT sle.warehouse) AS total_warehouses,
+            SUM(sle.actual_qty * sle.valuation_rate) AS total_stock_value
+        FROM `tabStock Ledger Entry` sle
+        INNER JOIN `tabItem` item ON sle.item_code = item.name
+        LEFT JOIN `tabWarehouse` w ON sle.warehouse = w.name
+        WHERE item.is_stock_item = 1 
+        AND sle.posting_date BETWEEN %s AND %s
+        AND sle.warehouse IS NOT NULL
+        GROUP BY sle.warehouse, w.warehouse_name
+        ORDER BY total_stock_value DESC
+    """
+    
+    fy_by_warehouse = frappe.db.sql(fy_by_warehouse_query, (fy_start, fy_end), as_dict=True)
+    
+    # Query for current month low stock data by warehouse
+    month_by_warehouse_query = """
+        SELECT 
+            sle.warehouse,
+            w.warehouse_name,
+            COUNT(DISTINCT CASE 
+                WHEN (stock.current_stock IS NULL OR stock.current_stock <= item.safety_stock) 
+                AND item.safety_stock > 0 
+                THEN item.name 
+            END) AS low_stock_items
+        FROM `tabStock Ledger Entry` sle
+        INNER JOIN `tabItem` item ON sle.item_code = item.name
+        LEFT JOIN `tabWarehouse` w ON sle.warehouse = w.name
+        LEFT JOIN (
+            SELECT item_code, warehouse, SUM(actual_qty) as current_stock
+            FROM `tabStock Ledger Entry`
+            WHERE posting_date BETWEEN %s AND %s
+            GROUP BY item_code, warehouse
+        ) stock ON item.name = stock.item_code AND sle.warehouse = stock.warehouse
+        WHERE item.is_stock_item = 1 
+        AND sle.posting_date BETWEEN %s AND %s
+        AND sle.warehouse IS NOT NULL
+        GROUP BY sle.warehouse, w.warehouse_name
+        ORDER BY low_stock_items DESC
+    """
+    
+    month_by_warehouse = frappe.db.sql(month_by_warehouse_query, (month_start, month_end, month_start, month_end), as_dict=True)
+    
+    # Create a dictionary to combine the data
+    warehouse_data = {}
+    
+    # Process fiscal year data
+    for row in fy_by_warehouse:
+        warehouse = row.get('warehouse', 'Unknown')
+        warehouse_data[warehouse] = {
+            'name': warehouse,
+            'display_name': row.get('warehouse_name', warehouse),
+            'total_items': row.get('total_items', 0),
+            'total_warehouses': row.get('total_warehouses', 0),
+            'total_stock_value': row.get('total_stock_value', 0),
+            'low_stock_items': 0
+        }
+    
+    # Process current month data
+    for row in month_by_warehouse:
+        warehouse = row.get('warehouse', 'Unknown')
+        if warehouse not in warehouse_data:
+            warehouse_data[warehouse] = {
+                'name': warehouse,
+                'display_name': row.get('warehouse_name', warehouse),
+                'total_items': 0,
+                'total_warehouses': 0,
+                'total_stock_value': 0,
+                'low_stock_items': 0
+            }
+        
+        warehouse_data[warehouse]['low_stock_items'] = row.get('low_stock_items', 0)
+    
+    # Convert to list and format values
+    result = []
+    for warehouse, data in warehouse_data.items():
+        result.append({
+            'name': data['name'],
+            'display_name': data['display_name'],
+            'total_items': f"{data['total_items']:,}",
+            'total_warehouses': f"{data['total_warehouses']:,}",
+            'total_stock_value': f"₹{data['total_stock_value']:,.0f}",
+            'low_stock_items': f"{data['low_stock_items']:,}"
+        })
+    
+    return result

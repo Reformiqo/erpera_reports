@@ -3,57 +3,57 @@
 {% block page_content %}
     <div class="overview-cards">
         <!-- Sales Area -->
-        <div class="card">
+        <div class="card clickable-card" onclick="showSalesModal('total_sales')">
             <div class="card-icon sales">💸</div>
             <div class="card-value">{{ summary_cards.sales.total_sales or 0 }}</div>
             <div class="card-label">Total Sales</div>
             <p style="color: #3b82f6; font-size: 12px; font-weight: 500;">(This Month)</p>
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showSalesModal('total_invoices')">
             <div class="card-icon sales">🧾</div>
             <div class="card-value">{{ summary_cards.sales.total_invoices or 0 }}</div>
             <div class="card-label">Sales Invoices</div>
             <p style="color: #3b82f6; font-size: 12px; font-weight: 500;">(This Month)</p>
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showSalesModal('avg_invoice_value')">
             <div class="card-icon sales">📊</div>
             <div class="card-value">₹{{ summary_cards.sales.avg_invoice_value or 0 }}</div>
             <div class="card-label">Avg Invoice Value</div>
             <p style="color: #3b82f6; font-size: 12px; font-weight: 500;">(This Month)</p>
         </div>
         <!-- Purchase Area -->
-        <div class="card">
+        <div class="card clickable-card" onclick="showPurchaseModal('total_amount')">
             <div class="card-icon purchase">💰</div>
             <div class="card-value">₹{{ summary_cards.purchase.total_amount or 0 }}</div>
             <div class="card-label">Total Purchase</div>
             <p style="color: #10b981; font-size: 12px; font-weight: 500;">(This Month)</p>
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showPurchaseModal('unique_suppliers')">
             <div class="card-icon purchase">👥</div>
             <div class="card-value">{{ summary_cards.purchase.unique_suppliers or 0 }}</div>
             <div class="card-label">Suppliers</div>
             <p style="color: #10b981; font-size: 12px; font-weight: 500;">(Active)</p>
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showPurchaseModal('total_outstanding')">
             <div class="card-icon purchase">📦</div>
             <div class="card-value">₹{{ summary_cards.purchase.total_outstanding or 0 }}</div>
             <div class="card-label">Outstanding Purchase</div>
             <p style="color: #10b981; font-size: 12px; font-weight: 500;">(Due)</p>
         </div>
         <!-- Stock Area -->
-        <div class="card">
+        <div class="card clickable-card" onclick="showStockModal('total_skus')">
             <div class="card-icon stock">📦</div>
             <div class="card-value">{{ summary_cards.stock.total_skus or 0 }}</div>
             <div class="card-label">Total SKUs</div>
             <p style="color: #f59e0b; font-size: 12px; font-weight: 500;">(Active)</p>
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showStockModal('total_stock_value')">
             <div class="card-icon stock">🏷️</div>
             <div class="card-value">₹{{ summary_cards.stock.total_stock_value or 0 }}</div>
             <div class="card-label">Stock Value</div>
             <p style="color: #f59e0b; font-size: 12px; font-weight: 500;">(Current)</p>
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showStockModal('efficiency_score')">
             <div class="card-icon stock">✅</div>
             <div class="card-value">{{ summary_cards.stock.efficiency_score or 0 }}%</div>
             <div class="card-label">Stock Efficiency</div>
@@ -250,76 +250,324 @@
         </div>
     </div>
 
+    <style>
+    .section-container {
+        margin: 2rem 0;
+        padding: 1rem;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #667eea;
+    }
+
+    .charts-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .clickable-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .clickable-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .dashboard-modal-content {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .dashboard-modal-content .overview-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        padding: 1rem 0;
+    }
+
+    .dashboard-modal-content .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .dashboard-modal-content .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .dashboard-modal-content .card-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .dashboard-modal-content .card-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .dashboard-modal-content .card-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    /* Custom card icons */
+    .card-icon.purchase-orders {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    }
+
+    .card-icon.purchase-receipts {
+        background: linear-gradient(135deg, #10b981, #047857);
+    }
+
+    .card-icon.purchase-invoices {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .card-icon.suppliers {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    }
+
+    .card-icon.outstanding {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    /* Growth indicators */
+    .growth-indicator {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 12px;
+        margin-top: 4px;
+        display: inline-block;
+        font-weight: 600;
+    }
+
+    .growth-indicator.positive {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .growth-indicator.negative {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .growth-indicator.neutral {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+    </style>
+
+    <script>
+    // Store data from server with error handling
+    let salesData = [];
+    let purchaseData = [];
+    let stockData = [];
+    
+    try {
+        salesData = JSON.parse('{{ sales_details | tojson | safe }}') || [];
+        purchaseData = JSON.parse('{{ purchase_details | tojson | safe }}') || [];
+        stockData = JSON.parse('{{ stock_details | tojson | safe }}') || [];
+    } catch (e) {
+        console.error('Error parsing data:', e);
+        salesData = [];
+        purchaseData = [];
+        stockData = [];
+    }
+    
+    console.log('Sales Data:', salesData);
+    console.log('Purchase Data:', purchaseData);
+    console.log('Stock Data:', stockData);
+
+    function showSalesModal(metricType) {
+        if (!salesData || salesData.length === 0) {
+            frappe.msgprint({
+                title: 'No Data Available',
+                message: 'No sales data is currently available for this period.',
+                indicator: 'red'
+            });
+            return;
+        }
+        
+        const metricTitles = {
+            'total_sales': 'Total Sales by Branch',
+            'total_invoices': 'Sales Invoices by Branch', 
+            'avg_invoice_value': 'Average Invoice Value by Branch'
+        };
+        
+        const metricLabels = {
+            'total_sales': 'Total Sales',
+            'total_invoices': 'Sales Invoices',
+            'avg_invoice_value': 'Average Invoice Value'
+        };
+        
+        const metricIcons = {
+            'total_sales': '💸',
+            'total_invoices': '🧾',
+            'avg_invoice_value': '📊'
+        };
+        
+        const title = metricTitles[metricType];
+        const label = metricLabels[metricType];
+        const icon = metricIcons[metricType];
+        
+        // Create number cards HTML
+        let cardsHTML = '<div class="dashboard-modal-content">';
+        cardsHTML += '<div class="overview-cards">';
+        
+        // Add number cards for each branch
+        salesData.forEach(function(item) {
+            const value = item[metricType] || 'N/A';
+            cardsHTML += '<div class="card">';
+            cardsHTML += '<div class="card-icon sales">' + icon + '</div>';
+            cardsHTML += '<div class="card-value">' + value + '</div>';
+            cardsHTML += '<div class="card-label">' + (item.display_name || item.name || 'Unknown') + '</div>';
+            cardsHTML += '</div>';
+        });
+        
+        cardsHTML += '</div></div>';
+        
+        // Show modal using frappe.msgprint
+        frappe.msgprint({
+            title: title,
+            message: cardsHTML,
+            wide: true,
+            indicator: 'blue'
+        });
+    }
+
+    function showPurchaseModal(metricType) {
+        if (!purchaseData || purchaseData.length === 0) {
+            frappe.msgprint({
+                title: 'No Data Available',
+                message: 'No purchase data is currently available for this period.',
+                indicator: 'red'
+            });
+            return;
+        }
+        
+        const metricTitles = {
+            'total_amount': 'Total Purchase by Branch',
+            'unique_suppliers': 'Unique Suppliers by Branch', 
+            'total_outstanding': 'Outstanding Purchase by Branch'
+        };
+        
+        const metricLabels = {
+            'total_amount': 'Total Purchase',
+            'unique_suppliers': 'Unique Suppliers',
+            'total_outstanding': 'Outstanding Purchase'
+        };
+        
+        const metricIcons = {
+            'total_amount': '💰',
+            'unique_suppliers': '👥',
+            'total_outstanding': '📦'
+        };
+        
+        const title = metricTitles[metricType];
+        const label = metricLabels[metricType];
+        const icon = metricIcons[metricType];
+        
+        // Create number cards HTML
+        let cardsHTML = '<div class="dashboard-modal-content">';
+        cardsHTML += '<div class="overview-cards">';
+        
+        // Add number cards for each branch
+        purchaseData.forEach(function(item) {
+            const value = item[metricType] || 'N/A';
+            cardsHTML += '<div class="card">';
+            cardsHTML += '<div class="card-icon purchase">' + icon + '</div>';
+            cardsHTML += '<div class="card-value">' + value + '</div>';
+            cardsHTML += '<div class="card-label">' + (item.display_name || item.name || 'Unknown') + '</div>';
+            cardsHTML += '</div>';
+        });
+        
+        cardsHTML += '</div></div>';
+        
+        // Show modal using frappe.msgprint
+        frappe.msgprint({
+            title: title,
+            message: cardsHTML,
+            wide: true,
+            indicator: 'blue'
+        });
+    }
+
+    function showStockModal(metricType) {
+        if (!stockData || stockData.length === 0) {
+            frappe.msgprint({
+                title: 'No Data Available',
+                message: 'No stock data is currently available.',
+                indicator: 'red'
+            });
+            return;
+        }
+        
+        const metricTitles = {
+            'total_skus': 'Total SKUs by Warehouse',
+            'total_stock_value': 'Stock Value by Warehouse', 
+            'efficiency_score': 'Stock Efficiency by Warehouse'
+        };
+        
+        const metricLabels = {
+            'total_skus': 'Total SKUs',
+            'total_stock_value': 'Stock Value',
+            'efficiency_score': 'Stock Efficiency'
+        };
+        
+        const metricIcons = {
+            'total_skus': '📦',
+            'total_stock_value': '🏷️',
+            'efficiency_score': '✅'
+        };
+        
+        const title = metricTitles[metricType];
+        const label = metricLabels[metricType];
+        const icon = metricIcons[metricType];
+        
+        // Create number cards HTML
+        let cardsHTML = '<div class="dashboard-modal-content">';
+        cardsHTML += '<div class="overview-cards">';
+        
+        // Add number cards for each warehouse
+        stockData.forEach(function(item) {
+            const value = item[metricType] || 'N/A';
+            cardsHTML += '<div class="card">';
+            cardsHTML += '<div class="card-icon stock">' + icon + '</div>';
+            cardsHTML += '<div class="card-value">' + value + '</div>';
+            cardsHTML += '<div class="card-label">' + (item.display_name || item.name || 'Unknown') + '</div>';
+            cardsHTML += '</div>';
+        });
+        
+        cardsHTML += '</div></div>';
+        
+        // Show modal using frappe.msgprint
+        frappe.msgprint({
+            title: title,
+            message: cardsHTML,
+            wide: true,
+            indicator: 'blue'
+        });
+    }
+    </script>
+
 {% endblock %}
-
-<style>
-.section-container {
-    margin: 2rem 0;
-    padding: 1rem;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.section-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #667eea;
-}
-
-.charts-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-/* Custom card icons */
-.card-icon.purchase-orders {
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-}
-
-.card-icon.purchase-receipts {
-    background: linear-gradient(135deg, #10b981, #047857);
-}
-
-.card-icon.purchase-invoices {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.card-icon.suppliers {
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-}
-
-.card-icon.outstanding {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-}
-
-/* Growth indicators */
-.growth-indicator {
-    font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 12px;
-    margin-top: 4px;
-    display: inline-block;
-    font-weight: 600;
-}
-
-.growth-indicator.positive {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.growth-indicator.negative {
-    background: #fef2f2;
-    color: #dc2626;
-}
-
-.growth-indicator.neutral {
-    background: #f3f4f6;
-    color: #6b7280;
-}
-</style>

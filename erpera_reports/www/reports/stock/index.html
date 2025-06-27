@@ -2,25 +2,25 @@
 
 {% block page_content %}
     <div class="overview-cards">
-        <div class="card">
+        <div class="card clickable-card" onclick="showWarehouseModal('total_items')">
             <div class="card-icon products">📦</div>
             <div class="card-value">{{ total_items }}</div>
             <div class="card-label">Total Items</div>
             <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showWarehouseModal('total_warehouses')">
             <div class="card-icon orders">🏪</div>
             <div class="card-value">{{ total_warehouses }} </div>
             <div class="card-label">Total Warehouses</div>
             <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showWarehouseModal('total_stock_value')">
             <div class="card-icon stock">📊</div>
             <div class="card-value">{{ total_stock_value }} </div>
             <div class="card-label">Total Stock Value</div>
             <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
         </div>
-        <div class="card">
+        <div class="card clickable-card" onclick="showWarehouseModal('low_stock_items')">
             <div class="card-icon out-of-stock">⚠️</div>
             <div class="card-value">{{ low_stock_items }} </div>
             <div class="card-label">Low Stock Items</div>
@@ -271,30 +271,141 @@
 
     <!-- Space for future sections -->
 
+    <style>
+    .section-container {
+        margin: 2rem 0;
+        padding: 1rem;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #7c3aed;
+    }
+
+    .charts-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .clickable-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .clickable-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .warehouse-modal-content {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .warehouse-modal-content .overview-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        padding: 1rem 0;
+    }
+
+    .warehouse-modal-content .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .warehouse-modal-content .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .warehouse-modal-content .card-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .warehouse-modal-content .card-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .warehouse-modal-content .card-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
+    </style>
+
+    <script>
+    // Store warehouse data from server
+    const warehouseData = JSON.parse('{{ warehouse_details | tojson | safe }}');
+
+    function showWarehouseModal(metricType) {
+        const metricTitles = {
+            'total_items': 'Total Items by Warehouse',
+            'total_warehouses': 'Total Warehouses by Warehouse', 
+            'total_stock_value': 'Total Stock Value by Warehouse',
+            'low_stock_items': 'Low Stock Items by Warehouse'
+        };
+        
+        const metricLabels = {
+            'total_items': 'Total Items',
+            'total_warehouses': 'Total Warehouses',
+            'total_stock_value': 'Total Stock Value', 
+            'low_stock_items': 'Low Stock Items'
+        };
+        
+        const metricIcons = {
+            'total_items': '📦',
+            'total_warehouses': '🏪',
+            'total_stock_value': '📊',
+            'low_stock_items': '⚠️'
+        };
+        
+        const title = metricTitles[metricType];
+        const label = metricLabels[metricType];
+        const icon = metricIcons[metricType];
+        
+        // Create number cards HTML
+        let cardsHTML = '<div class="warehouse-modal-content">';
+        cardsHTML += '<div class="overview-cards">';
+        
+        // Add number cards for each warehouse
+        warehouseData.forEach(function(item) {
+            const value = item[metricType];
+            cardsHTML += '<div class="card">';
+            cardsHTML += '<div class="card-icon products">' + icon + '</div>';
+            cardsHTML += '<div class="card-value">' + value + '</div>';
+            cardsHTML += '<div class="card-label">' + item.display_name + '</div>';
+            cardsHTML += '</div>';
+        });
+        
+        cardsHTML += '</div></div>';
+        
+        // Show modal using frappe.msgprint
+        frappe.msgprint({
+            title: title,
+            message: cardsHTML,
+            wide: true,
+            indicator: 'blue'
+        });
+    }
+    </script>
+
 {% endblock %}
-
-<style>
-.section-container {
-    margin: 2rem 0;
-    padding: 1rem;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.section-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #7c3aed;
-}
-
-.charts-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-</style>

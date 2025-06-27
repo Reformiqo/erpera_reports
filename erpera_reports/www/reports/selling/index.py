@@ -105,5 +105,106 @@ def get_context(context):
     context.customer_count = f"{customer_count:,}"
     context.avg_invoice_value = f"₹{avg_invoice_value:,.0f}"
     
+    # Get detailed data for each cost center for modal display
+    context.cost_center_details = get_cost_center_details(fy_start, fy_end, current_month_start, current_month_end)
+    
     return context
+
+def get_cost_center_details(fy_start, fy_end, month_start, month_end):
+    """
+    Get detailed statistics for each cost center to display in modal
+    """
+    # Query for fiscal year data by cost center
+    fy_by_cost_center_query = """
+        SELECT 
+            si.cost_center,
+            cc.cost_center_name,
+            SUM(si.total) AS total_sales,
+            COUNT(si.name) AS invoice_count,
+            COUNT(DISTINCT si.customer) AS customer_count
+        FROM `tabSales Invoice` si
+        LEFT JOIN `tabCost Center` cc ON si.cost_center = cc.name
+        WHERE si.docstatus = 1 
+        AND si.status NOT IN ('Cancelled', 'Return')
+        AND si.posting_date BETWEEN %s AND %s
+        AND si.cost_center IS NOT NULL
+        GROUP BY si.cost_center, cc.cost_center_name
+        ORDER BY total_sales DESC
+    """
+    
+    fy_by_cost_center = frappe.db.sql(fy_by_cost_center_query, (fy_start, fy_end), as_dict=True)
+    
+    # Query for current month data by cost center
+    month_by_cost_center_query = """
+        SELECT 
+            si.cost_center,
+            cc.cost_center_name,
+            SUM(si.total) AS month_total_sales,
+            COUNT(si.name) AS month_invoice_count
+        FROM `tabSales Invoice` si
+        LEFT JOIN `tabCost Center` cc ON si.cost_center = cc.name
+        WHERE si.docstatus = 1 
+        AND si.status NOT IN ('Cancelled', 'Return')
+        AND si.posting_date BETWEEN %s AND %s
+        AND si.cost_center IS NOT NULL
+        GROUP BY si.cost_center, cc.cost_center_name
+        ORDER BY month_total_sales DESC
+    """
+    
+    month_by_cost_center = frappe.db.sql(month_by_cost_center_query, (month_start, month_end), as_dict=True)
+    
+    # Create a dictionary to combine the data
+    cost_center_data = {}
+    
+    # Process fiscal year data
+    for row in fy_by_cost_center:
+        cost_center = row.get('cost_center', 'Unknown')
+        cost_center_data[cost_center] = {
+            'name': cost_center,
+            'display_name': row.get('cost_center_name', cost_center),
+            'total_sales': row.get('total_sales', 0),
+            'invoice_count': row.get('invoice_count', 0),
+            'customer_count': row.get('customer_count', 0),
+            'month_total_sales': 0,
+            'month_invoice_count': 0,
+            'avg_invoice_value': 0
+        }
+    
+    # Process current month data
+    for row in month_by_cost_center:
+        cost_center = row.get('cost_center', 'Unknown')
+        if cost_center not in cost_center_data:
+            cost_center_data[cost_center] = {
+                'name': cost_center,
+                'display_name': row.get('cost_center_name', cost_center),
+                'total_sales': 0,
+                'invoice_count': 0,
+                'customer_count': 0,
+                'month_total_sales': 0,
+                'month_invoice_count': 0,
+                'avg_invoice_value': 0
+            }
+        
+        cost_center_data[cost_center]['month_total_sales'] = row.get('month_total_sales', 0)
+        cost_center_data[cost_center]['month_invoice_count'] = row.get('month_invoice_count', 0)
+        
+        # Calculate average invoice value for current month
+        month_invoice_count = row.get('month_invoice_count', 0)
+        month_total_sales = row.get('month_total_sales', 0)
+        if month_invoice_count > 0:
+            cost_center_data[cost_center]['avg_invoice_value'] = month_total_sales / month_invoice_count
+    
+    # Convert to list and format values
+    result = []
+    for cost_center, data in cost_center_data.items():
+        result.append({
+            'name': data['name'],
+            'display_name': data['display_name'],
+            'total_sales': f"₹{data['total_sales']:,.0f}",
+            'invoice_count': f"{data['invoice_count']:,}",
+            'customer_count': f"{data['customer_count']:,}",
+            'avg_invoice_value': f"₹{data['avg_invoice_value']:,.0f}"
+        })
+    
+    return result
 
