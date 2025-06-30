@@ -226,43 +226,7 @@
 <div class="chart-container width-{{ width|default(4) }}">
   <div class="chart-title">{{ title }}</div>
   
-  <!-- Filter Container -->
-  {% if filters %}
-  <div class="filter-container" id="{{ chart_id }}_filters">
-    <button class="filter-toggle" onclick="toggleFilters_{{ chart_id }}()">
-      <span class="custom-sliders-icon"></span>
-    </button>
-    
-    <div class="filter-content" id="{{ chart_id }}_filter_content">
-      <div class="filter-row">
-        {% for filter in filters %}
-        <div class="filter-group">
-          <label class="filter-label">{{ filter.label }}</label>
-          {% if filter.fieldtype == 'Date' %}
-          <input type="date" class="filter-input filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}">
-          {% elif filter.fieldtype == 'Select' %}
-          <select class="filter-select filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}">
-            <option value="">All</option>
-            {% if filter.options %}
-              {% for option in filter.options %}
-              <option value="{{ option.value }}">{{ option.label }}</option>
-              {% endfor %}
-            {% endif %}
-          </select>
-          {% else %}
-          <input type="text" class="filter-input filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}" placeholder="{{ filter.label }}">
-          {% endif %}
-        </div>
-        {% endfor %}
-        
-        <div class="filter-actions">
-          <button class="filter-btn filter-btn-primary" onclick="applyFilters_{{ chart_id }}()">Apply</button>
-          <button class="filter-btn filter-btn-secondary" onclick="clearFilters_{{ chart_id }}()">Clear</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
+  <!-- Filter Container Removed: Filters now come from URL query params -->
   
   <canvas id="{{ chart_id }}" class="chart-canvas"></canvas>
 </div>
@@ -342,75 +306,21 @@
       });
     }
     
-    {% if filters %}
-    // Filter functions
-    window.toggleFilters_{{ chart_id }} = function() {
-      const content = document.getElementById('{{ chart_id }}_filter_content');
-      content.classList.toggle('filter-hidden');
-    };
-    
-    window.applyFilters_{{ chart_id }} = function() {
-      const filters = {};
-      const filterElements = document.querySelectorAll('.filter-control-{{ chart_id }}');
-      
-      filterElements.forEach(function(el) {
-        const fieldname = el.dataset.fieldname;
-        if (fieldname) {
-          filters[fieldname] = el.value;
-        }
+    // Helper to get query params
+    function getQueryParams() {
+      const params = {};
+      window.location.search.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(str,key,value) {
+        params[key] = decodeURIComponent(value);
       });
-      
-      // Call backend with filters
-      {% if data_url %}
-        frappe.call({
-          method: "{{ data_url }}",
-          args: { filters: filters },
-          callback: function(r) {
-            if (r.message) {
-              if (r.message.datasets) {
-                renderBarChart_{{ chart_id }}(
-                  r.message.labels,
-                  null,
-                  r.message.datasets
-                );
-              } else {
-                renderBarChart_{{ chart_id }}(
-                  r.message.labels,
-                  r.message.data,
-                  null,
-                  r.message.backgroundColor || '{{ backgroundColor|default("#667eea") }}'
-                );
-              }
-            }
-          }
-        });
-      {% endif %}
-    };
+      return params;
+    }
     
-    window.clearFilters_{{ chart_id }} = function() {
-      // Clear all filter inputs
-      const filterElements = document.querySelectorAll('.filter-control-{{ chart_id }}');
-      if (!filterElements.length) return;
-      
-      filterElements.forEach(function(input) {
-        if (input.type === 'date' || input.type === 'text') {
-          input.value = '';
-        } else if (input.tagName === 'SELECT') {
-          input.selectedIndex = 0;
-        } else {
-          input.value = '';
-        }
-      });
-      
-      // Reload chart with cleared filters
-      applyFilters_{{ chart_id }}();
-    };
-    {% endif %}
-    
-    // Initial chart load
+    // Initial chart load with filters from URL
     {% if data_url %}
+      const urlFilters = getQueryParams();
       frappe.call({
         method: "{{ data_url }}",
+        args: { filters: urlFilters },
         callback: function(r) {
           if (r.message) {
             if (r.message.datasets) {

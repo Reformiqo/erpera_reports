@@ -3,9 +3,16 @@ from frappe import _
 from datetime import datetime, timedelta
 from frappe.utils import nowdate, add_months, add_days, getdate
 
+def format_currency(value):
+    try:
+        return f"₹{float(value):,.2f}"
+    except Exception:
+        return f"₹{value}"
+
 def get_context(context):
     """Get context data for the main dashboard page"""
     context.title = _("ERPera Reports Dashboard")
+    context.active_page = "dashboard"
     context.summary_cards = get_dashboard_data()
     companies = frappe.get_all(
         "Company",
@@ -40,23 +47,38 @@ def get_context(context):
     context.item_list = items
     context.item_group_list = item_groups
     
-    # Get detailed data for each branch/warehouse for modal display
+    # Get filters from URL args
+    args = frappe.request.args
+    from_date = args.get('from_date')
+    to_date = args.get('to_date')
+    company = args.get('company')
+    branch = args.get('branch')
+    warehouse = args.get('warehouse')
+
+    # Default to current month if not provided
     today = getdate(nowdate())
-    start_of_month = today.replace(day=1)
-    end_of_month = add_months(start_of_month, 1) - timedelta(days=1)
+    start_of_month = from_date or today.replace(day=1)
+    end_of_month = to_date or (add_months(today.replace(day=1), 1) - timedelta(days=1))
     
-    context.sales_details = get_sales_details(start_of_month, end_of_month)
-    context.purchase_details = get_purchase_details(start_of_month, end_of_month)
-    context.stock_details = get_stock_details()
+    context.sales_details = get_sales_details(start_of_month, end_of_month, company, branch)
+    context.purchase_details = get_purchase_details(start_of_month, end_of_month, company, branch)
+    context.stock_details = get_stock_details(warehouse, company)
     
     return context
 
-def get_sales_details(start_date, end_date):
+def get_sales_details(start_date, end_date, company=None, branch=None):
     """
-    Get detailed sales statistics for each branch to display in modal
+    Get detailed sales statistics for each branch to display in modal, using filters if provided
     """
-    # Query for sales data by branch
-    sales_by_branch_query = """
+    extra_si = ""
+    args = {'start_date': start_date, 'end_date': end_date}
+    if company:
+        extra_si += " AND si.company = %(company)s"
+        args['company'] = company
+    if branch:
+        extra_si += " AND si.cost_center = %(branch)s"
+        args['branch'] = branch
+    sales_by_branch_query = f"""
         SELECT 
             si.cost_center,
             cc.cost_center_name,
@@ -65,34 +87,38 @@ def get_sales_details(start_date, end_date):
             COALESCE(AVG(si.grand_total), 0) AS avg_invoice_value
         FROM `tabSales Invoice` si
         LEFT JOIN `tabCost Center` cc ON si.cost_center = cc.name
-        WHERE si.posting_date BETWEEN %s AND %s
+        WHERE si.posting_date BETWEEN %(start_date)s AND %(end_date)s
         AND si.docstatus = 1
         AND si.cost_center IS NOT NULL
+        {extra_si}
         GROUP BY si.cost_center, cc.cost_center_name
         ORDER BY total_sales DESC
     """
-    
-    sales_by_branch = frappe.db.sql(sales_by_branch_query, (start_date, end_date), as_dict=True)
-    
-    # Convert to list and format values
+    sales_by_branch = frappe.db.sql(sales_by_branch_query, args, as_dict=True)
     result = []
     for row in sales_by_branch:
         result.append({
             'name': row.get('cost_center', 'Unknown'),
             'display_name': row.get('cost_center_name', row.get('cost_center', 'Unknown')),
-            'total_sales': f"₹{row.get('total_sales', 0):,.0f}",
+            'total_sales': format_currency(row.get('total_sales', 0)),
             'total_invoices': f"{row.get('total_invoices', 0):,}",
-            'avg_invoice_value': f"₹{row.get('avg_invoice_value', 0):,.0f}"
+            'avg_invoice_value': format_currency(row.get('avg_invoice_value', 0))
         })
-    
     return result
 
-def get_purchase_details(start_date, end_date):
+def get_purchase_details(start_date, end_date, company=None, branch=None):
     """
-    Get detailed purchase statistics for each branch to display in modal
+    Get detailed purchase statistics for each branch to display in modal, using filters if provided
     """
-    # Query for purchase data by branch
-    purchase_by_branch_query = """
+    extra_pi = ""
+    args = {'start_date': start_date, 'end_date': end_date}
+    if company:
+        extra_pi += " AND pi.company = %(company)s"
+        args['company'] = company
+    if branch:
+        extra_pi += " AND pi.cost_center = %(branch)s"
+        args['branch'] = branch
+    purchase_by_branch_query = f"""
         SELECT 
             pi.cost_center,
             cc.cost_center_name,
@@ -101,34 +127,38 @@ def get_purchase_details(start_date, end_date):
             COALESCE(SUM(pi.outstanding_amount), 0) AS total_outstanding
         FROM `tabPurchase Invoice` pi
         LEFT JOIN `tabCost Center` cc ON pi.cost_center = cc.name
-        WHERE pi.posting_date BETWEEN %s AND %s
+        WHERE pi.posting_date BETWEEN %(start_date)s AND %(end_date)s
         AND pi.docstatus = 1
         AND pi.cost_center IS NOT NULL
+        {extra_pi}
         GROUP BY pi.cost_center, cc.cost_center_name
         ORDER BY total_amount DESC
     """
-    
-    purchase_by_branch = frappe.db.sql(purchase_by_branch_query, (start_date, end_date), as_dict=True)
-    
-    # Convert to list and format values
+    purchase_by_branch = frappe.db.sql(purchase_by_branch_query, args, as_dict=True)
     result = []
     for row in purchase_by_branch:
         result.append({
             'name': row.get('cost_center', 'Unknown'),
             'display_name': row.get('cost_center_name', row.get('cost_center', 'Unknown')),
-            'total_amount': f"₹{row.get('total_amount', 0):,.0f}",
+            'total_amount': format_currency(row.get('total_amount', 0)),
             'unique_suppliers': f"{row.get('unique_suppliers', 0):,}",
-            'total_outstanding': f"₹{row.get('total_outstanding', 0):,.0f}"
+            'total_outstanding': format_currency(row.get('total_outstanding', 0))
         })
-    
     return result
 
-def get_stock_details():
+def get_stock_details(warehouse=None, company=None):
     """
-    Get detailed stock statistics for each warehouse to display in modal
+    Get detailed stock statistics for each warehouse to display in modal, using filters if provided
     """
-    # Query for stock data by warehouse
-    stock_by_warehouse_query = """
+    extra_sle = ""
+    args = {}
+    if warehouse:
+        extra_sle += " AND sle.warehouse = %(warehouse)s"
+        args['warehouse'] = warehouse
+    if company:
+        extra_sle += " AND sle.company = %(company)s"
+        args['company'] = company
+    stock_by_warehouse_query = f"""
         SELECT 
             sle.warehouse,
             w.warehouse_name,
@@ -143,23 +173,20 @@ def get_stock_details():
         LEFT JOIN `tabWarehouse` w ON sle.warehouse = w.name
         WHERE item.is_stock_item = 1 
         AND sle.warehouse IS NOT NULL
+        {extra_sle}
         GROUP BY sle.warehouse, w.warehouse_name
         ORDER BY total_stock_value DESC
     """
-    
-    stock_by_warehouse = frappe.db.sql(stock_by_warehouse_query, as_dict=True)
-    
-    # Convert to list and format values
+    stock_by_warehouse = frappe.db.sql(stock_by_warehouse_query, args, as_dict=True)
     result = []
     for row in stock_by_warehouse:
         result.append({
             'name': row.get('warehouse', 'Unknown'),
             'display_name': row.get('warehouse_name', row.get('warehouse', 'Unknown')),
             'total_skus': f"{row.get('total_skus', 0):,}",
-            'total_stock_value': f"₹{row.get('total_stock_value', 0):,.0f}",
+            'total_stock_value': format_currency(row.get('total_stock_value', 0)),
             'efficiency_score': f"{row.get('efficiency_score', 0):.1f}%"
         })
-    
     return result
 
 @frappe.whitelist()
@@ -170,7 +197,6 @@ def get_dashboard_data():
     end_of_month = add_months(start_of_month, 1) - timedelta(days=1)
     prev_month_start = add_months(start_of_month, -1)
     prev_month_end = start_of_month - timedelta(days=1)
-    
 
     try:
         # Sales summary
@@ -207,27 +233,27 @@ def get_dashboard_data():
 
         return {
             "sales": {
-                "total_sales": int(sales.total_sales or 0),
+                "total_sales": format_currency(sales.total_sales or 0),
                 "total_invoices": int(sales.total_invoices or 0),
-                "avg_invoice_value": int(sales.avg_invoice_value or 0)
+                "avg_invoice_value": format_currency(sales.avg_invoice_value or 0)
             },
             "purchase": {
-                "total_amount": int(purchase.total_amount or 0),
+                "total_amount": format_currency(purchase.total_amount or 0),
                 "unique_suppliers": int(purchase.unique_suppliers or 0),
-                "total_outstanding": int(purchase.total_outstanding or 0)
+                "total_outstanding": format_currency(purchase.total_outstanding or 0)
             },
             "stock": {
                 "total_skus": int(total_skus or 0),
-                "total_stock_value": int(total_stock_value),
+                "total_stock_value": format_currency(total_stock_value),
                 "efficiency_score": int(efficiency_score)
             }
         }
     except Exception as e:
         frappe.log_error(f"Error in get_dashboard_data: {str(e)}")
         return {
-            "sales": {"total_sales": 0, "total_invoices": 0, "avg_invoice_value": 0},
-            "purchase": {"total_amount": 0, "unique_suppliers": 0, "total_outstanding": 0},
-            "stock": {"total_skus": 0, "total_stock_value": 0, "efficiency_score": 0}
+            "sales": {"total_sales": format_currency(0), "total_invoices": 0, "avg_invoice_value": format_currency(0)},
+            "purchase": {"total_amount": format_currency(0), "unique_suppliers": 0, "total_outstanding": format_currency(0)},
+            "stock": {"total_skus": 0, "total_stock_value": format_currency(0), "efficiency_score": 0}
         }
 
 def get_purchase_orders_summary(start_date, end_date, prev_start, prev_end):

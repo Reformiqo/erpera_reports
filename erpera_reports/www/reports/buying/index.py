@@ -5,7 +5,9 @@ def get_context(context):
     """
     Get context for the buying reports page.
     This function fetches data for the filter dropdowns and number card statistics.
+    Now uses filters from frappe.request.args.get for from_date, to_date, company, branch.
     """
+    context.active_page = "buying"
     
     # Fetch companies
     companies = frappe.get_all(
@@ -49,7 +51,14 @@ def get_context(context):
     context.item_group_list = item_groups
     context.supplier_list = suppliers
     
-    # Calculate dynamic periods
+    # Get filters from URL args
+    args = frappe.request.args
+    from_date = args.get('from_date')
+    to_date = args.get('to_date')
+    company = args.get('company')
+    branch = args.get('branch')
+    
+    # Calculate dynamic periods (defaults)
     current_date = datetime.now()
     current_month = current_date.strftime("%B")  # Full month name (e.g., "July")
     current_year = current_date.year
@@ -68,63 +77,79 @@ def get_context(context):
     context.current_fiscal_year = fiscal_year
     context.current_month = current_month
     
+    # Use filters or defaults for number cards
+    filter_from = from_date or fy_start
+    filter_to = to_date or fy_end
+    filter_month_from = from_date or current_date.replace(day=1).strftime("%Y-%m-%d")
+    filter_month_to = to_date or current_date.strftime("%Y-%m-%d")
+    
+    # Build extra conditions for company/branch
+    extra_pi = ""
+    extra_args = {}
+    if company:
+        extra_pi += " AND pi.company = %(company)s"
+        extra_args['company'] = company
+    if branch:
+        extra_pi += " AND pi.cost_center = %(branch)s"
+        extra_args['branch'] = branch
+    
     # Calculate statistics for number cards
-    # Total purchase amount (current fiscal year)
-    total_purchase_query = """
+    # Total purchase amount (fiscal year or filtered)
+    total_purchase_query = f"""
         SELECT SUM(pii.amount) as total_amount
         FROM `tabPurchase Invoice` pi
         INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
         LEFT JOIN `tabItem` i ON pii.item_code = i.name
         WHERE pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND pi.posting_date BETWEEN %s AND %s
+        AND pi.posting_date BETWEEN %(from_date)s AND %(to_date)s
+        {extra_pi}
         AND (
             i.is_stock_item = 1 
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
         )
     """
-    total_purchase_result = frappe.db.sql(total_purchase_query, (fy_start, fy_end), as_dict=True)[0] or {}
+    total_purchase_result = frappe.db.sql(total_purchase_query, dict(from_date=filter_from, to_date=filter_to, **extra_args), as_dict=True)[0] or {}
     total_purchase = total_purchase_result.get('total_amount') or 0
     
-    # Total purchase invoices (current fiscal year)
-    total_invoices_query = """
+    # Total purchase invoices (fiscal year or filtered)
+    total_invoices_query = f"""
         SELECT COUNT(DISTINCT pi.name) as invoice_count
         FROM `tabPurchase Invoice` pi
         INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
         LEFT JOIN `tabItem` i ON pii.item_code = i.name
         WHERE pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND pi.posting_date BETWEEN %s AND %s
+        AND pi.posting_date BETWEEN %(from_date)s AND %(to_date)s
+        {extra_pi}
         AND (
             i.is_stock_item = 1 
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
         )
     """
-    total_invoices_result = frappe.db.sql(total_invoices_query, (fy_start, fy_end), as_dict=True)[0] or {}
+    total_invoices_result = frappe.db.sql(total_invoices_query, dict(from_date=filter_from, to_date=filter_to, **extra_args), as_dict=True)[0] or {}
     total_invoices = total_invoices_result.get('invoice_count') or 0
     
-    # Unique suppliers (current fiscal year)
-    unique_suppliers_query = """
+    # Unique suppliers (fiscal year or filtered)
+    unique_suppliers_query = f"""
         SELECT COUNT(DISTINCT pi.supplier) as supplier_count
         FROM `tabPurchase Invoice` pi
         INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
         LEFT JOIN `tabItem` i ON pii.item_code = i.name
         WHERE pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND pi.posting_date BETWEEN %s AND %s
+        AND pi.posting_date BETWEEN %(from_date)s AND %(to_date)s
+        {extra_pi}
         AND (
             i.is_stock_item = 1 
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
         )
     """
-    unique_suppliers_result = frappe.db.sql(unique_suppliers_query, (fy_start, fy_end), as_dict=True)[0] or {}
+    unique_suppliers_result = frappe.db.sql(unique_suppliers_query, dict(from_date=filter_from, to_date=filter_to, **extra_args), as_dict=True)[0] or {}
     unique_suppliers = unique_suppliers_result.get('supplier_count') or 0
     
-    # Average purchase value (current month)
-    current_month_start = current_date.replace(day=1).strftime("%Y-%m-%d")
-    current_month_end = current_date.strftime("%Y-%m-%d")
-    
-    avg_purchase_query = """
+    # Average purchase value (current month or filtered)
+    avg_purchase_query = f"""
         SELECT 
             COALESCE(AVG(pi.grand_total), 0) as avg_amount
         FROM `tabPurchase Invoice` pi
@@ -132,13 +157,14 @@ def get_context(context):
         LEFT JOIN `tabItem` i ON pii.item_code = i.name
         WHERE pi.docstatus = 1
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND pi.posting_date BETWEEN %s AND %s
+        AND pi.posting_date BETWEEN %(from_date)s AND %(to_date)s
+        {extra_pi}
         AND (
             i.is_stock_item = 1 
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
         )
     """
-    avg_purchase_result = frappe.db.sql(avg_purchase_query, (current_month_start, current_month_end), as_dict=True)[0] or {}
+    avg_purchase_result = frappe.db.sql(avg_purchase_query, dict(from_date=filter_month_from, to_date=filter_month_to, **extra_args), as_dict=True)[0] or {}
     avg_purchase = avg_purchase_result.get('avg_amount') or 0
 
     # Add formatted stats to the context
@@ -147,17 +173,25 @@ def get_context(context):
     context.supplier_count = f"{unique_suppliers:,}"
     context.avg_invoice_value = f"₹{avg_purchase:,.0f}"
     
-    # Get detailed data for each cost center for modal display
-    context.cost_center_details = get_cost_center_details(fy_start, fy_end, current_month_start, current_month_end)
+    # Get detailed data for each cost center for modal display, using filters
+    context.cost_center_details = get_cost_center_details(filter_from, filter_to, filter_month_from, filter_month_to, company, branch)
     
     return context
 
-def get_cost_center_details(fy_start, fy_end, month_start, month_end):
+def get_cost_center_details(fy_start, fy_end, month_start, month_end, company=None, branch=None):
     """
-    Get detailed statistics for each cost center to display in modal
+    Get detailed statistics for each cost center to display in modal, using filters if provided
     """
+    extra_pi = ""
+    args = {'fy_start': fy_start, 'fy_end': fy_end, 'month_start': month_start, 'month_end': month_end}
+    if company:
+        extra_pi += " AND pi.company = %(company)s"
+        args['company'] = company
+    if branch:
+        extra_pi += " AND pi.cost_center = %(branch)s"
+        args['branch'] = branch
     # Query for fiscal year data by cost center
-    fy_by_cost_center_query = """
+    fy_by_cost_center_query = f"""
         SELECT 
             pi.cost_center,
             cc.cost_center_name,
@@ -170,8 +204,9 @@ def get_cost_center_details(fy_start, fy_end, month_start, month_end):
         LEFT JOIN `tabCost Center` cc ON pi.cost_center = cc.name
         WHERE pi.docstatus = 1 
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND pi.posting_date BETWEEN %s AND %s
+        AND pi.posting_date BETWEEN %(fy_start)s AND %(fy_end)s
         AND pi.cost_center IS NOT NULL
+        {extra_pi}
         AND (
             i.is_stock_item = 1 
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
@@ -180,10 +215,10 @@ def get_cost_center_details(fy_start, fy_end, month_start, month_end):
         ORDER BY total_purchase DESC
     """
     
-    fy_by_cost_center = frappe.db.sql(fy_by_cost_center_query, (fy_start, fy_end), as_dict=True)
+    fy_by_cost_center = frappe.db.sql(fy_by_cost_center_query, args, as_dict=True)
     
     # Query for current month data by cost center
-    month_by_cost_center_query = """
+    month_by_cost_center_query = f"""
         SELECT 
             pi.cost_center,
             cc.cost_center_name,
@@ -194,8 +229,9 @@ def get_cost_center_details(fy_start, fy_end, month_start, month_end):
         LEFT JOIN `tabCost Center` cc ON pi.cost_center = cc.name
         WHERE pi.docstatus = 1 
         AND pi.status NOT IN ('Cancelled', 'Return')
-        AND pi.posting_date BETWEEN %s AND %s
+        AND pi.posting_date BETWEEN %(month_start)s AND %(month_end)s
         AND pi.cost_center IS NOT NULL
+        {extra_pi}
         AND (
             i.is_stock_item = 1 
             OR (i.is_stock_item IS NULL AND pii.item_group NOT IN ('EXPENSE', 'FIXED ASSET', 'Service', 'SERVICES'))
@@ -204,7 +240,7 @@ def get_cost_center_details(fy_start, fy_end, month_start, month_end):
         ORDER BY avg_invoice_value DESC
     """
     
-    month_by_cost_center = frappe.db.sql(month_by_cost_center_query, (month_start, month_end), as_dict=True)
+    month_by_cost_center = frappe.db.sql(month_by_cost_center_query, args, as_dict=True)
     
     # Create a dictionary to combine the data
     cost_center_data = {}

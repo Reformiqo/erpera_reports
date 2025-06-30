@@ -54,11 +54,40 @@
           labels: labels,
           datasets: [{
             data: data,
-            backgroundColor: backgroundColor || '{{ backgroundColor|default("#667eea") }}'
+            backgroundColor: backgroundColor || '{{ backgroundColor|default("#667eea") }}',
+            offset: data.map(() => 0)
           }]
         },
         options: {
-          plugins: { legend: { position: 'bottom' } },
+          plugins: {
+            legend: {
+              position: 'left',
+              labels: {
+                boxWidth: 12,
+                padding: 8,
+                font: {
+                  size: 10
+                },
+                generateLabels: function(chart) {
+                  const original = Chart.overrides.doughnut.plugins.legend.labels.generateLabels;
+                  const labels = original(chart);
+                  const hovered = chart.$_hoveredIndex;
+                  return labels.map((label, idx) => {
+                    if (hovered === idx) {
+                      return Object.assign({}, label, {
+                        fontColor: '#1d4ed8',
+                        fontStyle: 'bold',
+                        fillStyle: label.fillStyle,
+                        strokeStyle: label.strokeStyle,
+                        lineWidth: label.lineWidth
+                      });
+                    }
+                    return label;
+                  });
+                }
+              }
+            }
+          },
           onClick: function(evt, elements) {
             if (elements.length > 0) {
               const idx = elements[0].index;
@@ -69,30 +98,61 @@
               }
             }
           },
+          onHover: function(evt, activeEls) {
+            const chart = this;
+            const dataset = chart.data.datasets[0];
+            if (!dataset._originalOffset) {
+              dataset._originalOffset = dataset.offset ? [...dataset.offset] : dataset.data.map(() => 0);
+            }
+            if (activeEls && activeEls.length > 0) {
+              const idx = activeEls[0].index;
+              dataset.offset = dataset.data.map((_, i) => i === idx ? 20 : 0);
+              chart.$_hoveredIndex = idx;
+              chart.update('none');
+            } else {
+              dataset.offset = [...dataset._originalOffset];
+              chart.$_hoveredIndex = null;
+              chart.update('none');
+            }
+          },
           responsive: true,
           maintainAspectRatio: false
         }
       });
     }
     {% if data_url %}
-      frappe.call({
-        method: "{{ data_url }}",
-        callback: function(r) {
-          if (r.message) {
-            renderDoughnutChart_{{ chart_id }}(
-              r.message.labels,
-              r.message.data,
-              r.message.backgroundColor || '{{ backgroundColor|default("#667eea") }}'
-            );
-          }
+    var filters = {{ filters|tojson if filters is defined else 'null' }};
+    var dataUrl = "{{ data_url }}";
+    if (filters && Array.isArray(filters)) {
+      var urlParams = new URLSearchParams(window.location.search);
+      var filterQuery = '';
+      filters.forEach(function(f) {
+        if (urlParams.has(f.fieldname)) {
+          filterQuery += (filterQuery ? '&' : '?') + encodeURIComponent(f.fieldname) + '=' + encodeURIComponent(urlParams.get(f.fieldname));
         }
       });
+      if (filterQuery) {
+        dataUrl += filterQuery;
+      }
+    }
+    frappe.call({
+      method: dataUrl,
+      callback: function(r) {
+        if (r.message) {
+          renderDoughnutChart_{{ chart_id }}(
+            r.message.labels,
+            r.message.data,
+            r.message.backgroundColor || '{{ backgroundColor|default("#667eea") }}'
+          );
+        }
+      }
+    });
     {% else %}
-      renderDoughnutChart_{{ chart_id }}(
-        {{ labels|tojson }},
-        {{ data|tojson }},
-        {{ backgroundColor|tojson|default('"#667eea"') }}
-      );
+    renderDoughnutChart_{{ chart_id }}(
+      {{ labels|tojson }},
+      {{ data|tojson }},
+      {{ backgroundColor|tojson|default('"#667eea"') }}
+    );
     {% endif %}
   });
 </script>

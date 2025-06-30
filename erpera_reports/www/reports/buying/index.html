@@ -1,29 +1,106 @@
 {% extends 'erpera_reports/templates/pages/base.html' %}
 
 {% block page_content %}
+    <div class="filter-section">
+        <div class="filter-container">
+            <h3 class="filter-title">🔍 Dashboard Filters</h3>
+            <div class="filter-row-main">
+                <!-- Date Range Filter -->
+                <div class="filter-group">
+                    <label class="filter-group-label">📅 Date Range:</label>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-range="today" onclick="setDateRange('today')">Today</button>
+                        <button class="filter-btn" data-range="yesterday" onclick="setDateRange('yesterday')">Yesterday</button>
+                        <button class="filter-btn" data-range="this_week" onclick="setDateRange('this_week')">This Week</button>
+                        <button class="filter-btn" data-range="last_week" onclick="setDateRange('last_week')">Last Week</button>
+                        <button class="filter-btn" data-range="this_month" onclick="setDateRange('this_month')">This Month</button>
+                        <button class="filter-btn" data-range="last_month" onclick="setDateRange('last_month')">Last Month</button>
+                        <button class="filter-btn" data-range="this_quarter" onclick="setDateRange('this_quarter')">This Quarter</button>
+                        <button class="filter-btn" data-range="last_quarter" onclick="setDateRange('last_quarter')">Last Quarter</button>
+                        <button class="filter-btn" data-range="this_year" onclick="setDateRange('this_year')">This Year</button>
+                        <button class="filter-btn" data-range="last_year" onclick="setDateRange('last_year')">Last Year</button>
+                        <button class="filter-btn custom" data-range="custom" onclick="showCustomDatePicker()">Custom Range</button>
+                    </div>
+                </div>
+                <!-- Company and Branch Filters -->
+                <div class="filter-group">
+                    <label class="filter-group-label">🏢 Company:</label>
+                    <select id="companyFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setCompanyFilter()">
+                        <option value="">All Companies</option>
+                        {% for company in company_list %}
+                            <option value="{{ company.value }}">{{ company.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-group-label">🏪 Branch:</label>
+                    <select id="branchFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setBranchFilter()">
+                        <option value="">All Branches</option>
+                        {% for branch in branch_list %}
+                            <option value="{{ branch.value }}">{{ branch.label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="custom-date-picker" id="customDatePicker" style="display: none;">
+                <div class="date-inputs">
+                    <div class="date-input-group">
+                        <label for="fromDate">From Date:</label>
+                        <input type="date" id="fromDate" class="date-input">
+                    </div>
+                    <div class="date-input-group">
+                        <label for="toDate">To Date:</label>
+                        <input type="date" id="toDate" class="date-input">
+                    </div>
+                    <button class="apply-btn" onclick="applyCustomDateRange()">Apply</button>
+                </div>
+            </div>
+            <div class="current-range-display" id="currentFiltersBar">
+                <span id="currentRangeText">Showing: This Month</span>
+                <span id="filterChips"></span>
+            </div>
+        </div>
+    </div>
+
     <div class="overview-cards">
-        <div class="card clickable-card" onclick="showCostCenterModal('total_purchase')">
-            <div class="card-icon products">💰</div>
-            <div class="card-value">{{ total_purchase }} </div>
-            <div class="card-label">Total Purchase</div>
-            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>   
+        <div class="card clickable-card">
+            <div class="card-content">
+                <div class="card-info">
+                    <div class="card-value">{{ total_purchase }} </div>
+                    <div class="card-label">Total Purchase</div>
+                    <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
+                </div>
+                <div class="card-icon">💰</div>
+            </div>
         </div>
-        <div class="card clickable-card" onclick="showCostCenterModal('invoice_count')">
-            <div class="card-icon orders">📄</div>
-            <div class="card-value">{{ invoice_count }} </div>
-            <div class="card-label">Total Invoices</div>
-            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>   
+        <div class="card clickable-card">
+            <div class="card-content">
+                <div class="card-info">
+                    <div class="card-value">{{ invoice_count }} </div>
+                    <div class="card-label">Total Invoices</div>
+                    <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
+                </div>
+                <div class="card-icon">📄</div>
+            </div>
         </div>
-        <div class="card clickable-card" onclick="showCostCenterModal('supplier_count')">
-            <div class="card-icon stock">🏢</div>
-            <div class="card-value">{{ supplier_count }}</div>
-            <div class="card-label">Unique Suppliers</div>
+        <div class="card clickable-card">
+            <div class="card-content">
+                <div class="card-info">
+                    <div class="card-value">{{ supplier_count }}</div>
+                    <div class="card-label">Unique Suppliers</div>
+                </div>
+                <div class="card-icon">🏢</div>
+            </div>
         </div>
-        <div class="card clickable-card" onclick="showCostCenterModal('avg_invoice_value')">
-            <div class="card-icon out-of-stock">📊</div>
-            <div class="card-value">{{ avg_invoice_value }} </div>
-            <div class="card-label">Average Purchase Value</div>
-            <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_month }})</p>
+        <div class="card clickable-card">
+            <div class="card-content">
+                <div class="card-info">
+                    <div class="card-value">{{ avg_invoice_value }} </div>
+                    <div class="card-label">Average Purchase Value</div>
+                    <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_month }})</p>
+                </div>
+                <div class="card-icon">📊</div>
+            </div>
         </div>
     </div>
 
@@ -293,6 +370,111 @@
         color: #6b7280;
         font-weight: 500;
     }
+    /* Filter Section Styles (copied from reports/index.html) */
+    .filter-section {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+    }
+    .filter-container { max-width: 100%; }
+    .filter-title { font-size: 1.25rem; font-weight: 600; color: #1a1a1a; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .filter-row-main { display: flex; gap: 1.5rem; margin-bottom: 1rem; align-items: center; flex-wrap: nowrap; }
+    .filter-group { margin-bottom: 0; flex: none; display: flex; flex-direction: column; justify-content: center; }
+    .filter-group-label { display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; white-space: nowrap; }
+    .filter-buttons { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-bottom: 0; }
+    .filter-btn { padding: 0.375rem 0.75rem; border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; white-space: nowrap; }
+    .filter-btn:hover { background: #f3f4f6; border-color: #9ca3af; }
+    .filter-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+    .filter-btn.custom { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+    .filter-btn.custom:hover { background: #d97706; border-color: #d97706; }
+    .filter-select { padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #374151; font-size: 0.875rem; font-weight: 500; cursor: pointer; width: 100%; transition: all 0.2s ease; }
+    .filter-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    .filter-select:hover { border-color: #9ca3af; }
+    .custom-date-picker { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 1rem; margin-top: 1rem; }
+    .date-inputs { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
+    .date-input-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .date-input-group label { font-size: 0.875rem; font-weight: 500; color: #374151; }
+    .date-input { padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.875rem; }
+    .date-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    .apply-btn { padding: 0.5rem 1rem; background: #10b981; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: background-color 0.2s ease; }
+    .apply-btn:hover { background: #059669; }
+    .current-range-display { margin-top: 1rem; padding: 0.75rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; text-align: center; }
+    .current-range-display span { font-size: 0.875rem; font-weight: 500; color: #0369a1; }
+    .filter-chip { display: inline-flex; align-items: center; background: #e0e7ff; color: #3730a3; border-radius: 16px; padding: 2px 10px 2px 8px; margin: 0 4px; font-size: 0.85em; font-weight: 500; }
+    .chip-clear { background: none; border: none; color: #a21caf; font-size: 1em; margin-left: 4px; cursor: pointer; line-height: 1; }
+    .chip-clear:hover { color: #dc2626; }
+    @media (max-width: 1200px) { .filter-row-main { flex-direction: column; gap: 1rem; align-items: stretch; } .filter-group { flex: none; } .filter-buttons { justify-content: flex-start; } }
+    @media (max-width: 768px) { .filter-buttons { justify-content: center; } .filter-select { width: 100%; } .date-inputs { flex-direction: column; align-items: stretch; } .apply-btn { align-self: flex-start; } }
+    .overview-cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem 1.5rem 1.5rem 1.5rem;
+        min-width: 220px;
+        min-height: 120px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        display: flex;
+        align-items: stretch;
+        flex: 1 1 220px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .card-content {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        height: 100%;
+    }
+    .card-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        flex: 1;
+    }
+    .card-value {
+        font-size: 2.1rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+        line-height: 1.1;
+    }
+    .card-label {
+        font-size: 1rem;
+        color: #6b7280;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    .card-icon {
+        font-size: 3.5rem;
+        margin-left: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-shrink: 0;
+        height: 100%;
+    }
+    @media (max-width: 900px) {
+        .overview-cards {
+            flex-direction: column;
+        }
+        .card {
+            min-width: 0;
+        }
+        .card-content {
+            flex-direction: row;
+        }
+    }
     </style>
 
     <script>
@@ -333,7 +515,7 @@
         costCenterData.forEach(function(item) {
             const value = item[metricType];
             cardsHTML += '<div class="card">';
-            cardsHTML += '<div class="card-icon products">' + icon + '</div>';
+            cardsHTML += '<div class="card-icon">' + icon + '</div>';
             cardsHTML += '<div class="card-value">' + value + '</div>';
             cardsHTML += '<div class="card-label">' + item.display_name + '</div>';
             cardsHTML += '</div>';
@@ -348,6 +530,266 @@
             wide: true,
             indicator: 'blue'
         });
+    }
+
+    // JS logic for filter handling (copied and adapted from reports/index.html)
+    let currentDateRange = 'this_month';
+    let currentFromDate = null;
+    let currentToDate = null;
+    let currentCompany = '';
+    let currentBranch = '';
+    let isInitialLoad = true;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromDate = urlParams.get('from_date');
+        const toDate = urlParams.get('to_date');
+        const company = urlParams.get('company');
+        const branch = urlParams.get('branch');
+        let range = 'this_month';
+        if (fromDate && toDate) {
+            const today = new Date();
+            const from = new Date(fromDate);
+            const to = new Date(toDate);
+            const isToday = from.toDateString() === today.toDateString() && to.toDateString() === today.toDateString();
+            if (isToday) {
+                range = 'today';
+            } else {
+                range = 'custom';
+            }
+            currentFromDate = from;
+            currentToDate = to;
+            currentToDate.setHours(23, 59, 59);
+        }
+        setDateRange(range, false);
+        if (company) {
+            currentCompany = company;
+            const companySelect = document.getElementById('companyFilter');
+            if (companySelect) companySelect.value = company;
+        }
+        if (branch) {
+            currentBranch = branch;
+            const branchSelect = document.getElementById('branchFilter');
+            if (branchSelect) branchSelect.value = branch;
+        }
+        updateFilterDisplay();
+        isInitialLoad = false;
+    });
+
+    function setDateRange(range, shouldRefresh = true) {
+        currentDateRange = range;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const activeBtn = document.querySelector(`[data-range="${range}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
+        const dates = calculateDateRange(range);
+        currentFromDate = dates.from;
+        currentToDate = dates.to;
+        updateRangeDisplay(range, dates);
+        updateFilterDisplay();
+        if (!isInitialLoad && shouldRefresh) {
+            refreshDashboardData(dates.from, dates.to);
+        }
+    }
+
+    function setCompanyFilter() {
+        const companySelect = document.getElementById('companyFilter');
+        currentCompany = companySelect ? companySelect.value : '';
+        updateFilterDisplay();
+        if (!isInitialLoad) {
+            refreshDashboardData(currentFromDate, currentToDate);
+        }
+    }
+
+    function setBranchFilter() {
+        const branchSelect = document.getElementById('branchFilter');
+        currentBranch = branchSelect ? branchSelect.value : '';
+        updateFilterDisplay();
+        if (!isInitialLoad) {
+            refreshDashboardData(currentFromDate, currentToDate);
+        }
+    }
+
+    function updateFilterDisplay() {
+        const chipsContainer = document.getElementById('filterChips');
+        let chipsHTML = '';
+        if (currentDateRange === 'custom') {
+            const fromStr = currentFromDate ? currentFromDate.toLocaleDateString() : '';
+            const toStr = currentToDate ? currentToDate.toLocaleDateString() : '';
+            chipsHTML += `<span class='filter-chip'>Custom: ${fromStr} - ${toStr} <button class='chip-clear' onclick='clearDateFilter()' title='Clear'>×</button></span>`;
+        }
+        if (currentCompany) {
+            chipsHTML += `<span class='filter-chip'>Company: ${getCompanyName(currentCompany)} <button class='chip-clear' onclick='clearCompanyFilter()' title='Clear'>×</button></span>`;
+        }
+        if (currentBranch) {
+            chipsHTML += `<span class='filter-chip'>Branch: ${getBranchName(currentBranch)} <button class='chip-clear' onclick='clearBranchFilter()' title='Clear'>×</button></span>`;
+        }
+        chipsContainer.innerHTML = chipsHTML;
+    }
+
+    function clearDateFilter() {
+        setDateRange('this_month');
+    }
+    function clearCompanyFilter() {
+        const companySelect = document.getElementById('companyFilter');
+        if (companySelect) companySelect.value = '';
+        setCompanyFilter();
+    }
+    function clearBranchFilter() {
+        const branchSelect = document.getElementById('branchFilter');
+        if (branchSelect) branchSelect.value = '';
+        setBranchFilter();
+    }
+
+    function getCompanyName(companyValue) {
+        const companySelect = document.getElementById('companyFilter');
+        if (companySelect) {
+            const option = companySelect.querySelector(`option[value="${companyValue}"]`);
+            return option ? option.textContent : companyValue;
+        }
+        return companyValue;
+    }
+
+    function getBranchName(branchValue) {
+        const branchSelect = document.getElementById('branchFilter');
+        if (branchSelect) {
+            const option = branchSelect.querySelector(`option[value="${branchValue}"]`);
+            return option ? option.textContent : branchValue;
+        }
+        return branchValue;
+    }
+
+    function calculateDateRange(range) {
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+        switch(range) {
+            case 'today':
+                return { from: startOfDay, to: endOfDay, display: 'Today' };
+            case 'yesterday':
+                const yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
+                return { from: new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()), to: new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59), display: 'Yesterday' };
+            case 'this_week':
+                const startOfWeek = new Date(today);
+                const dayOfWeek = today.getDay();
+                startOfWeek.setDate(today.getDate() - dayOfWeek);
+                return { from: new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate()), to: endOfDay, display: 'This Week' };
+            case 'last_week':
+                const lastWeekStart = new Date(today);
+                lastWeekStart.setDate(today.getDate() - dayOfWeek - 7);
+                const lastWeekEnd = new Date(lastWeekStart);
+                lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+                return { from: new Date(lastWeekStart.getFullYear(), lastWeekStart.getMonth(), lastWeekStart.getDate()), to: new Date(lastWeekEnd.getFullYear(), lastWeekEnd.getMonth(), lastWeekEnd.getDate(), 23, 59, 59), display: 'Last Week' };
+            case 'this_month':
+                return { from: new Date(today.getFullYear(), today.getMonth(), 1), to: endOfDay, display: 'This Month' };
+            case 'last_month':
+                const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+                return { from: lastMonth, to: new Date(lastMonthEnd.getFullYear(), lastMonthEnd.getMonth(), lastMonthEnd.getDate(), 23, 59, 59), display: 'Last Month' };
+            case 'this_quarter':
+                const quarter = Math.floor(today.getMonth() / 3);
+                const quarterStart = new Date(today.getFullYear(), quarter * 3, 1);
+                return { from: quarterStart, to: endOfDay, display: 'This Quarter' };
+            case 'last_quarter':
+                const lastQuarter = Math.floor((today.getMonth() - 3) / 3);
+                const lastQuarterStart = new Date(today.getFullYear(), lastQuarter * 3, 1);
+                const lastQuarterEnd = new Date(today.getFullYear(), (lastQuarter + 1) * 3, 0);
+                return { from: lastQuarterStart, to: new Date(lastQuarterEnd.getFullYear(), lastQuarterEnd.getMonth(), lastQuarterEnd.getDate(), 23, 59, 59), display: 'Last Quarter' };
+            case 'this_year':
+                return { from: new Date(today.getFullYear(), 0, 1), to: endOfDay, display: 'This Year' };
+            case 'last_year':
+                const lastYearStart = new Date(today.getFullYear() - 1, 0, 1);
+                const lastYearEnd = new Date(today.getFullYear() - 1, 11, 31);
+                return { from: lastYearStart, to: new Date(lastYearEnd.getFullYear(), lastYearEnd.getMonth(), lastYearEnd.getDate(), 23, 59, 59), display: 'Last Year' };
+            default:
+                return { from: new Date(today.getFullYear(), today.getMonth(), 1), to: endOfDay, display: 'This Month' };
+        }
+    }
+
+    function updateRangeDisplay(range, dates) {
+        const displayText = document.getElementById('currentRangeText');
+        if (displayText) {
+            const fromStr = dates.from.toLocaleDateString();
+            const toStr = dates.to.toLocaleDateString();
+            displayText.textContent = `Showing: ${dates.display} (${fromStr} - ${toStr})`;
+        }
+    }
+
+    function showCustomDatePicker() {
+        const picker = document.getElementById('customDatePicker');
+        if (picker) {
+            picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+        }
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        document.getElementById('fromDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+        document.getElementById('toDate').value = today.toISOString().split('T')[0];
+    }
+
+    function applyCustomDateRange() {
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+        if (!fromDate || !toDate) {
+            frappe.msgprint({ title: 'Invalid Date Range', message: 'Please select both from and to dates.', indicator: 'red' });
+            return;
+        }
+        if (new Date(fromDate) > new Date(toDate)) {
+            frappe.msgprint({ title: 'Invalid Date Range', message: 'From date cannot be after to date.', indicator: 'red' });
+            return;
+        }
+        const newFromDate = new Date(fromDate);
+        const newToDate = new Date(toDate);
+        newToDate.setHours(23, 59, 59);
+        if (currentFromDate && currentToDate) {
+            const fromChanged = currentFromDate.toISOString().split('T')[0] !== fromDate;
+            const toChanged = currentToDate.toISOString().split('T')[0] !== toDate;
+            if (!fromChanged && !toChanged) {
+                document.getElementById('customDatePicker').style.display = 'none';
+                return;
+            }
+        }
+        currentFromDate = newFromDate;
+        currentToDate = newToDate;
+        const displayText = document.getElementById('currentRangeText');
+        if (displayText) {
+            displayText.textContent = `Showing: Custom Range (${fromDate} - ${toDate})`;
+        }
+        document.getElementById('customDatePicker').style.display = 'none';
+        if (!isInitialLoad) {
+            refreshDashboardData(currentFromDate, currentToDate);
+        }
+    }
+
+    function refreshDashboardData(fromDate, toDate) {
+        frappe.show_alert('Refreshing dashboard data...', 2);
+        const fromDateStr = fromDate.toISOString().split('T')[0];
+        const toDateStr = toDate.toISOString().split('T')[0];
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('from_date', fromDateStr);
+        currentUrl.searchParams.set('to_date', toDateStr);
+        if (currentCompany) {
+            currentUrl.searchParams.set('company', currentCompany);
+        } else {
+            currentUrl.searchParams.delete('company');
+        }
+        if (currentBranch) {
+            currentUrl.searchParams.set('branch', currentBranch);
+        } else {
+            currentUrl.searchParams.delete('branch');
+        }
+        // Debug: log the filters being sent
+        console.log('Refreshing with filters:', {
+            from_date: fromDateStr,
+            to_date: toDateStr,
+            company: currentCompany,
+            branch: currentBranch
+        });
+        window.location.href = currentUrl.toString();
     }
     </script>
 

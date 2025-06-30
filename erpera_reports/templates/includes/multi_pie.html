@@ -197,45 +197,6 @@
 {% if chart_id and title and data_url %}
 <div class="multi-pie-container width-{{ width|default(6) }}">
   <div class="multi-pie-title">{{ title }}</div>
-
-  <!-- Filter Container -->
-  {% if filters %}
-  <div class="filter-container" id="{{ chart_id }}_filters">
-    <button class="filter-toggle" onclick="toggleFilters_{{ chart_id }}()">
-      <i class="fa fa-filter"></i>
-    </button>
-    
-    <div class="filter-content" id="{{ chart_id }}_filter_content">
-      <div class="filter-row">
-        {% for filter in filters %}
-        <div class="filter-group">
-          <label class="filter-label">{{ filter.label }}</label>
-          {% if filter.fieldtype == 'Date' %}
-          <input type="date" class="filter-input filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}">
-          {% elif filter.fieldtype == 'Select' %}
-          <select class="filter-select filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}">
-            <option value="">All</option>
-            {% if filter.options %}
-              {% for option in filter.options %}
-              <option value="{{ option.value }}">{{ option.label }}</option>
-              {% endfor %}
-            {% endif %}
-          </select>
-          {% else %}
-          <input type="text" class="filter-input filter-control-{{ chart_id }}" id="{{ chart_id }}_{{ filter.fieldname }}" data-fieldname="{{ filter.fieldname }}" placeholder="{{ filter.label }}">
-          {% endif %}
-        </div>
-        {% endfor %}
-        
-        <div class="filter-actions">
-          <button class="filter-btn filter-btn-primary" onclick="applyFilters_{{ chart_id }}()">Apply</button>
-          <button class="filter-btn filter-btn-secondary" onclick="clearFilters_{{ chart_id }}()">Clear</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
   <div id="{{ chart_id }}_container" style="width: 100%;">
     <div class="loading-spinner">
     </div>
@@ -286,13 +247,15 @@
         gridContainer.appendChild(chartItem);
         
         // Create pie chart
-        new Chart(canvas, {
+        const chartInstance = new Chart(canvas, {
           type: 'pie',
           data: {
             labels: entityData.labels,
             datasets: [{
               data: entityData.data,
-              backgroundColor: entityData.backgroundColor
+              backgroundColor: entityData.backgroundColor,
+              // Add initial offset array (all 0)
+              offset: entityData.data.map(() => 0)
             }]
           },
           options: {
@@ -304,6 +267,25 @@
                   padding: 8,
                   font: {
                     size: 10
+                  },
+                  generateLabels: function(chart) {
+                    // Default generator
+                    const original = Chart.overrides.pie.plugins.legend.labels.generateLabels;
+                    const labels = original(chart);
+                    // Highlight hovered label
+                    const hovered = chart.$_hoveredIndex;
+                    return labels.map((label, idx) => {
+                      if (hovered === idx) {
+                        return Object.assign({}, label, {
+                          fontColor: '#1d4ed8', // blue-700
+                          fontStyle: 'bold',
+                          fillStyle: label.fillStyle,
+                          strokeStyle: label.strokeStyle,
+                          lineWidth: label.lineWidth,
+                        });
+                      }
+                      return label;
+                    });
                   }
                 }
               },
@@ -318,17 +300,22 @@
                 }
               }
             },
-            onClick: function(evt, elements) {
-              if (elements.length > 0) {
-                const idx = elements[0].index;
-                const label = this.data.labels[idx];
-                const value = this.data.datasets[0].data[idx];
-                if (typeof showDrillDownModal === 'function') {
-                  showDrillDownModal({ 
-                    label: `${entityName} - ${label}`, 
-                    value: value 
-                  }, '{{ title }}');
-                }
+            onHover: function(evt, activeEls) {
+              // Pop out the hovered segment and highlight legend label
+              const chart = this;
+              const dataset = chart.data.datasets[0];
+              if (!dataset._originalOffset) {
+                dataset._originalOffset = dataset.offset ? [...dataset.offset] : dataset.data.map(() => 0);
+              }
+              if (activeEls && activeEls.length > 0) {
+                const idx = activeEls[0].index;
+                dataset.offset = dataset.data.map((_, i) => i === idx ? 20 : 0);
+                chart.$_hoveredIndex = idx;
+                chart.update('none');
+              } else {
+                dataset.offset = [...dataset._originalOffset];
+                chart.$_hoveredIndex = null;
+                chart.update('none');
               }
             },
             responsive: true,
@@ -342,9 +329,22 @@
       container.appendChild(gridContainer);
     }
     
-    function loadMultiPieData_{{ chart_id }}(filters = {}) {
+    function loadMultiPieData_{{ chart_id }}() {
       const container = document.getElementById('{{ chart_id }}_container');
       container.innerHTML = `<div class="loading-spinner"><i class="fa fa-spinner fa-spin"></i> Loading charts...</div>`;
+
+      // Read filters from query params
+      {% set filters_json = filters|tojson if filters is defined else 'null' %}
+      var filters = {};
+      var filterDefs = {{ filters_json }};
+      if (filterDefs && Array.isArray(filterDefs)) {
+        var urlParams = new URLSearchParams(window.location.search);
+        filterDefs.forEach(function(f) {
+          if (urlParams.has(f.fieldname)) {
+            filters[f.fieldname] = urlParams.get(f.fieldname);
+          }
+        });
+      }
 
       frappe.call({
         method: "{{ data_url }}",
@@ -364,45 +364,6 @@
         }
       });
     }
-
-    {% if filters %}
-    // Filter functions
-    window.toggleFilters_{{ chart_id }} = function() {
-      const content = document.getElementById('{{ chart_id }}_filter_content');
-      content.classList.toggle('filter-hidden');
-    };
-    
-    window.applyFilters_{{ chart_id }} = function() {
-      const filters = {};
-      const filterElements = document.querySelectorAll('.filter-control-{{ chart_id }}');
-      
-      filterElements.forEach(function(el) {
-        const fieldname = el.dataset.fieldname;
-        if (fieldname) {
-          filters[fieldname] = el.value;
-        }
-      });
-      
-      loadMultiPieData_{{ chart_id }}(filters);
-    };
-    
-    window.clearFilters_{{ chart_id }} = function() {
-      const filterElements = document.querySelectorAll('.filter-control-{{ chart_id }}');
-      if (!filterElements.length) return;
-      
-      filterElements.forEach(function(input) {
-        if (input.type === 'date' || input.type === 'text') {
-          input.value = '';
-        } else if (input.tagName === 'SELECT') {
-          input.selectedIndex = 0;
-        } else {
-          input.value = '';
-        }
-      });
-      
-      applyFilters_{{ chart_id }}();
-    };
-    {% endif %}
 
     // Initial chart load
     loadMultiPieData_{{ chart_id }}();
