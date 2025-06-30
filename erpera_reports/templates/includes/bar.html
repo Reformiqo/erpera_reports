@@ -37,11 +37,12 @@
   
   /* Filter Styles */
   .filter-container {
-    background: #f8f9fa;
+    background: #b08120 !important;
     border-radius: 8px;
     padding: 0.75rem;
     margin-bottom: 1rem;
     border: 1px solid #e9ecef;
+    position: fixed;
   }
   .filter-row {
     display: flex;
@@ -51,9 +52,11 @@
   }
   .filter-group {
     display: flex;
-    flex-direction: column;
-    flex: 1;
+    flex-direction: row;
+    gap: 1rem;
     min-width: 140px;
+    margin-bottom: 0;
+    justify-content: center;
   }
   .filter-label {
     font-size: 0.75rem;
@@ -228,7 +231,7 @@
   
   <!-- Filter Container -->
   {% if filters %}
-  <div class="filter-container">
+  <!-- <div class="filter-container">
     <button class="filter-toggle" onclick="toggleFilters_{{ chart_id }}()" title="Toggle Filters">
       <div class="custom-sliders-icon"></div>
     </button>
@@ -258,7 +261,7 @@
         <button class="filter-btn filter-btn-secondary" onclick="resetFilters_{{ chart_id }}()">Reset</button>
       </div>
     </div>
-  </div>
+  </div> -->
   {% endif %}
   
   <canvas id="{{ chart_id }}" class="chart-canvas"></canvas>

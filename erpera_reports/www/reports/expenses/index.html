@@ -2,7 +2,7 @@
 
 {% block page_content %}
 <div style="display: flex;flex-direction: row;">
-    <div><h1>Stock Dashboard</h1></div>
+    <div><h1>Expenses Dashboard</h1></div>
     <div class="filter-section">
         <div class="filter-container">
             <!-- <h3 class="filter-title">🔍 Dashboard Filters</h3> -->
@@ -24,7 +24,7 @@
                         <button class="filter-btn custom" data-range="custom" onclick="showCustomDatePicker()">Custom Range</button>
                     </div>
                 </div>
-                <!-- Company and Warehouse Filters -->
+                <!-- Company and Branch Filters -->
                 <div class="filter-group">
                     <!-- <label class="filter-group-label">🏢 Company:</label> -->
                     <select id="companyFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setCompanyFilter()">
@@ -33,11 +33,11 @@
                             <option value="{{ company.value }}">{{ company.label }}</option>
                         {% endfor %}
                     </select>
-                    <!-- <label class="filter-group-label">🏪 Warehouse:</label> -->
-                    <select id="warehouseFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setWarehouseFilter()">
-                        <option value="">All Warehouses</option>
-                        {% for warehouse in warehouse_list %}
-                            <option value="{{ warehouse.value }}">{{ warehouse.label }}</option>
+                    <!-- <label class="filter-group-label">🏪 Branch:</label> -->
+                    <select id="branchFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setBranchFilter()">
+                        <option value="">All Branches</option>
+                        {% for branch in branch_list %}
+                            <option value="{{ branch.value }}">{{ branch.label }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -65,73 +65,72 @@
         </div>
     </div>
 </div>
-
     <div class="overview-cards">
-        <div class="card clickable-card" onclick="showWarehouseModal('total_items')">
+        <div class="card clickable-card">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ total_items }}</div>
-                    <div class="card-label">Total Items</div>
+                    <div class="card-value">{{ total_purchase }} </div>
+                    <div class="card-label">Total Purchase</div>
                     <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
                 </div>
-                <div class="card-icon">📦</div>
+                <div class="card-icon">💰</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showWarehouseModal('total_warehouses')">
+        <div class="card clickable-card">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ total_warehouses }} </div>
-                    <div class="card-label">Total Warehouses</div>
+                    <div class="card-value">{{ invoice_count }} </div>
+                    <div class="card-label">Total Invoices</div>
                     <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
                 </div>
-                <div class="card-icon">🏪</div>
+                <div class="card-icon">📄</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showWarehouseModal('total_stock_value')">
+        <div class="card clickable-card">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ total_stock_value }} </div>
-                    <div class="card-label">Total Stock Value</div>
-                    <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
+                    <div class="card-value">{{ supplier_count }}</div>
+                    <div class="card-label">Unique Suppliers</div>
+                </div>
+                <div class="card-icon">🏢</div>
+            </div>
+        </div>
+        <div class="card clickable-card">
+            <div class="card-content">
+                <div class="card-info">
+                    <div class="card-value">{{ avg_invoice_value }} </div>
+                    <div class="card-label">Average Purchase Value</div>
+                    <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_month }})</p>
                 </div>
                 <div class="card-icon">📊</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showWarehouseModal('low_stock_items')">
-            <div class="card-content">
-                <div class="card-info">
-                    <div class="card-value">{{ low_stock_items }} </div>
-                    <div class="card-label">Low Stock Items</div>
-                    <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_month }})</p>
-                </div>
-                <div class="card-icon">⚠️</div>
-            </div>
-        </div>
     </div>
 
+    
     <div class="section-container">
-        <h2 class="section-title">Total Stock</h2>
+        <h2 class="section-title">Total Buying</h2>
         <div class="charts-row">
-            {% set chart_id = 'warehouseWiseStock' %}
-            {% set title = 'Warehouse Wise Stock' %}
-            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_id = 'branchWiseBuying' %}
+            {% set title = 'Branch Wise Buying' %}
+            {% set backgroundColor = '#059669' %}
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_warehouse_wise_stock' %}
+            {% set data_url = 'erpera_reports.buying.get_branch_wise_buying' %}
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
-            {% set chart_id = 'companyWiseStock' %}
-            {% set title = 'Company Wise Stock' %}
-            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_id = 'companyWiseBuying' %}
+            {% set title = 'Company Wise Buying' %}
+            {% set backgroundColor = '#059669' %}
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_company_wise_stock' %}
+            {% set data_url = 'erpera_reports.buying.get_company_wise_buying' %}
             {% set filters = [
                 { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
                 { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
@@ -139,214 +138,157 @@
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
-            {% set chart_id = 'stockSummary' %}
-            {% set title = 'Stock Summary' %}
-            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_id = 'buyingSummary' %}
+            {% set title = 'Buying Summary' %}
+            {% set backgroundColor = '#059669' %}
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_stock_summary' %}
+            {% set data_url = 'erpera_reports.buying.get_buying_summary' %}
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
               { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
               { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
     </div>
 
     <div class="section-container">
-        <h2 class="section-title">Consolidated Total Stock</h2>
+        <h2 class="section-title">Consolidated Total Buying</h2>
         <div class="charts-row">
-            {% set chart_id = 'consolidatedTotalStock' %}
-            {% set title = 'Consolidated Total Stock' %}
-            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_id = 'consolidatedTotalBuying' %}
+            {% set title = 'Consolidated Total Buying' %}
+            {% set backgroundColor = '#059669' %}
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_consolidated_stock' %}
+            {% set data_url = 'erpera_reports.buying.consolidated_total_buying' %}
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
-            {% set chart_id = 'entityWiseStock' %}
-            {% set title = 'Entity Wise Stock' %}
-            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_id = 'entityWiseBuying' %}
+            {% set title = 'Entity Wise Buying' %}
+            {% set backgroundColor = '#059669' %}
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_entity_wise_stock' %}
+            {% set data_url = 'erpera_reports.buying.get_entity_summary' %}
             {% set filters = [
               { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'consolidatedExpiryStock' %}
-            {% set title = 'Consolidated Expiry Stock' %}
-            {% set backgroundColor = '#7c3aed' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_consolidated_expiry_stock' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
     </div>
 
     <div class="section-container">
-        <h2 class="section-title">Expiry Stock</h2>
+        <h2 class="section-title">Top Suppliers</h2>
         <div class="charts-row">
-            {% set chart_id = 'warehouseWiseExpiryStock' %}
-            {% set title = 'Warehouse Wise Expiry Stock' %}
-            {% set backgroundColor = '#7c3aed' %}
+            {% set chart_id = 'topSuppliersByBranch' %}
+            {% set title = 'Top Suppliers by Branch' %}
+            {% set backgroundColor = '#059669' %}
             {% set chart_type = 'bar' %}
             {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_warehouse_wise_expiry_stock' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'companyWiseExpiryStock' %}
-            {% set title = 'Company Wise Expiry Stock' %}
-            {% set backgroundColor = '#7c3aed' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_company_wise_expiry_stock' %}
+            {% set data_url = 'erpera_reports.buying.get_top_supplier_for_expenses_raw_bar' %}
             {% set filters = [
                 { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
                 { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'expiryStockSummary' %}
-            {% set title = 'Expiry Stock Summary' %}
-            {% set backgroundColor = '#7c3aed' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_expiry_stock_summary' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
-              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
     </div>
 
-    <!-- Stock Transfer Opportunities Section -->
     <div class="section-container">
-        <h2 class="section-title">Stock Transfer Opportunities</h2>
+        <h2 class="section-title">Top Buying Products</h2>
         <div class="charts-row">
-            {% set chart_id = 'expiryDemandComparison' %}
-            {% set title = 'Comparison Chart - Expiry vs Demand' %}
-            {% set backgroundColor = '#7c3aed' %}
-            {% set chart_type = 'bar' %}
+            {% set chart_id = 'topBuyingProductsByBranch' %}
+            {% set title = 'Top Buying Products by Branch' %}
+            {% set data_url = 'erpera_reports.buying.get_top_buying_products_by_branch' %}
             {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_expiry_demand_comparison' %}
             {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
-              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+                { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+                { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
             ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
+            {% include "erpera_reports/templates/includes/multi_pie.html" %}
+
+            {% set chart_id = 'topBuyingProductsByCompany' %}
+            {% set title = 'Top Buying Products by Company' %}
+            {% set data_url = 'erpera_reports.buying.get_top_buying_products_by_company' %}
+            {% set width = 12 %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+                { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
+                { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/multi_pie.html" %}
         </div>
     </div>
 
-    <!-- Consolidate Expired Items Section -->
     <div class="section-container">
-        <h2 class="section-title">Consolidate Expired Items</h2>
+        <h2 class="section-title">Most Expenses Head</h2>
         <div class="charts-row">
-            {% set chart_id = 'consolidatedExpiredItems' %}
-            {% set title = 'All Company Expired Stock - Bar Chart' %}
-            {% set backgroundColor = '#dc2626' %}
-            {% set chart_type = 'bar' %}
+            {% set chart_id = 'mostExpensesHeadByBranch' %}
+            {% set title = 'Most Expenses Head by Branch' %}
+            {% set data_url = 'erpera_reports.buying.get_most_expenses_head_by_branch' %}
             {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_consolidated_expired_items' %}
             {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
-              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+                { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
             ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
+            {% include "erpera_reports/templates/includes/multi_pie.html" %}
+
+            {% set chart_id = 'mostExpensesHeadByCompany' %}
+            {% set title = 'Most Expenses Head by Company' %}
+            {% set data_url = 'erpera_reports.buying.get_most_expenses_head_by_company' %}
+            {% set width = 12 %}
+            {% set filters = [
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+                { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
+            ] %}
+            {% include "erpera_reports/templates/includes/multi_pie.html" %}
         </div>
     </div>
 
-    <!-- In & Out Quantity Movement Section -->
     <div class="section-container">
-        <h2 class="section-title">In & Out Quantity Movement</h2>
+        <h2 class="section-title">Consolidate Most Purchase Head</h2>
         <div class="charts-row">
-            {% set chart_id = 'branchWiseInOutQuantity' %}
-            {% set title = 'Branch Wise In & Out Quantity Movement' %}
-            {% set backgroundColor = '#7c3aed' %}
-            {% set chart_type = 'bar' %}
+            {% set chart_id = 'consolidateMostPurchaseHead' %}
+            {% set title = 'Top 10 Expense Categories Overall' %}
+            {% set backgroundColor = '#059669' %}
+            {% set chart_type = 'pie' %}
             {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_branch_wise_in_out_quantity' %}
+            {% set data_url = 'erpera_reports.buying.get_consolidate_most_purchase_head' %}
             {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
-              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
+                { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+                { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+                { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+                { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+                { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
             ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'companyWiseInOutQuantity' %}
-            {% set title = 'Company Wise In & Out Quantity Movement' %}
-            {% set backgroundColor = '#7c3aed' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_company_wise_in_out_quantity' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
-              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'consolidateInOutQuantity' %}
-            {% set title = 'Consolidate In & Out Quantity - All Companies & Branches' %}
-            {% set backgroundColor = '#7c3aed' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_consolidate_in_out_quantity' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Item", "fieldtype": "Select", "fieldname": "item", "options": item_list },
-              { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Warehouse", "fieldtype": "Select", "fieldname": "warehouse", "options": warehouse_list }
-            ] %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
+            {% include "erpera_reports/templates/includes/doughnut.html" %}
         </div>
     </div>
 
@@ -367,7 +309,7 @@
         color: #1a1a1a;
         margin-bottom: 1.5rem;
         padding-bottom: 0.5rem;
-        border-bottom: 2px solid #7c3aed;
+        border-bottom: 2px solid #059669;
     }
 
     .charts-row {
@@ -387,19 +329,19 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
-    .warehouse-modal-content {
+    .cost-center-modal-content {
         max-height: 70vh;
         overflow-y: auto;
     }
 
-    .warehouse-modal-content .overview-cards {
+    .cost-center-modal-content .overview-cards {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 1rem;
         padding: 1rem 0;
     }
 
-    .warehouse-modal-content .card {
+    .cost-center-modal-content .card {
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 8px;
@@ -409,34 +351,33 @@
         transition: all 0.3s ease;
     }
 
-    .warehouse-modal-content .card:hover {
+    .cost-center-modal-content .card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
-    .warehouse-modal-content .card-icon {
+    .cost-center-modal-content .card-icon {
         font-size: 2rem;
         margin-bottom: 0.5rem;
     }
 
-    .warehouse-modal-content .card-value {
+    .cost-center-modal-content .card-value {
         font-size: 1.5rem;
         font-weight: 700;
         color: #1f2937;
         margin-bottom: 0.5rem;
     }
 
-    .warehouse-modal-content .card-label {
+    .cost-center-modal-content .card-label {
         font-size: 0.875rem;
         color: #6b7280;
         font-weight: 500;
     }
-
     /* Filter Section Styles (copied from reports/index.html) */
     .filter-section {
         padding: 1.5rem;
         margin-bottom: 10.5%;
-        margin-left: 40%;
+        margin-left: 35%;
     }
     .filter-container { max-width: 100%; }
     .filter-title { font-size: 1.25rem; font-weight: 600; color: #1a1a1a; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
@@ -552,29 +493,29 @@
     </style>
 
     <script>
-    // Store warehouse data from server
-    const warehouseData = JSON.parse('{{ warehouse_details | tojson | safe }}');
+    // Store cost center data from server
+    const costCenterData = JSON.parse('{{ cost_center_details | tojson | safe }}');
 
-    function showWarehouseModal(metricType) {
+    function showCostCenterModal(metricType) {
         const metricTitles = {
-            'total_items': 'Total Items by Warehouse',
-            'total_warehouses': 'Total Warehouses by Warehouse', 
-            'total_stock_value': 'Total Stock Value by Warehouse',
-            'low_stock_items': 'Low Stock Items by Warehouse'
+            'total_purchase': 'Total Purchase by Cost Center',
+            'invoice_count': 'Total Invoices by Cost Center', 
+            'supplier_count': 'Unique Suppliers by Cost Center',
+            'avg_invoice_value': 'Average Purchase Value by Cost Center'
         };
         
         const metricLabels = {
-            'total_items': 'Total Items',
-            'total_warehouses': 'Total Warehouses',
-            'total_stock_value': 'Total Stock Value', 
-            'low_stock_items': 'Low Stock Items'
+            'total_purchase': 'Total Purchase',
+            'invoice_count': 'Total Invoices',
+            'supplier_count': 'Unique Suppliers', 
+            'avg_invoice_value': 'Average Purchase Value'
         };
         
         const metricIcons = {
-            'total_items': '📦',
-            'total_warehouses': '🏪',
-            'total_stock_value': '📊',
-            'low_stock_items': '⚠️'
+            'total_purchase': '💰',
+            'invoice_count': '📄',
+            'supplier_count': '🏢',
+            'avg_invoice_value': '📊'
         };
         
         const title = metricTitles[metricType];
@@ -582,20 +523,16 @@
         const icon = metricIcons[metricType];
         
         // Create number cards HTML
-        let cardsHTML = '<div class="warehouse-modal-content">';
+        let cardsHTML = '<div class="cost-center-modal-content">';
         cardsHTML += '<div class="overview-cards">';
         
-        // Add number cards for each warehouse
-        warehouseData.forEach(function(item) {
+        // Add number cards for each cost center
+        costCenterData.forEach(function(item) {
             const value = item[metricType];
             cardsHTML += '<div class="card">';
-            cardsHTML += '<div class="card-content">';
-            cardsHTML += '<div class="card-info">';
+            cardsHTML += '<div class="card-icon">' + icon + '</div>';
             cardsHTML += '<div class="card-value">' + value + '</div>';
             cardsHTML += '<div class="card-label">' + item.display_name + '</div>';
-            cardsHTML += '</div>';
-            cardsHTML += '<div class="card-icon">' + icon + '</div>';
-            cardsHTML += '</div>';
             cardsHTML += '</div>';
         });
         
@@ -610,12 +547,12 @@
         });
     }
 
-    // Filter logic for stock dashboard
+    // JS logic for filter handling (copied and adapted from reports/index.html)
     let currentDateRange = 'this_month';
     let currentFromDate = null;
     let currentToDate = null;
     let currentCompany = '';
-    let currentWarehouse = '';
+    let currentBranch = '';
     let isInitialLoad = true;
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -623,7 +560,7 @@
         const fromDate = urlParams.get('from_date');
         const toDate = urlParams.get('to_date');
         const company = urlParams.get('company');
-        const warehouse = urlParams.get('warehouse');
+        const branch = urlParams.get('branch');
         let range = 'this_month';
         if (fromDate && toDate) {
             const today = new Date();
@@ -645,10 +582,10 @@
             const companySelect = document.getElementById('companyFilter');
             if (companySelect) companySelect.value = company;
         }
-        if (warehouse) {
-            currentWarehouse = warehouse;
-            const warehouseSelect = document.getElementById('warehouseFilter');
-            if (warehouseSelect) warehouseSelect.value = warehouse;
+        if (branch) {
+            currentBranch = branch;
+            const branchSelect = document.getElementById('branchFilter');
+            if (branchSelect) branchSelect.value = branch;
         }
         updateFilterDisplay();
         isInitialLoad = false;
@@ -682,9 +619,9 @@
         }
     }
 
-    function setWarehouseFilter() {
-        const warehouseSelect = document.getElementById('warehouseFilter');
-        currentWarehouse = warehouseSelect ? warehouseSelect.value : '';
+    function setBranchFilter() {
+        const branchSelect = document.getElementById('branchFilter');
+        currentBranch = branchSelect ? branchSelect.value : '';
         updateFilterDisplay();
         if (!isInitialLoad) {
             refreshDashboardData(currentFromDate, currentToDate);
@@ -702,8 +639,8 @@
         if (currentCompany) {
             chipsHTML += `<span class='filter-chip'>Company: ${getCompanyName(currentCompany)} <button class='chip-clear' onclick='clearCompanyFilter()' title='Clear'>×</button></span>`;
         }
-        if (currentWarehouse) {
-            chipsHTML += `<span class='filter-chip'>Warehouse: ${getWarehouseName(currentWarehouse)} <button class='chip-clear' onclick='clearWarehouseFilter()' title='Clear'>×</button></span>`;
+        if (currentBranch) {
+            chipsHTML += `<span class='filter-chip'>Branch: ${getBranchName(currentBranch)} <button class='chip-clear' onclick='clearBranchFilter()' title='Clear'>×</button></span>`;
         }
         chipsContainer.innerHTML = chipsHTML;
     }
@@ -716,10 +653,10 @@
         if (companySelect) companySelect.value = '';
         setCompanyFilter();
     }
-    function clearWarehouseFilter() {
-        const warehouseSelect = document.getElementById('warehouseFilter');
-        if (warehouseSelect) warehouseSelect.value = '';
-        setWarehouseFilter();
+    function clearBranchFilter() {
+        const branchSelect = document.getElementById('branchFilter');
+        if (branchSelect) branchSelect.value = '';
+        setBranchFilter();
     }
 
     function getCompanyName(companyValue) {
@@ -731,13 +668,13 @@
         return companyValue;
     }
 
-    function getWarehouseName(warehouseValue) {
-        const warehouseSelect = document.getElementById('warehouseFilter');
-        if (warehouseSelect) {
-            const option = warehouseSelect.querySelector(`option[value="${warehouseValue}"]`);
-            return option ? option.textContent : warehouseValue;
+    function getBranchName(branchValue) {
+        const branchSelect = document.getElementById('branchFilter');
+        if (branchSelect) {
+            const option = branchSelect.querySelector(`option[value="${branchValue}"]`);
+            return option ? option.textContent : branchValue;
         }
-        return warehouseValue;
+        return branchValue;
     }
 
     function calculateDateRange(range) {
@@ -855,17 +792,17 @@
         } else {
             currentUrl.searchParams.delete('company');
         }
-        if (currentWarehouse) {
-            currentUrl.searchParams.set('warehouse', currentWarehouse);
+        if (currentBranch) {
+            currentUrl.searchParams.set('branch', currentBranch);
         } else {
-            currentUrl.searchParams.delete('warehouse');
+            currentUrl.searchParams.delete('branch');
         }
         // Debug: log the filters being sent
         console.log('Refreshing with filters:', {
             from_date: fromDateStr,
             to_date: toDateStr,
             company: currentCompany,
-            warehouse: currentWarehouse
+            branch: currentBranch
         });
         window.location.href = currentUrl.toString();
     }

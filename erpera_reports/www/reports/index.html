@@ -2,43 +2,42 @@
 
 {% block page_content %}
     <!-- Date Filter Section -->
+<div style="display: flex;flex-direction: row;">
+    <div><h1>Home Dashboard</h1></div>
     <div class="filter-section">
         <div class="filter-container">
-            <h3 class="filter-title">🔍 Dashboard Filters</h3>
+            <!-- <h3 class="filter-title">🔍 Dashboard Filters</h3> -->
             
             <!-- All Filters in One Line -->
             <div class="filter-row-main">
                 <!-- Date Range Filter -->
                 <div class="filter-group">
-                    <label class="filter-group-label">📅 Date Range:</label>
+                    <!-- <label class="filter-group-label">📅 Date Range:</label> -->
                     <div class="filter-buttons">
-                        <button class="filter-btn active" data-range="today" onclick="setDateRange('today')">Today</button>
-                        <button class="filter-btn" data-range="yesterday" onclick="setDateRange('yesterday')">Yesterday</button>
-                        <button class="filter-btn" data-range="this_week" onclick="setDateRange('this_week')">This Week</button>
-                        <button class="filter-btn" data-range="last_week" onclick="setDateRange('last_week')">Last Week</button>
-                        <button class="filter-btn" data-range="this_month" onclick="setDateRange('this_month')">This Month</button>
-                        <button class="filter-btn" data-range="last_month" onclick="setDateRange('last_month')">Last Month</button>
-                        <button class="filter-btn" data-range="this_quarter" onclick="setDateRange('this_quarter')">This Quarter</button>
-                        <button class="filter-btn" data-range="last_quarter" onclick="setDateRange('last_quarter')">Last Quarter</button>
-                        <button class="filter-btn" data-range="this_year" onclick="setDateRange('this_year')">This Year</button>
-                        <button class="filter-btn" data-range="last_year" onclick="setDateRange('last_year')">Last Year</button>
+                        <button class="filter-btn active" data-range="today" onclick="setDateRange('today')">1D</button>
+                        <!-- <button class="filter-btn" data-range="yesterday" onclick="setDateRange('yesterday')">Yesterday</button> -->
+                        <button class="filter-btn" data-range="this_week" onclick="setDateRange('this_week')">1W</button>
+                        <!-- <button class="filter-btn" data-range="last_week" onclick="setDateRange('last_week')">Last Week</button> -->
+                        <button class="filter-btn" data-range="this_month" onclick="setDateRange('this_month')">1M</button>
+                        <!-- <button class="filter-btn" data-range="last_month" onclick="setDateRange('last_month')">Last Month</button> -->
+                        <button class="filter-btn" data-range="this_quarter" onclick="setDateRange('this_quarter')">3M</button>
+                        <button class="filter-btn" data-range="last_quarter" onclick="setDateRange('last_quarter')">6M</button>
+                        <button class="filter-btn" data-range="this_year" onclick="setDateRange('this_year')">1Y</button>
+                        <!-- <button class="filter-btn" data-range="last_year" onclick="setDateRange('last_year')">Last Year</button> -->
                         <button class="filter-btn custom" data-range="custom" onclick="showCustomDatePicker()">Custom Range</button>
                     </div>
                 </div>
                 
                 <!-- Company and Branch Filters -->
                 <div class="filter-group">
-                    <label class="filter-group-label">🏢 Company:</label>
+                    <!-- <label class="filter-group-label">🏢 Company:</label> -->
                     <select id="companyFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setCompanyFilter()">
                         <option value="">All Companies</option>
                         {% for company in company_list %}
                             <option value="{{ company.value }}">{{ company.label }}</option>
                         {% endfor %}
                     </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label class="filter-group-label">🏪 Branch:</label>
+                    <!-- <label class="filter-group-label">🏪 Branch:</label> -->
                     <select id="branchFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setBranchFilter()">
                         <option value="">All Branches</option>
                         {% for branch in branch_list %}
@@ -46,6 +45,7 @@
                         {% endfor %}
                     </select>
                 </div>
+                
             </div>
 
             <div class="custom-date-picker" id="customDatePicker" style="display: none;">
@@ -68,20 +68,20 @@
             </div> 
         </div>
     </div>
-
+</div>
     <div class="overview-cards">
         <!-- Sales Area -->
-        <div class="card clickable-card" onclick="showSalesModal('total_sales')">
+        <div class="card clickable-card" onclick="showSalesModal('total_sales')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ summary_cards.sales.total_sales or 0 }}</div>
                     <div class="card-label">Total Sales</div>
-                    <p style="color: #3b82f6; font-size: 12px; font-weight: 500;">(This Month)</p>
+                    <p style="color: #003489; font-size: 16px; font-weight: bold;">(This Month)</p>
                 </div>
-                <div class="card-icon">💸</div>
+                <div class="card-icon">₹</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showSalesModal('total_invoices')">
+        <!-- <div class="card clickable-card" onclick="showSalesModal('total_invoices')">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ summary_cards.sales.total_invoices or 0 }}</div>
@@ -100,19 +100,19 @@
                 </div>
                 <div class="card-icon">📊</div>
             </div>
-        </div>
+        </div> -->
         <!-- Purchase Area -->
-        <div class="card clickable-card" onclick="showPurchaseModal('total_amount')">
+        <div class="card clickable-card" onclick="showPurchaseModal('total_amount')" style="background: linear-gradient(135deg, #ffc0c0 0%, #ff0000f5 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ summary_cards.purchase.total_amount or 0 }}</div>
                     <div class="card-label">Total Purchase</div>
-                    <p style="color: #10b981; font-size: 12px; font-weight: 500;">(This Month)</p>
+                    <p style="color: #003489; font-size: 16px; font-weight: bold;">(This Month)</p>
                 </div>
                 <div class="card-icon">💰</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showPurchaseModal('unique_suppliers')">
+        <!-- <div class="card clickable-card" onclick="showPurchaseModal('unique_suppliers')">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ summary_cards.purchase.unique_suppliers or 0 }}</div>
@@ -121,19 +121,19 @@
                 </div>
                 <div class="card-icon">👥</div>
             </div>
-        </div>
-        <div class="card clickable-card" onclick="showPurchaseModal('total_outstanding')">
+        </div> -->
+        <div class="card clickable-card" onclick="showPurchaseModal('total_outstanding')" style="background: linear-gradient(135deg, #e9c0ff 0%, #67469b 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ summary_cards.purchase.total_outstanding or 0 }}</div>
-                    <div class="card-label">Outstanding Purchase</div>
-                    <p style="color: #10b981; font-size: 12px; font-weight: 500;">(Due)</p>
+                    <div class="card-label">Total Expense</div>
+                    <p style="color: #003489; font-size: 16px; font-weight: bold;">(This Month)</p>
                 </div>
-                <div class="card-icon">📦</div>
+                <div class="card-icon">💵</div>
             </div>
         </div>
         <!-- Stock Area -->
-        <div class="card clickable-card" onclick="showStockModal('total_skus')">
+        <!-- <div class="card clickable-card" onclick="showStockModal('total_skus')">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ summary_cards.stock.total_skus or 0 }}</div>
@@ -142,18 +142,18 @@
                 </div>
                 <div class="card-icon">📦</div>
             </div>
-        </div>
-        <div class="card clickable-card" onclick="showStockModal('total_stock_value')">
+        </div> -->
+        <div class="card clickable-card" onclick="showStockModal('total_stock_value')" style="background: linear-gradient(135deg, #f5ba7e 0%, #7b4a0f 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ summary_cards.stock.total_stock_value or 0 }}</div>
                     <div class="card-label">Stock Value</div>
-                    <p style="color: #f59e0b; font-size: 12px; font-weight: 500;">(Current)</p>
+                    <p style="color: #003489; font-size: 16px; font-weight: bold;">(This Month)</p>
                 </div>
-                <div class="card-icon">🏷️</div>
+                <div class="card-icon">📦</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showStockModal('efficiency_score')">
+        <!-- <div class="card clickable-card" onclick="showStockModal('efficiency_score')">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ summary_cards.stock.efficiency_score or 0 }}%</div>
@@ -162,7 +162,7 @@
                 </div>
                 <div class="card-icon">✅</div>
             </div>
-        </div>
+        </div> -->
     </div>
 
  
@@ -357,11 +357,9 @@
     <style>
     /* Filter Section Styles */
     .filter-section {
-        background: #fff;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        margin-bottom: 2rem;
         padding: 1.5rem;
+        margin-bottom: 10.5%;
+        margin-left: 40%;
     }
 
     .filter-container {
@@ -380,18 +378,19 @@
 
     .filter-row-main {
         display: flex;
-        gap: 1.5rem;
+        flex-flow: column;
+        gap: 0.5rem;
         margin-bottom: 1rem;
         align-items: center;
-        flex-wrap: nowrap;
     }
 
     .filter-group {
-        margin-bottom: 0;
-        flex: none;
         display: flex;
-        flex-direction: column;
-        justify-content: center;
+    flex-direction: row;
+    gap: 1rem;
+    min-width: 140px;
+    margin-bottom: 0;
+    justify-content: center;
     }
 
     .filter-group-label {
@@ -578,7 +577,7 @@
     .section-container {
         margin: 2rem 0;
         padding: 1rem;
-        background: #fff;
+        background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
@@ -616,7 +615,7 @@
 
     .dashboard-modal-content .overview-cards {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 1rem;
         padding: 1rem 0;
     }
@@ -731,7 +730,7 @@
 
     .overview-cards {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 1rem;
         margin-bottom: 1rem;
     }
@@ -748,6 +747,7 @@
         flex: 1 1 0;
         transition: all 0.3s ease;
         position: relative;
+        z-index: -1;
     }
     .card-content {
         display: flex;
@@ -772,19 +772,22 @@
         line-height: 1.1;
     }
     .card-label {
-        font-size: 1rem;
-        color: #6b7280;
-        font-weight: 500;
-        margin-bottom: 0.25rem;
+        color: #434c5e;
+    font-weight: bold;
+    font-size: 28px;
+    margin-bottom: 0.25rem;
     }
     .card-icon {
-        font-size: 3.5rem;
-        margin-left: 1.5rem;
+        font-size: 4.5rem;
         display: flex;
         align-items: center;
-        justify-content: flex-end;
         flex-shrink: 0;
         height: 100%;
+        background: rgba(0, 0, 0, .1);
+    border-radius: 54px;
+    width: 115px;
+    justify-content: center;
+    color: white;
     }
     @media (max-width: 900px) {
         .overview-cards {
