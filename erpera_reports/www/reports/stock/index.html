@@ -72,7 +72,7 @@
                 <div class="card-info">
                     <div class="card-value">{{ total_items }}</div>
                     <div class="card-label">Total Items</div>
-                    <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
+                    <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
                 </div>
                 <div class="card-icon">📦</div>
             </div>
@@ -82,7 +82,7 @@
                 <div class="card-info">
                     <div class="card-value">{{ total_warehouses }} </div>
                     <div class="card-label">Total Warehouses</div>
-                    <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
+                    <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
                 </div>
                 <div class="card-icon">🏪</div>
             </div>
@@ -92,7 +92,7 @@
                 <div class="card-info">
                     <div class="card-value">{{ total_stock_value }} </div>
                     <div class="card-label">Total Stock Value</div>
-                    <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_fiscal_year }})</p>
+                    <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
                 </div>
                 <div class="card-icon">📊</div>
             </div>
@@ -102,7 +102,7 @@
                 <div class="card-info">
                     <div class="card-value">{{ low_stock_items }} </div>
                     <div class="card-label">Low Stock Items</div>
-                    <p style="color: #dc2626; font-size: 12px; font-weight: 500;">({{ current_month }})</p>
+                    <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_month }})</p>
                 </div>
                 <div class="card-icon">⚠️</div>
             </div>
@@ -356,7 +356,7 @@
     .section-container {
         margin: 2rem 0;
         padding: 1rem;
-        background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);
+        background: linear-gradient(135deg, #ffebc0 0%, #7c4a09 100%);
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
@@ -500,6 +500,7 @@
         transition: all 0.3s ease;
         position: relative;
         z-index: -1;
+        background: linear-gradient(135deg, #f5ba7e 0%, #7b4a0f 100%);
     }
     .card-content {
         display: flex;
@@ -524,19 +525,22 @@
         line-height: 1.1;
     }
     .card-label {
-        font-size: 1rem;
-        color: #6b7280;
-        font-weight: 500;
-        margin-bottom: 0.25rem;
+        color: #434c5e;
+    font-weight: bold;
+    font-size: 28px;
+    margin-bottom: 0.25rem;
     }
     .card-icon {
-        font-size: 3.5rem;
-        margin-left: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        flex-shrink: 0;
-        height: 100%;
+        font-size: 4.5rem;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 100%;
+    background: rgba(0, 0, 0, .1);
+    border-radius: 54px;
+    width: 115px;
+    justify-content: center;
+    color: white;
     }
     @media (max-width: 900px) {
         .overview-cards {
