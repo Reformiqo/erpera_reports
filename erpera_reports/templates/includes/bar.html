@@ -37,11 +37,12 @@
   
   /* Filter Styles */
   .filter-container {
-    background: #f8f9fa;
+    background: #b08120 !important;
     border-radius: 8px;
     padding: 0.75rem;
     margin-bottom: 1rem;
     border: 1px solid #e9ecef;
+    position: fixed;
   }
   .filter-row {
     display: flex;
@@ -51,9 +52,11 @@
   }
   .filter-group {
     display: flex;
-    flex-direction: column;
-    flex: 1;
+    flex-direction: row;
+    gap: 1rem;
     min-width: 140px;
+    margin-bottom: 0;
+    justify-content: center;
   }
   .filter-label {
     font-size: 0.75rem;
@@ -190,11 +193,11 @@
   .charts-row > .chart-container {
     min-width: 260px;
   }
-  .charts-row > .width-12 { flex: 0 0 100%; max-width: 100%; }
-  .charts-row > .width-6  { flex: 0 0 50%;  max-width: 50%; }
-  .charts-row > .width-4  { flex: 0 0 33.333%; max-width: 33.333%; }
-  .charts-row > .width-3  { flex: 0 0 25%;  max-width: 25%; }
-  .charts-row > .width-2  { flex: 0 0 16.666%; max-width: 16.666%; }
+  .charts-row > .width-12 { flex: 0 0 100%; max-width: 100%; background: linear-gradient(135deg, #e8ff91 0%, #ffffff 100%);}
+  .charts-row > .width-6  { flex: 0 0 50%;  max-width: 50%; background: linear-gradient(135deg, #e8ff91 0%, #ffffff 100%);}
+  .charts-row > .width-4  { flex: 0 0 33.333%; max-width: 33.333%; background: linear-gradient(135deg, #e8ff91 0%, #ffffff 100%);}
+  .charts-row > .width-3  { flex: 0 0 25%;  max-width: 25%; background: linear-gradient(135deg, #e8ff91 0%, #ffffff 100%);}
+  .charts-row > .width-2  { flex: 0 0 16.666%; max-width: 16.666%; background: linear-gradient(135deg, #e8ff91 0%, #ffffff 100%);}
   @media (max-width: 1200px) {
     .charts-row > .width-12,
     .charts-row > .width-6,
@@ -203,6 +206,7 @@
     .charts-row > .width-2 {
       flex: 0 0 100%;
       max-width: 100%;
+      background: linear-gradient(135deg, #e8ff91 0%, #ffffff 100%);
     }
   }
   @media (max-width: 992px) {
@@ -228,7 +232,7 @@
   
   <!-- Filter Container -->
   {% if filters %}
-  <div class="filter-container">
+  <!-- <div class="filter-container">
     <button class="filter-toggle" onclick="toggleFilters_{{ chart_id }}()" title="Toggle Filters">
       <div class="custom-sliders-icon"></div>
     </button>
@@ -258,7 +262,7 @@
         <button class="filter-btn filter-btn-secondary" onclick="resetFilters_{{ chart_id }}()">Reset</button>
       </div>
     </div>
-  </div>
+  </div> -->
   {% endif %}
   
   <canvas id="{{ chart_id }}" class="chart-canvas"></canvas>

@@ -94,11 +94,12 @@
 
   /* Filter Styles */
   .filter-container {
-    background: #f8f9fa;
+    background: #b08120 !important;
     border-radius: 8px;
     padding: 0.75rem;
     margin-bottom: 1rem;
     border: 1px solid #e9ecef;
+    position: fixed;
   }
   .filter-row {
     display: flex;
@@ -108,9 +109,11 @@
   }
   .filter-group {
     display: flex;
-    flex-direction: column;
-    flex: 1;
+    flex-direction: row;
+    gap: 1rem;
     min-width: 140px;
+    margin-bottom: 0;
+    justify-content: center;
   }
   .filter-label {
     font-size: 0.75rem;

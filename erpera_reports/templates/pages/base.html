@@ -18,7 +18,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #e9eef6;
+            background: linear-gradient(302deg, #ffcb68 0%, #fff22f 100%);
             min-height: 100vh;
         }
 
@@ -30,7 +30,7 @@
 
         .sidebar {
             width: 250px;
-            background: linear-gradient(135deg, #22304a 0%, #2c3e50 100%);
+            background: linear-gradient(135deg, #ff6e00 0%, #be8409 100%);
             color: white;
             padding: 20px 0;
             backdrop-filter: blur(10px);
@@ -45,7 +45,7 @@
         .profile {
             text-align: center;
             padding: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid #18580c;
             margin-bottom: 20px;
         }
 
@@ -53,7 +53,7 @@
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            background: #3498db;
+            background: #279015;
             margin: 0 auto 10px;
             display: flex;
             align-items: center;
@@ -74,6 +74,7 @@
 
         .nav-menu {
             list-style: none;
+            font-size: larger;
         }
 
          .nav-item {
@@ -82,11 +83,14 @@
             transition: all 0.3s ease;
             border-left: 3px solid transparent;
             color: white;
+            font-size: larger;
         }
 
         .nav-item:hover, .nav-item.active {
-            background: rgba(32, 13, 136, 0.925);
+            background: linear-gradient(135deg, #fff200 0%, #be8409 100%);
             border-left-color: #3498db;
+            font-weight: bold;
+            border-radius: 0px 89px 21px;
         }
 
         .nav-item i {
@@ -97,12 +101,8 @@
         .main-content {
             flex: 1;
             margin-left: 250px;
-            padding: 32px 32px 32px 32px;
-            background: #fff;
-            border-radius: 18px;
-            box-shadow: 0 4px 32px 0 rgba(44,62,80,0.10);
+            padding: 0px 32px 32px 32px;
             min-height: 100vh;
-            margin-top: 24px;
             margin-bottom: 24px;
         }
 
@@ -152,6 +152,7 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.08);
             border: 1px solid #f0f0f0;
             transition: all 0.3s ease;
+            z-index: -1;
         }
 
         .card:hover {
@@ -336,14 +337,15 @@
         <div class="sidebar">
             <div class="profile">
                 <div class="profile-img">JRFB</div>
-                <h3>{{frappe.session.user}}</h3>
+                <h3 style="color: white;margin: 0px;">{{frappe.session.user}}</h3>
             </div>
             <ul class="nav-menu">
 
-                <a href="/reports/index"><li class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">🏠 Dashboard</li></a>
-                <a href="/reports/selling/index"><li class="nav-item {% if active_page == 'selling' %}active{% endif %}">🛒 Selling</li></a>
-                <a href="/reports/buying/index"><li class="nav-item {% if active_page == 'buying' %}active{% endif %}">📋 Buying</li></a>
-                <a href="/reports/stock/index"><li class="nav-item {% if active_page == 'stock' %}active{% endif %}">📦 Stock</li></a>
+                <a href="/reports/index" style="text-decoration: none !important;"><li class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">🏠 Dashboard</li></a>
+                <a href="/reports/selling/index" style="text-decoration: none !important;"><li class="nav-item {% if active_page == 'selling' %}active{% endif %}">&nbsp;&nbsp;₹&nbsp; Sales</li></a>
+                <a href="/reports/buying/index" style="text-decoration: none !important;"><li class="nav-item {% if active_page == 'buying' %}active{% endif %}">💰 Purchase</li></a>
+                <a href="/reports/expenses/index" style="text-decoration: none !important;"><li class="nav-item {% if active_page == 'expenses' %}active{% endif %}">💵 Expense</li></a>
+                <a href="/reports/stock/index" style="text-decoration: none !important;"><li class="nav-item {% if active_page == 'stock' %}active{% endif %}">📦 Stock</li></a>
             </ul>
         </div>
 
