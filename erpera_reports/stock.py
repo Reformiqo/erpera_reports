@@ -38,8 +38,12 @@ def apply_filters_to_query(base_query, filters):
         conditions.append("sle.company = %(company)s")
         params['company'] = filters['company']
     
-    # Warehouse filter
-    if filters.get('warehouse'):
+    # Branch filter (maps to warehouse in stock context)
+    if filters.get('branch'):
+        conditions.append("LOWER(TRIM(sle.warehouse)) = LOWER(TRIM(%(branch)s))")
+        params['branch'] = filters['branch'].strip()
+    # Only add warehouse filter if branch is not present
+    elif filters.get('warehouse'):
         conditions.append("sle.warehouse = %(warehouse)s")
         params['warehouse'] = filters['warehouse']
     
