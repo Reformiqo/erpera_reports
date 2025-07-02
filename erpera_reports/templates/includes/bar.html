@@ -351,21 +351,27 @@
     };
     
     window.applyFilters_{{ chart_id }} = function() {
+      // Get filters from UI controls
       const filters = {};
       const filterElements = document.querySelectorAll(`.filter-control-{{ chart_id }}`);
-      
       filterElements.forEach(function(el) {
         const fieldname = el.dataset.fieldname;
         if (fieldname && el.value) {
           filters[fieldname] = el.value;
         }
       });
-      
-      // Load chart data with filters
+      // Merge with query params (decode values)
+      const queryFiltersRaw = getQueryParams();
+      const queryFilters = {};
+      Object.keys(queryFiltersRaw).forEach(function(key) {
+        queryFilters[key] = decodeQueryParam(queryFiltersRaw[key]);
+      });
+      const mergedFilters = { ...queryFilters, ...filters };
+      // Load chart data with merged filters
       {% if data_url %}
       frappe.call({
         method: "{{ data_url }}",
-        args: { filters: filters },
+        args: { filters: mergedFilters },
         callback: function(r) {
           if (r.message) {
             if (r.message.datasets) {
@@ -408,17 +414,17 @@
     };
     {% endif %}
     
-    // Initial chart load with default filters
+    // Initial chart load with default filters (now using query params)
     {% if data_url %}
-      // Get default filters
-      const defaultFilters = {
-        from_date: '{{ frappe.utils.getdate().replace(day=1).strftime("%Y-%m-%d") }}',
-        to_date: '{{ frappe.utils.today() }}'
-      };
-      
+      // Get filters from query params (decode values)
+      const queryFiltersRaw = getQueryParams();
+      const queryFilters = {};
+      Object.keys(queryFiltersRaw).forEach(function(key) {
+        queryFilters[key] = decodeQueryParam(queryFiltersRaw[key]);
+      });
       frappe.call({
         method: "{{ data_url }}",
-        args: { filters: defaultFilters },
+        args: { filters: queryFilters },
         callback: function(r) {
           if (r.message) {
             if (r.message.datasets) {
@@ -735,5 +741,20 @@ function showDrillDownModal(clickData, chartTitle) {
     }
   });
 }
+</script>
+
+<script>
+  // Utility to get query params as an object
+  function getQueryParams() {
+    const params = {};
+    window.location.search.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(str, key, value) {
+      params[key] = value;
+    });
+    return params;
+  }
+  // Utility to decode query param values (handles + and percent encoding)
+  function decodeQueryParam(val) {
+    return decodeURIComponent((val || '').replace(/\+/g, ' '));
+  }
 </script>
 {% endif %}

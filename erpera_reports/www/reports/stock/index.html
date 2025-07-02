@@ -682,7 +682,14 @@
         currentCompany = companySelect ? companySelect.value : '';
         updateFilterDisplay();
         if (!isInitialLoad) {
-            refreshDashboardData(currentFromDate, currentToDate);
+            const urlParams = new URLSearchParams(window.location.search);
+            let fromDate = urlParams.get('from_date');
+            let toDate = urlParams.get('to_date');
+            if (fromDate && toDate) {
+                refreshDashboardData(new Date(fromDate), new Date(toDate));
+            } else {
+                refreshDashboardData(currentFromDate, currentToDate);
+            }
         }
     }
 
@@ -691,7 +698,14 @@
         currentWarehouse = warehouseSelect ? warehouseSelect.value : '';
         updateFilterDisplay();
         if (!isInitialLoad) {
-            refreshDashboardData(currentFromDate, currentToDate);
+            const urlParams = new URLSearchParams(window.location.search);
+            let fromDate = urlParams.get('from_date');
+            let toDate = urlParams.get('to_date');
+            if (fromDate && toDate) {
+                refreshDashboardData(new Date(fromDate), new Date(toDate));
+            } else {
+                refreshDashboardData(currentFromDate, currentToDate);
+            }
         }
     }
 
@@ -773,9 +787,16 @@
                 const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
                 return { from: lastMonth, to: new Date(lastMonthEnd.getFullYear(), lastMonthEnd.getMonth(), lastMonthEnd.getDate(), 23, 59, 59), display: 'Last Month' };
             case 'this_quarter':
-                const quarter = Math.floor(today.getMonth() / 3);
-                const quarterStart = new Date(today.getFullYear(), quarter * 3, 1);
-                return { from: quarterStart, to: endOfDay, display: 'This Quarter' };
+            case '3m':
+                // Rolling 3 months (calendar months) up to today
+                const threeMonthsAgo = new Date(today);
+                threeMonthsAgo.setMonth(today.getMonth() - 3);
+                return { from: threeMonthsAgo, to: endOfDay, display: 'Last 3 Months' };
+            case '6m':
+                // Rolling 6 months (calendar months) up to today
+                const sixMonthsAgo = new Date(today);
+                sixMonthsAgo.setMonth(today.getMonth() - 6);
+                return { from: sixMonthsAgo, to: endOfDay, display: 'Last 6 Months' };
             case 'last_quarter':
                 const lastQuarter = Math.floor((today.getMonth() - 3) / 3);
                 const lastQuarterStart = new Date(today.getFullYear(), lastQuarter * 3, 1);

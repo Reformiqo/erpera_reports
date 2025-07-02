@@ -619,7 +619,14 @@
         currentCompany = companySelect ? companySelect.value : '';
         updateFilterDisplay();
         if (!isInitialLoad) {
-            refreshDashboardData(currentFromDate, currentToDate);
+            const urlParams = new URLSearchParams(window.location.search);
+            let fromDate = urlParams.get('from_date');
+            let toDate = urlParams.get('to_date');
+            if (fromDate && toDate) {
+                refreshDashboardData(new Date(fromDate), new Date(toDate));
+            } else {
+                refreshDashboardData(currentFromDate, currentToDate);
+            }
         }
     }
 
@@ -628,7 +635,14 @@
         currentBranch = branchSelect ? branchSelect.value : '';
         updateFilterDisplay();
         if (!isInitialLoad) {
-            refreshDashboardData(currentFromDate, currentToDate);
+            const urlParams = new URLSearchParams(window.location.search);
+            let fromDate = urlParams.get('from_date');
+            let toDate = urlParams.get('to_date');
+            if (fromDate && toDate) {
+                refreshDashboardData(new Date(fromDate), new Date(toDate));
+            } else {
+                refreshDashboardData(currentFromDate, currentToDate);
+            }
         }
     }
 

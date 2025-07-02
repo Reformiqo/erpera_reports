@@ -122,21 +122,21 @@
     }
     {% if data_url %}
     var filters = {{ filters|tojson if filters is defined else 'null' }};
-    var dataUrl = "{{ data_url }}";
+    var args = {};
+    function decodeQueryParam(val) {
+      return decodeURIComponent((val || '').replace(/\+/g, ' '));
+    }
     if (filters && Array.isArray(filters)) {
       var urlParams = new URLSearchParams(window.location.search);
-      var filterQuery = '';
       filters.forEach(function(f) {
         if (urlParams.has(f.fieldname)) {
-          filterQuery += (filterQuery ? '&' : '?') + encodeURIComponent(f.fieldname) + '=' + encodeURIComponent(urlParams.get(f.fieldname));
+          args[f.fieldname] = decodeQueryParam(urlParams.get(f.fieldname));
         }
       });
-      if (filterQuery) {
-        dataUrl += filterQuery;
-      }
     }
     frappe.call({
-      method: dataUrl,
+      method: "{{ data_url }}",
+      args: { filters: args },
       callback: function(r) {
         if (r.message) {
           renderDoughnutChart_{{ chart_id }}(

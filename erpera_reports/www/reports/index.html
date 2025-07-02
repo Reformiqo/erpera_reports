@@ -74,95 +74,44 @@
         <div class="card clickable-card" onclick="showSalesModal('total_sales')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ summary_cards.sales.total_sales or 0 }}</div>
+                    <div class="card-value">{{ total_sales }}</div>
                     <div class="card-label">Total Sales</div>
-                    <p style="color: #003489; font-size: 16px; font-weight: bold;">(This Month)</p>
+                    <p style="color: #003489; font-size: 16px; font-weight: bold;">({{ current_month }})</p>
                 </div>
                 <div class="card-icon">₹</div>
             </div>
         </div>
-        <!-- <div class="card clickable-card" onclick="showSalesModal('total_invoices')">
-            <div class="card-content">
-                <div class="card-info">
-                    <div class="card-value">{{ summary_cards.sales.total_invoices or 0 }}</div>
-                    <div class="card-label">Sales Invoices</div>
-                    <p style="color: #3b82f6; font-size: 12px; font-weight: 500;">(This Month)</p>
-                </div>
-                <div class="card-icon">🧾</div>
-            </div>
-        </div>
-        <div class="card clickable-card" onclick="showSalesModal('avg_invoice_value')">
-            <div class="card-content">
-                <div class="card-info">
-                    <div class="card-value">{{ summary_cards.sales.avg_invoice_value or 0 }}</div>
-                    <div class="card-label">Avg Invoice Value</div>
-                    <p style="color: #3b82f6; font-size: 12px; font-weight: 500;">(This Month)</p>
-                </div>
-                <div class="card-icon">📊</div>
-            </div>
-        </div> -->
         <!-- Purchase Area -->
         <div class="card clickable-card" onclick="showPurchaseModal('total_amount')" style="background: linear-gradient(135deg, #ffc0c0 0%, #ff0000f5 100%);">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ summary_cards.purchase.total_amount or 0 }}</div>
+                    <div class="card-value">{{ total_amount }}</div>
                     <div class="card-label">Total Purchase</div>
-                    <p style="color: #003489; font-size: 16px; font-weight: bold;">(This Month)</p>
+                    <p style="color: #003489; font-size: 16px; font-weight: bold;">({{ current_month }})</p>
                 </div>
                 <div class="card-icon">💰</div>
             </div>
         </div>
-        <!-- <div class="card clickable-card" onclick="showPurchaseModal('unique_suppliers')">
-            <div class="card-content">
-                <div class="card-info">
-                    <div class="card-value">{{ summary_cards.purchase.unique_suppliers or 0 }}</div>
-                    <div class="card-label">Suppliers</div>
-                    <p style="color: #10b981; font-size: 12px; font-weight: 500;">(Active)</p>
-                </div>
-                <div class="card-icon">👥</div>
-            </div>
-        </div> -->
         <div class="card clickable-card" onclick="showPurchaseModal('total_outstanding')" style="background: linear-gradient(135deg, #e9c0ff 0%, #67469b 100%);">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ summary_cards.purchase.total_outstanding or 0 }}</div>
+                    <div class="card-value">{{ total_outstanding }}</div>
                     <div class="card-label">Total Expense</div>
-                    <p style="color: #003489; font-size: 16px; font-weight: bold;">(This Month)</p>
+                    <p style="color: #003489; font-size: 16px; font-weight: bold;">({{ current_month }})</p>
                 </div>
                 <div class="card-icon">💵</div>
             </div>
         </div>
-        <!-- Stock Area -->
-        <!-- <div class="card clickable-card" onclick="showStockModal('total_skus')">
-            <div class="card-content">
-                <div class="card-info">
-                    <div class="card-value">{{ summary_cards.stock.total_skus or 0 }}</div>
-                    <div class="card-label">Total SKUs</div>
-                    <p style="color: #f59e0b; font-size: 12px; font-weight: 500;">(Active)</p>
-                </div>
-                <div class="card-icon">📦</div>
-            </div>
-        </div> -->
         <div class="card clickable-card" onclick="showStockModal('total_stock_value')" style="background: linear-gradient(135deg, #f5ba7e 0%, #7b4a0f 100%);">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ summary_cards.stock.total_stock_value or 0 }}</div>
+                    <div class="card-value">{{ total_stock_value }}</div>
                     <div class="card-label">Stock Value</div>
-                    <p style="color: #003489; font-size: 16px; font-weight: bold;">(This Month)</p>
+                    <p style="color: #003489; font-size: 16px; font-weight: bold;">({{ current_month }})</p>
                 </div>
                 <div class="card-icon">📦</div>
             </div>
         </div>
-        <!-- <div class="card clickable-card" onclick="showStockModal('efficiency_score')">
-            <div class="card-content">
-                <div class="card-info">
-                    <div class="card-value">{{ summary_cards.stock.efficiency_score or 0 }}%</div>
-                    <div class="card-label">Stock Efficiency</div>
-                    <p style="color: #f59e0b; font-size: 12px; font-weight: 500;">(Optimal)</p>
-                </div>
-                <div class="card-icon">✅</div>
-            </div>
-        </div> -->
     </div>
 
  
@@ -894,9 +843,16 @@
         const companySelect = document.getElementById('companyFilter');
         currentCompany = companySelect ? companySelect.value : '';
         updateFilterDisplay();
-        
         if (!isInitialLoad) {
-            refreshDashboardData(currentFromDate, currentToDate);
+            // Always get the latest from the URL, so we don't reset the range
+            const urlParams = new URLSearchParams(window.location.search);
+            let fromDate = urlParams.get('from_date');
+            let toDate = urlParams.get('to_date');
+            if (fromDate && toDate) {
+                refreshDashboardData(new Date(fromDate), new Date(toDate));
+            } else {
+                refreshDashboardData(currentFromDate, currentToDate);
+            }
         }
     }
 
@@ -904,9 +860,16 @@
         const branchSelect = document.getElementById('branchFilter');
         currentBranch = branchSelect ? branchSelect.value : '';
         updateFilterDisplay();
-        
         if (!isInitialLoad) {
-            refreshDashboardData(currentFromDate, currentToDate);
+            // Always get the latest from the URL, so we don't reset the range
+            const urlParams = new URLSearchParams(window.location.search);
+            let fromDate = urlParams.get('from_date');
+            let toDate = urlParams.get('to_date');
+            if (fromDate && toDate) {
+                refreshDashboardData(new Date(fromDate), new Date(toDate));
+            } else {
+                refreshDashboardData(currentFromDate, currentToDate);
+            }
         }
     }
 
@@ -1027,12 +990,14 @@
                 };
                 
             case 'this_quarter':
-                const quarter = Math.floor(today.getMonth() / 3);
-                const quarterStart = new Date(today.getFullYear(), quarter * 3, 1);
+            case '3m':
+                // Rolling 3 months (calendar months) up to today
+                const threeMonthsAgo = new Date(today);
+                threeMonthsAgo.setMonth(today.getMonth() - 3);
                 return {
-                    from: quarterStart,
+                    from: threeMonthsAgo,
                     to: endOfDay,
-                    display: 'This Quarter'
+                    display: 'Last 3 Months'
                 };
                 
             case 'last_quarter':
@@ -1059,6 +1024,16 @@
                     from: lastYearStart,
                     to: new Date(lastYearEnd.getFullYear(), lastYearEnd.getMonth(), lastYearEnd.getDate(), 23, 59, 59),
                     display: 'Last Year'
+                };
+                
+            case '6m':
+                // Rolling 6 months (calendar months) up to today
+                const sixMonthsAgo = new Date(today);
+                sixMonthsAgo.setMonth(today.getMonth() - 6);
+                return {
+                    from: sixMonthsAgo,
+                    to: endOfDay,
+                    display: 'Last 6 Months'
                 };
                 
             default:

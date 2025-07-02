@@ -340,11 +340,14 @@
       {% set filters_json = filters|tojson if filters is defined else 'null' %}
       var filters = {};
       var filterDefs = {{ filters_json }};
+      function decodeQueryParam(val) {
+        return decodeURIComponent((val || '').replace(/\+/g, ' '));
+      }
       if (filterDefs && Array.isArray(filterDefs)) {
         var urlParams = new URLSearchParams(window.location.search);
         filterDefs.forEach(function(f) {
           if (urlParams.has(f.fieldname)) {
-            filters[f.fieldname] = urlParams.get(f.fieldname);
+            filters[f.fieldname] = decodeQueryParam(urlParams.get(f.fieldname));
           }
         });
       }
