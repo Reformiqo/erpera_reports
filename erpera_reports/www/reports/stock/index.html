@@ -1,9 +1,9 @@
 {% extends 'erpera_reports/templates/pages/base.html' %}
 
 {% block page_content %}
-<div style="display: flex;flex-direction: row;">
-    <div><h1>Stock Dashboard</h1></div>
+    
     <div class="filter-section">
+		<div><h1>Stock Dashboard</h1></div>
         <div class="filter-container">
             <!-- <h3 class="filter-title">🔍 Dashboard Filters</h3> -->
             <div class="filter-row-main">
@@ -64,7 +64,7 @@
             </div>
         </div>
     </div>
-</div>
+
 
     <div class="overview-cards">
         <div class="card clickable-card" onclick="showWarehouseModal('total_items')">
@@ -434,9 +434,9 @@
 
     /* Filter Section Styles (copied from reports/index.html) */
     .filter-section {
-        padding: 1.5rem;
-        margin-bottom: 10.5%;
-        margin-left: 40%;
+		display: flex;
+        flex-direction: row;
+        padding: 35px;
     }
     .filter-container { max-width: 100%; }
     .filter-title { font-size: 1.25rem; font-weight: 600; color: #1a1a1a; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
