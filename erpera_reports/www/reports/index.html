@@ -974,10 +974,13 @@
                 };
                 
             case 'this_month':
+                // get the last 30 days instead of this month 
+                const last30Days = new Date(today);
+                last30Days.setDate(today.getDate() - 30);
                 return {
-                    from: new Date(today.getFullYear(), today.getMonth(), 1),
+                    from: last30Days,
                     to: endOfDay,
-                    display: 'This Month'
+                    display: 'Last 30 Days'
                 };
                 
             case 'last_month':
@@ -1011,10 +1014,13 @@
                 };
                 
             case 'this_year':
+                // get the last 365 days instead of this year 
+                const last365Days = new Date(today);
+                last365Days.setDate(today.getDate() - 365);
                 return {
-                    from: new Date(today.getFullYear(), 0, 1),
+                    from: last365Days,
                     to: endOfDay,
-                    display: 'This Year'
+                    display: 'Last 365 Days'
                 };
                 
             case 'last_year':

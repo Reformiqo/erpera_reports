@@ -46,6 +46,10 @@ def get_context(context):
     # Build extra conditions for company/branch
     extra_si = ""
     extra_args = {}
+    if from_date:
+        extra_si += " AND si.posting_date BETWEEN %(from_date)s AND %(to_date)s"
+        extra_args['from_date'] = from_date
+        extra_args['to_date'] = to_date
     if company:
         extra_si += " AND si.company = %(company)s"
         extra_args['company'] = company
@@ -60,29 +64,24 @@ def get_context(context):
             COUNT(name) AS invoice_count
         FROM `tabSales Invoice` si
         WHERE docstatus = 1
-        AND posting_date BETWEEN %(from_date)s AND %(to_date)s
         {extra_si}
     """
-    fy_sales_stats = frappe.db.sql(fy_stats_query, dict(from_date=filter_from, to_date=filter_to, **extra_args), as_dict=True)[0] or {}
+    fy_sales_stats = frappe.db.sql(fy_stats_query, extra_args, as_dict=True)[0] or {}
 
     # Query for average sale value (current month or filtered)
-    month_stats_query = f"""
-        SELECT
-            SUM(grand_total) AS month_total_sales,
-            COUNT(name) AS month_invoice_count
-        FROM `tabSales Invoice` si
-        WHERE docstatus = 1
-        AND posting_date BETWEEN %(from_date)s AND %(to_date)s
-        {extra_si}
-    """
-    month_sales_stats = frappe.db.sql(month_stats_query, dict(from_date=filter_month_from, to_date=filter_month_to, **extra_args), as_dict=True)[0] or {}
-
-    # Purchase summary
+    
     extra_pi = ""
+    extra_pi_args = {}
+    if from_date:
+        extra_pi += " AND pi.posting_date BETWEEN %(from_date)s AND %(to_date)s"
+        extra_pi_args['from_date'] = from_date
+        extra_pi_args['to_date'] = to_date
     if company:
         extra_pi += " AND pi.company = %(company)s"
+        extra_pi_args['company'] = company
     if branch:
         extra_pi += " AND pi.cost_center = %(branch)s"
+        extra_pi_args['branch'] = branch
     purchase_query = f"""
         SELECT
             SUM(grand_total) AS total_amount,
@@ -90,17 +89,17 @@ def get_context(context):
             SUM(outstanding_amount) AS total_outstanding
         FROM `tabPurchase Invoice` pi
         WHERE docstatus = 1
-        AND posting_date BETWEEN %(from_date)s AND %(to_date)s
         {extra_pi}
     """
-    purchase_stats = frappe.db.sql(purchase_query, dict(from_date=filter_from, to_date=filter_to, company=company, branch=branch), as_dict=True)[0] or {}
+    purchase_stats = frappe.db.sql(purchase_query, extra_pi_args, as_dict=True)[0] or {}
 
     # Stock summary (SKUs, stock value, efficiency)
-    total_skus = frappe.db.sql("""
+    total_skus_result = frappe.db.sql("""
         SELECT COUNT(DISTINCT item_code) as total_skus
         FROM `tabItem`
         WHERE disabled = 0
-    """, as_dict=True)[0].total_skus
+    """, as_dict=True)
+    total_skus = total_skus_result[0].total_skus if total_skus_result else 0
     # For demo, use 0 for total_stock_value and efficiency_score
     total_stock_value = 0
     efficiency_score = 0
@@ -108,8 +107,8 @@ def get_context(context):
     # Format and set context variables for number cards
     total_sales = fy_sales_stats.get('total_sales') or 0
     invoice_count = fy_sales_stats.get('invoice_count') or 0
-    month_total_sales = month_sales_stats.get('month_total_sales') or 0
-    month_invoice_count = month_sales_stats.get('month_invoice_count') or 0
+    month_total_sales =   0
+    month_invoice_count =  0
     avg_invoice_value = month_total_sales / month_invoice_count if month_invoice_count > 0 else 0
     context.total_sales = f"₹{total_sales:,.0f}"
     context.invoice_count = f"{invoice_count:,}"
