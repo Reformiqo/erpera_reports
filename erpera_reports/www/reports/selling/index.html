@@ -124,6 +124,8 @@
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
               { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_selling_drill_down_data' %}
+            {% set drill_down_title = 'Selling Details' %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
             {% set chart_id = 'companyWiseSelling' %}

@@ -480,7 +480,8 @@ function showDrillDownModal(clickData, chartTitle) {
   const isDateLabel = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}$/i.test(label);
   
   // Determine drill-down method and type based on chart title and label type
-  let drillDownMethod = 'erpera_reports.buying.get_drill_down_data';
+  let drillDownMethod = '{{ drill_down_method | default("erpera_reports.api.get_buying_drill_down_data") }}';
+  let drillDownTitle = '{{ drill_down_title | default("Purchase Details") }}';
   
   if (isDateLabel) {
     // Handle time period drill-down
@@ -529,7 +530,7 @@ function showDrillDownModal(clickData, chartTitle) {
     callback: function(r) {
       if (r.message && r.message.success) {
         const data = r.message.data || [];
-        const title = r.message.title || `Drill Down: ${label}`;
+        const title = r.message.title || `${drillDownTitle}: ${label}`;
         
         if (data.length === 0) {
           frappe.msgprint({
@@ -674,7 +675,7 @@ function showDrillDownModal(clickData, chartTitle) {
         
         // Show the modal with data
         frappe.msgprint({
-          title: 'Purchase Details',
+          title: drillDownTitle,
           message: tableHtml,
           wide: true,
           indicator: 'green'
