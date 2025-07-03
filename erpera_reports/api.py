@@ -127,7 +127,7 @@ def get_buying_drill_down_data(filters=None, chart_title=None, clicked_label=Non
             params['branch'] = filters['branch']
         
         if filters.get('item'):
-            query += " AND pii.item_code = %(item)s"
+            query += " AND (pii.item_code = %(item)s OR pii.item_name = %(item)s)"
             params['item'] = filters['item']
         
         if filters.get('item_group'):

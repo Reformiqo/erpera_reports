@@ -131,6 +131,8 @@
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
               { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_selling_drill_down_data' %}
+            {% set drill_down_title = 'Sales Details' %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
             {% set chart_id = 'lowPerformingSkus' %}
@@ -145,6 +147,8 @@
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
               { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_selling_drill_down_data' %}
+            {% set drill_down_title = 'Sales Details' %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
         
@@ -161,6 +165,8 @@
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
               { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_selling_drill_down_data' %}
+            {% set drill_down_title = 'Sales Details' %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
             {% set chart_id = 'itemCategoryPerformance' %}
@@ -175,6 +181,8 @@
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
               { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_selling_drill_down_data' %}
+            {% set drill_down_title = 'Sales Details' %}
             {% include "erpera_reports/templates/includes/doughnut.html" %}
         </div>
         
@@ -191,6 +199,8 @@
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
               { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
             ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_selling_drill_down_data' %}
+            {% set drill_down_title = 'Sales Details' %}
             {% include "erpera_reports/templates/includes/line.html" %}
         </div>
     </div>
@@ -209,6 +219,8 @@
               { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
             ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_selling_drill_down_data' %}
+            {% set drill_down_title = 'Sales Details' %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
         
@@ -235,6 +247,8 @@
                 {"value": "20", "label": "Top 20"}
               ] }
             ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_buying_drill_down_data' %}
+            {% set drill_down_title = 'Purchase Details' %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
             
@@ -257,6 +271,8 @@
                 {"value": "50", "label": "Top 50"}
               ] }
             ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_buying_drill_down_data' %}
+            {% set drill_down_title = 'Purchase Details' %}
             {% include "erpera_reports/templates/includes/bar.html" %}
 
             
@@ -279,6 +295,8 @@
               { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
               { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
             ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_selling_drill_down_data' %}
+            {% set drill_down_title = 'Sales Details' %}
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
     </div>

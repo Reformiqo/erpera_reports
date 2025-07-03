@@ -512,6 +512,21 @@ function showDrillDownModal(clickData, chartTitle) {
     filters['drill_value'] = label.split(' (₹')[0]; // Remove amount from label if present
   }
   
+  // If the chart is about items, set filters['item'] = label
+  if (chartTitle && chartTitle.toLowerCase().includes('item')) {
+    filters['item'] = label;
+  }
+  
+  // If the chart is 'Sales Snapshot Across All Branches', set filters['branch'] = label
+  if (chartTitle && chartTitle.toLowerCase().includes('sales snapshot')) {
+    filters['branch'] = label;
+  }
+  
+  // If the chart is 'Outstanding by Supplier', set filters['supplier'] = label
+  if (chartTitle && chartTitle.toLowerCase().includes('outstanding by supplier')) {
+    filters['supplier'] = label;
+  }
+  
   // Show loading message
   frappe.msgprint({
     title: 'Drill Down',
