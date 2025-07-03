@@ -285,3 +285,430 @@ def get_expense_summary(filters=None):
         'data': data,
         'datasets': None
     }
+
+@frappe.whitelist()
+def get_consolidated_expense(filters=None):
+    """
+    Returns consolidated expense data across all companies and branches.
+    """
+    if isinstance(filters, str):
+        import json
+        filters = json.loads(filters)
+    filters = filters or {}
+    args = {}
+    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    if filters.get('from_date'):
+        where.append("pi.posting_date >= %(from_date)s")
+        args['from_date'] = filters['from_date']
+    if filters.get('to_date'):
+        where.append("pi.posting_date <= %(to_date)s")
+        args['to_date'] = filters['to_date']
+    if filters.get('company'):
+        where.append("pi.company = %(company)s")
+        args['company'] = filters['company']
+    if filters.get('branch'):
+        where.append("pi.cost_center = %(branch)s")
+        args['branch'] = filters['branch']
+    sql = f"""
+        SELECT 
+            CASE 
+                WHEN pi.cost_center IS NOT NULL AND pi.cost_center != '' 
+                THEN CONCAT(COALESCE(pi.company, 'Unknown'), ' - ', pi.cost_center)
+                ELSE COALESCE(pi.company, 'Unknown Company')
+            END AS entity_name,
+            SUM(pii.amount) as total
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
+        GROUP BY entity_name
+        ORDER BY total DESC
+    """
+    rows = frappe.db.sql(sql, args, as_dict=True)
+    labels = [row['entity_name'] for row in rows]
+    data = [row['total'] for row in rows]
+    return {
+        'labels': labels,
+        'data': data,
+        'datasets': None
+    }
+
+@frappe.whitelist()
+def get_entity_wise_expense(filters=None):
+    """
+    Returns expense data by entity (company-branch combination).
+    """
+    return get_consolidated_expense(filters)
+
+@frappe.whitelist()
+def get_consolidated_expiry_expense(filters=None):
+    """
+    Returns consolidated expiry expense data.
+    """
+    if isinstance(filters, str):
+        import json
+        filters = json.loads(filters)
+    filters = filters or {}
+    args = {}
+    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    if filters.get('from_date'):
+        where.append("pi.posting_date >= %(from_date)s")
+        args['from_date'] = filters['from_date']
+    if filters.get('to_date'):
+        where.append("pi.posting_date <= %(to_date)s")
+        args['to_date'] = filters['to_date']
+    if filters.get('company'):
+        where.append("pi.company = %(company)s")
+        args['company'] = filters['company']
+    if filters.get('branch'):
+        where.append("pi.cost_center = %(branch)s")
+        args['branch'] = filters['branch']
+    sql = f"""
+        SELECT 
+            CASE 
+                WHEN pi.cost_center IS NOT NULL AND pi.cost_center != '' 
+                THEN CONCAT(COALESCE(pi.company, 'Unknown'), ' - ', pi.cost_center)
+                ELSE COALESCE(pi.company, 'Unknown Company')
+            END AS entity_name,
+            SUM(pii.amount) as total
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
+        GROUP BY entity_name
+        ORDER BY total DESC
+    """
+    rows = frappe.db.sql(sql, args, as_dict=True)
+    labels = [row['entity_name'] for row in rows]
+    data = [row['total'] for row in rows]
+    return {
+        'labels': labels,
+        'data': data,
+        'datasets': None
+    }
+
+@frappe.whitelist()
+def get_branch_wise_expiry_expense(filters=None):
+    """
+    Returns branch-wise expiry expense data.
+    """
+    if isinstance(filters, str):
+        import json
+        filters = json.loads(filters)
+    filters = filters or {}
+    args = {}
+    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    if filters.get('from_date'):
+        where.append("pi.posting_date >= %(from_date)s")
+        args['from_date'] = filters['from_date']
+    if filters.get('to_date'):
+        where.append("pi.posting_date <= %(to_date)s")
+        args['to_date'] = filters['to_date']
+    if filters.get('company'):
+        where.append("pi.company = %(company)s")
+        args['company'] = filters['company']
+    if filters.get('branch'):
+        where.append("pi.cost_center = %(branch)s")
+        args['branch'] = filters['branch']
+    sql = f"""
+        SELECT pi.cost_center, cc.cost_center_name, SUM(pii.amount) as total
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        LEFT JOIN `tabCost Center` cc ON pi.cost_center = cc.name
+        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
+        GROUP BY pi.cost_center, cc.cost_center_name
+        ORDER BY total DESC
+    """
+    rows = frappe.db.sql(sql, args, as_dict=True)
+    labels = [row['cost_center_name'] or row['cost_center'] for row in rows]
+    data = [row['total'] for row in rows]
+    return {
+        'labels': labels,
+        'data': data,
+        'datasets': None
+    }
+
+@frappe.whitelist()
+def get_company_wise_expiry_expense(filters=None):
+    """
+    Returns company-wise expiry expense data.
+    """
+    if isinstance(filters, str):
+        import json
+        filters = json.loads(filters)
+    filters = filters or {}
+    args = {}
+    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    if filters.get('from_date'):
+        where.append("pi.posting_date >= %(from_date)s")
+        args['from_date'] = filters['from_date']
+    if filters.get('to_date'):
+        where.append("pi.posting_date <= %(to_date)s")
+        args['to_date'] = filters['to_date']
+    if filters.get('company'):
+        where.append("pi.company = %(company)s")
+        args['company'] = filters['company']
+    sql = f"""
+        SELECT pi.company, SUM(pii.amount) as total
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
+        GROUP BY pi.company
+        ORDER BY total DESC
+    """
+    rows = frappe.db.sql(sql, args, as_dict=True)
+    labels = [row['company'] for row in rows]
+    data = [row['total'] for row in rows]
+    return {
+        'labels': labels,
+        'data': data,
+        'datasets': None
+    }
+
+@frappe.whitelist()
+def get_expiry_expense_summary(filters=None):
+    """
+    Returns expiry expense summary data.
+    """
+    if isinstance(filters, str):
+        import json
+        filters = json.loads(filters)
+    filters = filters or {}
+    args = {}
+    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    if filters.get('from_date'):
+        where.append("pi.posting_date >= %(from_date)s")
+        args['from_date'] = filters['from_date']
+    if filters.get('to_date'):
+        where.append("pi.posting_date <= %(to_date)s")
+        args['to_date'] = filters['to_date']
+    if filters.get('company'):
+        where.append("pi.company = %(company)s")
+        args['company'] = filters['company']
+    if filters.get('branch'):
+        where.append("pi.cost_center = %(branch)s")
+        args['branch'] = filters['branch']
+    sql = f"""
+        SELECT pii.item_group, SUM(pii.amount) as total
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
+        GROUP BY pii.item_group
+        ORDER BY total DESC
+    """
+    rows = frappe.db.sql(sql, args, as_dict=True)
+    labels = [row['item_group'] for row in rows]
+    data = [row['total'] for row in rows]
+    return {
+        'labels': labels,
+        'data': data,
+        'datasets': None
+    }
+
+@frappe.whitelist()
+def get_expiry_demand_comparison(filters=None):
+    """
+    Returns expiry vs demand comparison data.
+    """
+    if isinstance(filters, str):
+        import json
+        filters = json.loads(filters)
+    filters = filters or {}
+    args = {}
+    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    if filters.get('from_date'):
+        where.append("pi.posting_date >= %(from_date)s")
+        args['from_date'] = filters['from_date']
+    if filters.get('to_date'):
+        where.append("pi.posting_date <= %(to_date)s")
+        args['to_date'] = filters['to_date']
+    if filters.get('company'):
+        where.append("pi.company = %(company)s")
+        args['company'] = filters['company']
+    if filters.get('branch'):
+        where.append("pi.cost_center = %(branch)s")
+        args['branch'] = filters['branch']
+    sql = f"""
+        SELECT pii.item_group, SUM(pii.amount) as total
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
+        GROUP BY pii.item_group
+        ORDER BY total DESC
+    """
+    rows = frappe.db.sql(sql, args, as_dict=True)
+    labels = [row['item_group'] for row in rows]
+    data = [row['total'] for row in rows]
+    return {
+        'labels': labels,
+        'data': data,
+        'datasets': None
+    }
+
+@frappe.whitelist()
+def get_consolidated_expired_items(filters=None):
+    """
+    Returns consolidated expired items data.
+    """
+    if isinstance(filters, str):
+        import json
+        filters = json.loads(filters)
+    filters = filters or {}
+    args = {}
+    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    if filters.get('from_date'):
+        where.append("pi.posting_date >= %(from_date)s")
+        args['from_date'] = filters['from_date']
+    if filters.get('to_date'):
+        where.append("pi.posting_date <= %(to_date)s")
+        args['to_date'] = filters['to_date']
+    if filters.get('company'):
+        where.append("pi.company = %(company)s")
+        args['company'] = filters['company']
+    if filters.get('branch'):
+        where.append("pi.cost_center = %(branch)s")
+        args['branch'] = filters['branch']
+    sql = f"""
+        SELECT 
+            CASE 
+                WHEN pi.cost_center IS NOT NULL AND pi.cost_center != '' 
+                THEN CONCAT(COALESCE(pi.company, 'Unknown'), ' - ', pi.cost_center)
+                ELSE COALESCE(pi.company, 'Unknown Company')
+            END AS entity_name,
+            SUM(pii.amount) as total
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
+        GROUP BY entity_name
+        ORDER BY total DESC
+    """
+    rows = frappe.db.sql(sql, args, as_dict=True)
+    labels = [row['entity_name'] for row in rows]
+    data = [row['total'] for row in rows]
+    return {
+        'labels': labels,
+        'data': data,
+        'datasets': None
+    }
+
+@frappe.whitelist()
+def get_branch_wise_in_out_quantity(filters=None):
+    """
+    Returns branch-wise in/out quantity data.
+    """
+    if isinstance(filters, str):
+        import json
+        filters = json.loads(filters)
+    filters = filters or {}
+    args = {}
+    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    if filters.get('from_date'):
+        where.append("pi.posting_date >= %(from_date)s")
+        args['from_date'] = filters['from_date']
+    if filters.get('to_date'):
+        where.append("pi.posting_date <= %(to_date)s")
+        args['to_date'] = filters['to_date']
+    if filters.get('company'):
+        where.append("pi.company = %(company)s")
+        args['company'] = filters['company']
+    if filters.get('branch'):
+        where.append("pi.cost_center = %(branch)s")
+        args['branch'] = filters['branch']
+    sql = f"""
+        SELECT pi.cost_center, cc.cost_center_name, SUM(pii.amount) as total
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        LEFT JOIN `tabCost Center` cc ON pi.cost_center = cc.name
+        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
+        GROUP BY pi.cost_center, cc.cost_center_name
+        ORDER BY total DESC
+    """
+    rows = frappe.db.sql(sql, args, as_dict=True)
+    labels = [row['cost_center_name'] or row['cost_center'] for row in rows]
+    data = [row['total'] for row in rows]
+    return {
+        'labels': labels,
+        'data': data,
+        'datasets': None
+    }
+
+@frappe.whitelist()
+def get_company_wise_in_out_quantity(filters=None):
+    """
+    Returns company-wise in/out quantity data.
+    """
+    if isinstance(filters, str):
+        import json
+        filters = json.loads(filters)
+    filters = filters or {}
+    args = {}
+    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    if filters.get('from_date'):
+        where.append("pi.posting_date >= %(from_date)s")
+        args['from_date'] = filters['from_date']
+    if filters.get('to_date'):
+        where.append("pi.posting_date <= %(to_date)s")
+        args['to_date'] = filters['to_date']
+    if filters.get('company'):
+        where.append("pi.company = %(company)s")
+        args['company'] = filters['company']
+    sql = f"""
+        SELECT pi.company, SUM(pii.amount) as total
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
+        GROUP BY pi.company
+        ORDER BY total DESC
+    """
+    rows = frappe.db.sql(sql, args, as_dict=True)
+    labels = [row['company'] for row in rows]
+    data = [row['total'] for row in rows]
+    return {
+        'labels': labels,
+        'data': data,
+        'datasets': None
+    }
+
+@frappe.whitelist()
+def get_consolidate_in_out_quantity(filters=None):
+    """
+    Returns consolidated in/out quantity data.
+    """
+    if isinstance(filters, str):
+        import json
+        filters = json.loads(filters)
+    filters = filters or {}
+    args = {}
+    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    if filters.get('from_date'):
+        where.append("pi.posting_date >= %(from_date)s")
+        args['from_date'] = filters['from_date']
+    if filters.get('to_date'):
+        where.append("pi.posting_date <= %(to_date)s")
+        args['to_date'] = filters['to_date']
+    if filters.get('company'):
+        where.append("pi.company = %(company)s")
+        args['company'] = filters['company']
+    if filters.get('branch'):
+        where.append("pi.cost_center = %(branch)s")
+        args['branch'] = filters['branch']
+    sql = f"""
+        SELECT 
+            CASE 
+                WHEN pi.cost_center IS NOT NULL AND pi.cost_center != '' 
+                THEN CONCAT(COALESCE(pi.company, 'Unknown'), ' - ', pi.cost_center)
+                ELSE COALESCE(pi.company, 'Unknown Company')
+            END AS entity_name,
+            SUM(pii.amount) as total
+        FROM `tabPurchase Invoice` pi
+        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
+        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
+        GROUP BY entity_name
+        ORDER BY total DESC
+    """
+    rows = frappe.db.sql(sql, args, as_dict=True)
+    labels = [row['entity_name'] for row in rows]
+    data = [row['total'] for row in rows]
+    return {
+        'labels': labels,
+        'data': data,
+        'datasets': None
+    }

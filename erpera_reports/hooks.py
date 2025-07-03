@@ -137,13 +137,11 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Purchase Receipt": {
+		"validate": "erpera_reports.api.log_error"
+	}
+}
 
 # Scheduled Tasks
 # ---------------
