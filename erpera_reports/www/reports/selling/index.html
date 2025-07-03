@@ -2,9 +2,9 @@
 
 {% block page_content %}
     <!-- Filter Section (copied and adapted from reports/index.html) -->
-    <div style="display: flex;flex-direction: row;">
-        <div><h1>Sales Dashboard</h1></div>
+    
     <div class="filter-section">
+        <div><h1>Sales Dashboard</h1></div>
         <div class="filter-container">
             <!-- <h3 class="filter-title">🔍 Dashboard Filters</h3> -->
             <div class="filter-row-main">
@@ -65,7 +65,7 @@
             </div>
         </div>
     </div>
-    </div>
+    
     <div class="overview-cards">
         <div class="card clickable-card" onclick="showCostCenterModal('total_sales')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
             <div class="card-content">
@@ -399,11 +399,11 @@
 
     /* Filter Section Styles (copied from reports/index.html) */
     .filter-section {
-        padding: 1.5rem;
-        margin-bottom: 10.5%;
-        margin-left: 40%;
+        display: flex;
+        flex-direction: row;
+        padding: 35px;
     }
-    .filter-container { max-width: 100%; }
+    .filter-container { max-width: 100%; right: 20px;}
     .filter-title { font-size: 1.25rem; font-weight: 600; color: #1a1a1a; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
     .filter-row-main { 
         display: flex;
@@ -480,6 +480,7 @@
         align-items: flex-start;
         justify-content: center;
         flex: 1;
+        width: 120px;
     }
     .card-value {
         font-size: 2.1rem;
@@ -487,6 +488,7 @@
         color: #1f2937;
         margin-bottom: 0.25rem;
         line-height: 1.1;
+        overflow-wrap: anywhere;
     }
     .card-label {
         color: #434c5e;
@@ -496,10 +498,9 @@
     }
     .card-icon {
         font-size: 4.5rem;
-    display: flex
-;
+    display: flex;
     align-items: center;
-    flex-shrink: 0;
+    /* flex-shrink: 0; */
     height: 100%;
     background: rgba(0, 0, 0, .1);
     border-radius: 54px;
