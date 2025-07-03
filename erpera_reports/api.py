@@ -444,9 +444,13 @@ def get_stock_drill_down_data(filters=None, chart_title=None, clicked_label=None
         if filters.get('company') and drill_type != 'company':
             query += " AND sle.company = %(company)s"
             params['company'] = filters['company']
+        # Branch filter (maps to warehouse in stock context)
         if filters.get('branch'):
-            query += " AND sle.warehouse = %(branch)s"
-            params['branch'] = filters['branch']
+            query += " AND LOWER(TRIM(sle.warehouse)) = LOWER(TRIM(%(branch)s))"
+            params['branch'] = filters['branch'].strip()
+        elif filters.get('warehouse'):
+            query += " AND sle.warehouse = %(warehouse)s"
+            params['warehouse'] = filters['warehouse']
         if filters.get('item'):
             query += " AND sle.item_code = %(item)s"
             params['item'] = filters['item']

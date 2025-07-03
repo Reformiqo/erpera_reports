@@ -71,7 +71,7 @@
 </div>
     <div class="overview-cards">
         <!-- Sales Area -->
-        <div class="card clickable-card" onclick="showSalesModal('total_sales')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
+        <div class="card clickable-card" onclick="showCostCenterModal('total_sales')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ total_sales }}</div>
@@ -82,7 +82,7 @@
             </div>
         </div>
         <!-- Purchase Area -->
-        <div class="card clickable-card" onclick="showPurchaseModal('total_amount')" style="background: linear-gradient(135deg, #ffc0c0 0%, #ff0000f5 100%);">
+        <div class="card clickable-card" onclick="showCostCenterModal('total_amount')" style="background: linear-gradient(135deg, #ffc0c0 0%, #ff0000f5 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ total_amount }}</div>
@@ -92,7 +92,7 @@
                 <div class="card-icon">💰</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showPurchaseModal('total_outstanding')" style="background: linear-gradient(135deg, #e9c0ff 0%, #67469b 100%);">
+        <div class="card clickable-card" onclick="showCostCenterModal('total_outstanding')" style="background: linear-gradient(135deg, #e9c0ff 0%, #67469b 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ total_outstanding }}</div>
@@ -102,7 +102,7 @@
                 <div class="card-icon">💵</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showStockModal('total_stock_value')" style="background: linear-gradient(135deg, #f5ba7e 0%, #7b4a0f 100%);">
+        <div class="card clickable-card" onclick="showCostCenterModal('total_stock_value')" style="background: linear-gradient(135deg, #f5ba7e 0%, #7b4a0f 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ total_stock_value }}</div>
@@ -1189,177 +1189,69 @@
     console.log('Sales Data:', salesData);
     console.log('Purchase Data:', purchaseData);
     console.log('Stock Data:', stockData);
-
-    function showSalesModal(metricType) {
-        if (!salesData || salesData.length === 0) {
-            frappe.msgprint({
-                title: 'No Data Available',
-                message: 'No sales data is currently available for this period.',
-                indicator: 'red'
-            });
-            return;
-        }
-        
-        const metricTitles = {
-            'total_sales': 'Total Sales by Branch',
-            'total_invoices': 'Sales Invoices by Branch', 
-            'avg_invoice_value': 'Average Invoice Value by Branch'
-        };
-        
-        const metricLabels = {
-            'total_sales': 'Total Sales',
-            'total_invoices': 'Sales Invoices',
-            'avg_invoice_value': 'Average Invoice Value'
-        };
-        
-        const metricIcons = {
-            'total_sales': '💸',
-            'total_invoices': '🧾',
-            'avg_invoice_value': '📊'
-        };
-        
-        const title = metricTitles[metricType];
-        const label = metricLabels[metricType];
-        const icon = metricIcons[metricType];
-        
-        // Create number cards HTML
-        let cardsHTML = '<div class="dashboard-modal-content">';
-        cardsHTML += '<div class="overview-cards">';
-        
-        // Add number cards for each branch
-        salesData.forEach(function(item) {
-            const value = item[metricType] || 'N/A';
-            cardsHTML += '<div class="card">';
-            cardsHTML += '<div class="card-icon sales">' + icon + '</div>';
-            cardsHTML += '<div class="card-value">' + value + '</div>';
-            cardsHTML += '<div class="card-label">' + (item.display_name || item.name || 'Unknown') + '</div>';
-            cardsHTML += '</div>';
-        });
-        
-        cardsHTML += '</div></div>';
-        
-        // Show modal using frappe.msgprint
-        frappe.msgprint({
-            title: title,
-            message: cardsHTML,
-            wide: true,
-            indicator: 'blue'
-        });
-    }
-
-    function showPurchaseModal(metricType) {
-        if (!purchaseData || purchaseData.length === 0) {
-            frappe.msgprint({
-                title: 'No Data Available',
-                message: 'No purchase data is currently available for this period.',
-                indicator: 'red'
-            });
-            return;
-        }
-        
-        const metricTitles = {
-            'total_amount': 'Total Purchase by Branch',
-            'unique_suppliers': 'Unique Suppliers by Branch', 
-            'total_outstanding': 'Outstanding Purchase by Branch'
-        };
-        
-        const metricLabels = {
-            'total_amount': 'Total Purchase',
-            'unique_suppliers': 'Unique Suppliers',
-            'total_outstanding': 'Outstanding Purchase'
-        };
-        
-        const metricIcons = {
-            'total_amount': '💰',
-            'unique_suppliers': '👥',
-            'total_outstanding': '📦'
-        };
-        
-        const title = metricTitles[metricType];
-        const label = metricLabels[metricType];
-        const icon = metricIcons[metricType];
-        
-        // Create number cards HTML
-        let cardsHTML = '<div class="dashboard-modal-content">';
-        cardsHTML += '<div class="overview-cards">';
-        
-        // Add number cards for each branch
-        purchaseData.forEach(function(item) {
-            const value = item[metricType] || 'N/A';
-            cardsHTML += '<div class="card">';
-            cardsHTML += '<div class="card-icon purchase">' + icon + '</div>';
-            cardsHTML += '<div class="card-value">' + value + '</div>';
-            cardsHTML += '<div class="card-label">' + (item.display_name || item.name || 'Unknown') + '</div>';
-            cardsHTML += '</div>';
-        });
-        
-        cardsHTML += '</div></div>';
-        
-        // Show modal using frappe.msgprint
-        frappe.msgprint({
-            title: title,
-            message: cardsHTML,
-            wide: true,
-            indicator: 'blue'
-        });
-    }
-
-    function showStockModal(metricType) {
-        if (!stockData || stockData.length === 0) {
-            frappe.msgprint({
-                title: 'No Data Available',
-                message: 'No stock data is currently available.',
-                indicator: 'red'
-            });
-            return;
-        }
-        
-        const metricTitles = {
-            'total_skus': 'Total SKUs by Warehouse',
-            'total_stock_value': 'Stock Value by Warehouse', 
-            'efficiency_score': 'Stock Efficiency by Warehouse'
-        };
-        
-        const metricLabels = {
-            'total_skus': 'Total SKUs',
-            'total_stock_value': 'Stock Value',
-            'efficiency_score': 'Stock Efficiency'
-        };
-        
-        const metricIcons = {
-            'total_skus': '📦',
-            'total_stock_value': '🏷️',
-            'efficiency_score': '✅'
-        };
-        
-        const title = metricTitles[metricType];
-        const label = metricLabels[metricType];
-        const icon = metricIcons[metricType];
-        
-        // Create number cards HTML
-        let cardsHTML = '<div class="dashboard-modal-content">';
-        cardsHTML += '<div class="overview-cards">';
-        
-        // Add number cards for each warehouse
-        stockData.forEach(function(item) {
-            const value = item[metricType] || 'N/A';
-            cardsHTML += '<div class="card">';
-            cardsHTML += '<div class="card-icon stock">' + icon + '</div>';
-            cardsHTML += '<div class="card-value">' + value + '</div>';
-            cardsHTML += '<div class="card-label">' + (item.display_name || item.name || 'Unknown') + '</div>';
-            cardsHTML += '</div>';
-        });
-        
-        cardsHTML += '</div></div>';
-        
-        // Show modal using frappe.msgprint
-        frappe.msgprint({
-            title: title,
-            message: cardsHTML,
-            wide: true,
-            indicator: 'blue'
-        });
-    }
     </script>
+
+<!-- Ensure showCostCenterModal is globally available -->
+<script>
+window.showCostCenterModal = function(metricType) {
+    // Determine which data array to use
+    let dataArr = [];
+    let title = '';
+    let icon = '';
+    if (metricType === 'total_sales') {
+        dataArr = salesData;
+        title = 'Total Sales by Branch';
+        icon = '₹';
+    } else if (metricType === 'total_amount') {
+        dataArr = purchaseData;
+        title = 'Total Purchase by Branch';
+        icon = '💰';
+    } else if (metricType === 'total_outstanding') {
+        dataArr = purchaseData;
+        title = 'Total Expense by Branch';
+        icon = '💵';
+    } else if (metricType === 'total_stock_value') {
+        dataArr = stockData;
+        title = 'Stock Value by Warehouse';
+        icon = '📦';
+    } else {
+        frappe.msgprint({
+            title: 'No Data',
+            message: 'No data available for this metric.',
+            indicator: 'red'
+        });
+        return;
+    }
+
+    if (!dataArr || dataArr.length === 0) {
+        frappe.msgprint({
+            title: 'No Data Available',
+            message: 'No data is currently available for this period.',
+            indicator: 'red'
+        });
+        return;
+    }
+
+    // Build modal content
+    let cardsHTML = '<div class="dashboard-modal-content">';
+    cardsHTML += '<div class="overview-cards">';
+    dataArr.forEach(function(item) {
+        const value = item[metricType] || 'N/A';
+        cardsHTML += '<div class="card">';
+        cardsHTML += '<div class="card-icon">' + icon + '</div>';
+        cardsHTML += '<div class="card-value">' + value + '</div>';
+        cardsHTML += '<div class="card-label">' + (item.display_name || item.name || 'Unknown') + '</div>';
+        cardsHTML += '</div>';
+    });
+    cardsHTML += '</div></div>';
+
+    frappe.msgprint({
+        title: title,
+        message: cardsHTML,
+        wide: true,
+        indicator: 'blue'
+    });
+}
+</script>
 
 {% endblock %}
