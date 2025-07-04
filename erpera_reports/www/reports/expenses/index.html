@@ -9,12 +9,12 @@
             <div class="filter-row-main">
                 <div class="filter-group">
                     <div class="filter-buttons">
-                        <button class="filter-btn active" data-range="today" onclick="setDateRange('today')">1D</button>
-                        <button class="filter-btn" data-range="this_week" onclick="setDateRange('this_week')">1W</button>
-                        <button class="filter-btn" data-range="this_month" onclick="setDateRange('this_month')">1M</button>
-                        <button class="filter-btn" data-range="this_quarter" onclick="setDateRange('this_quarter')">3M</button>
-                        <button class="filter-btn" data-range="last_quarter" onclick="setDateRange('last_quarter')">6M</button>
-                        <button class="filter-btn" data-range="this_year" onclick="setDateRange('this_year')">1Y</button>
+                        <button class="filter-btn active" data-range="1d" onclick="setDateRange('today')">1D</button>
+                        <button class="filter-btn" data-range="1w" onclick="setDateRange('1w')">1W</button>
+                        <button class="filter-btn" data-range="1m" onclick="setDateRange('1m')">1M</button>
+                        <button class="filter-btn" data-range="3m" onclick="setDateRange('3m')">3M</button>
+                        <button class="filter-btn" data-range="6m" onclick="setDateRange('6m')">6M</button>
+                        <button class="filter-btn" data-range="1y" onclick="setDateRange('1y')">1Y</button>
                         <button class="filter-btn custom" data-range="custom" onclick="showCustomDatePicker()">Custom Range</button>
                     </div>
                 </div>
@@ -65,33 +65,34 @@
             <div class="card-icon">💸</div>
         </div>
     </div>
-    <div class="card clickable-card" onclick="showCostCenterModal('invoice_count')">
+    <div class="card clickable-card" onclick="showCostCenterModal('total_salaries')">
         <div class="card-content">
             <div class="card-info">
-                <div class="card-value">{{ invoice_count }}</div>
-                <div class="card-label">Total Invoices</div>
+                <div class="card-value">{{ total_salaries }}</div>
+                <div class="card-label">Total Salaries</div>
                 <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
             </div>
-            <div class="card-icon">📄</div>
+            <div class="card-icon">👥</div>
         </div>
     </div>
-    <div class="card clickable-card" onclick="showCostCenterModal('supplier_count')">
+    <div class="card clickable-card" onclick="showCostCenterModal('total_rents')">
         <div class="card-content">
             <div class="card-info">
-                <div class="card-value">{{ supplier_count }}</div>
-                <div class="card-label">Suppliers</div>
+                <div class="card-value">{{ total_rents }}</div>
+                <div class="card-label">Total Rents</div>
+                <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
             </div>
             <div class="card-icon">🏢</div>
         </div>
     </div>
-    <div class="card clickable-card" onclick="showCostCenterModal('avg_invoice_value')">
+    <div class="card clickable-card" onclick="showCostCenterModal('total_electric_bill')">
         <div class="card-content">
             <div class="card-info">
-                <div class="card-value">{{ avg_invoice_value }}</div>
-                <div class="card-label">Avg Expense Value</div>
-                <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_month }})</p>
+                <div class="card-value">{{ total_electric_bill }}</div>
+                <div class="card-label">Total Electric Bill</div>
+                <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
             </div>
-            <div class="card-icon">📊</div>
+            <div class="card-icon">⚡</div>
         </div>
     </div>
 </div>
@@ -297,21 +298,21 @@ const costCenterData = JSON.parse('{{ cost_center_details | tojson | safe }}');
 function showCostCenterModal(metricType) {
     const metricTitles = {
         'total_expense': 'Total Expense by Cost Center',
-        'invoice_count': 'Total Invoices by Cost Center',
-        'supplier_count': 'Unique Suppliers by Cost Center',
-        'avg_invoice_value': 'Average Expense Value by Cost Center'
+        'total_salaries': 'Total Salaries by Cost Center',
+        'total_rents': 'Total Rents by Cost Center',
+        'total_electric_bill': 'Total Electric Bill by Cost Center'
     };
     const metricLabels = {
         'total_expense': 'Total Expense',
-        'invoice_count': 'Total Invoices',
-        'supplier_count': 'Unique Suppliers',
-        'avg_invoice_value': 'Average Expense Value'
+        'total_salaries': 'Total Salaries',
+        'total_rents': 'Total Rents',
+        'total_electric_bill': 'Total Electric Bill'
     };
     const metricIcons = {
         'total_expense': '💸',
-        'invoice_count': '📄',
-        'supplier_count': '🏢',
-        'avg_invoice_value': '📊'
+        'total_salaries': '👥',
+        'total_rents': '🏢',
+        'total_electric_bill': '⚡'
     };
     const title = metricTitles[metricType];
     const label = metricLabels[metricType];
@@ -333,6 +334,270 @@ function showCostCenterModal(metricType) {
         wide: true,
         indicator: 'blue'
     });
+}
+
+let currentDateRange = 'this_month';
+let currentFromDate = null;
+let currentToDate = null;
+let currentCompany = '';
+let currentBranch = '';
+let isInitialLoad = true;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromDate = urlParams.get('from_date');
+    const toDate = urlParams.get('to_date');
+    const company = urlParams.get('company');
+    const branch = urlParams.get('branch');
+    let range = 'this_month';
+    if (fromDate && toDate) {
+        const today = new Date();
+        const from = new Date(fromDate);
+        const to = new Date(toDate);
+        const isToday = from.toDateString() === today.toDateString() && to.toDateString() === today.toDateString();
+        if (isToday) {
+            range = 'today';
+        } else {
+            // Detect 6m, 3m, 1w, etc. by comparing from/to
+            const diffDays = Math.round((to - from) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 180 - 2 && diffDays <= 184) range = '6m';
+            else if (diffDays >= 90 - 2 && diffDays <= 92) range = '3m';
+            else if (diffDays >= 6 && diffDays <= 7) range = '1w';
+            else range = 'custom';
+        }
+        currentFromDate = from;
+        currentToDate = to;
+        currentToDate.setHours(23, 59, 59);
+    }
+    setDateRange(range, false);
+    if (company) {
+        currentCompany = company;
+        const companySelect = document.getElementById('companyFilter');
+        if (companySelect) companySelect.value = company;
+    }
+    if (branch) {
+        currentBranch = branch;
+        const branchSelect = document.getElementById('branchFilter');
+        if (branchSelect) branchSelect.value = branch;
+    }
+    updateFilterDisplay();
+    isInitialLoad = false;
+});
+
+function calculateDateRange(range) {
+        const today = new Date();
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+        switch(range) {
+            case 'today':
+                return { from: startOfDay, to: endOfDay, display: 'Today' };
+            case '1w': {
+                // Last 7 days including today
+                const weekAgo = new Date(today);
+                weekAgo.setDate(today.getDate() - 6);
+                return { from: weekAgo, to: endOfDay, display: 'Last 7 Days' };
+            }
+            case '1m':
+                // get last month
+                const lastMonth = new Date(today);
+                lastMonth.setMonth(today.getMonth() - 1);
+                return { from: lastMonth, to: endOfDay, display: 'Last Month' };
+            case '3m': {
+                // Last 3 months from today (same day-of-month or last valid day)
+                const threeMonthsAgo = new Date(today);
+                const targetMonth = today.getMonth() - 3;
+                threeMonthsAgo.setMonth(targetMonth);
+                // If the day rolled over, set to last day of month
+                if (threeMonthsAgo.getMonth() !== ((targetMonth + 12) % 12)) {
+                    threeMonthsAgo.setDate(0);
+                }
+                return { from: threeMonthsAgo, to: endOfDay, display: 'Last 3 Months' };
+            }
+            case '6m': {
+                // Last 6 months from today (same day-of-month or last valid day)
+                const sixMonthsAgo = new Date(today);
+                const targetMonth = today.getMonth() - 6;
+                sixMonthsAgo.setMonth(targetMonth);
+                if (sixMonthsAgo.getMonth() !== ((targetMonth + 12) % 12)) {
+                    sixMonthsAgo.setDate(0);
+                }
+                return { from: sixMonthsAgo, to: endOfDay, display: 'Last 6 Months' };
+            }
+            case 'this_year':
+            case '1y':
+                return { from: new Date(today.getFullYear(), 0, 1), to: endOfDay, display: 'This Year' };
+            default:
+                return { from: new Date(today.getFullYear(), today.getMonth(), 1), to: endOfDay, display: 'This Month' };
+        }
+    }
+
+function setDateRange(range, shouldRefresh = true) {
+    currentDateRange = range;
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    const activeBtn = document.querySelector(`[data-range="${range}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+    const dates = calculateDateRange(range);
+    currentFromDate = dates.from;
+    currentToDate = dates.to;
+    updateRangeDisplay(range, dates);
+    updateFilterDisplay();
+    // Always update query params to exact dates
+    if (!isInitialLoad && shouldRefresh) {
+        refreshDashboardData(dates.from, dates.to);
+    }
+}
+
+function updateRangeDisplay(range, dates) {
+    const displayText = document.getElementById('currentRangeText');
+    if (displayText) {
+        const fromStr = dates.from.toLocaleDateString();
+        const toStr = dates.to.toLocaleDateString();
+        displayText.textContent = `Showing: ${dates.display} (${fromStr} - ${toStr})`;
+    }
+}
+
+function updateFilterDisplay() {
+    const chipsContainer = document.getElementById('filterChips');
+    let chipsHTML = '';
+    if (currentDateRange === 'custom') {
+        const fromStr = currentFromDate ? currentFromDate.toLocaleDateString() : '';
+        const toStr = currentToDate ? currentToDate.toLocaleDateString() : '';
+        chipsHTML += `<span class='filter-chip'>Custom: ${fromStr} - ${toStr} <button class='chip-clear' onclick='clearDateFilter()' title='Clear'>×</button></span>`;
+    }
+    if (currentCompany) {
+        chipsHTML += `<span class='filter-chip'>Company: ${getCompanyName(currentCompany)} <button class='chip-clear' onclick='clearCompanyFilter()' title='Clear'>×</button></span>`;
+    }
+    if (currentBranch) {
+        chipsHTML += `<span class='filter-chip'>Branch: ${getBranchName(currentBranch)} <button class='chip-clear' onclick='clearBranchFilter()' title='Clear'>×</button></span>`;
+    }
+    chipsContainer.innerHTML = chipsHTML;
+}
+
+function refreshDashboardData(fromDate, toDate) {
+    frappe.show_alert('Refreshing dashboard data...', 2);
+    const fromDateStr = fromDate.toISOString().split('T')[0];
+    const toDateStr = toDate.toISOString().split('T')[0];
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('from_date', fromDateStr);
+    currentUrl.searchParams.set('to_date', toDateStr);
+    if (currentCompany) {
+        currentUrl.searchParams.set('company', currentCompany);
+    } else {
+        currentUrl.searchParams.delete('company');
+    }
+    if (currentBranch) {
+        currentUrl.searchParams.set('branch', currentBranch);
+    } else {
+        currentUrl.searchParams.delete('branch');
+    }
+    // Debug: log the filters being sent
+    console.log('Refreshing with filters:', {
+        from_date: fromDateStr,
+        to_date: toDateStr,
+        company: currentCompany,
+        branch: currentBranch
+    });
+    window.location.href = currentUrl.toString();
+}
+
+// Helper functions for getting company and branch names
+function getCompanyName(companyValue) {
+    const companySelect = document.getElementById('companyFilter');
+    if (companySelect) {
+        const option = companySelect.querySelector(`option[value="${companyValue}"]`);
+        return option ? option.textContent : companyValue;
+    }
+    return companyValue;
+}
+
+function getBranchName(branchValue) {
+    const branchSelect = document.getElementById('branchFilter');
+    if (branchSelect) {
+        const option = branchSelect.querySelector(`option[value="${branchValue}"]`);
+        return option ? option.textContent : branchValue;
+    }
+    return branchValue;
+}
+
+// Filter functions
+function setCompanyFilter() {
+    const companySelect = document.getElementById('companyFilter');
+    currentCompany = companySelect ? companySelect.value : '';
+    updateFilterDisplay();
+    if (!isInitialLoad) {
+        refreshDashboardData(currentFromDate, currentToDate);
+    }
+}
+
+function setBranchFilter() {
+    const branchSelect = document.getElementById('branchFilter');
+    currentBranch = branchSelect ? branchSelect.value : '';
+    updateFilterDisplay();
+    if (!isInitialLoad) {
+        refreshDashboardData(currentFromDate, currentToDate);
+    }
+}
+
+function clearCompanyFilter() {
+    currentCompany = '';
+    const companySelect = document.getElementById('companyFilter');
+    if (companySelect) companySelect.value = '';
+    updateFilterDisplay();
+    if (!isInitialLoad) {
+        refreshDashboardData(currentFromDate, currentToDate);
+    }
+}
+
+function clearBranchFilter() {
+    currentBranch = '';
+    const branchSelect = document.getElementById('branchFilter');
+    if (branchSelect) branchSelect.value = '';
+    updateFilterDisplay();
+    if (!isInitialLoad) {
+        refreshDashboardData(currentFromDate, currentToDate);
+    }
+}
+
+function clearDateFilter() {
+    setDateRange('this_month');
+}
+
+function showCustomDatePicker() {
+    const datePicker = document.getElementById('customDatePicker');
+    if (datePicker) {
+        datePicker.style.display = 'block';
+    }
+}
+
+function applyCustomDateRange() {
+    const fromDateInput = document.getElementById('fromDate');
+    const toDateInput = document.getElementById('toDate');
+    
+    if (fromDateInput && toDateInput && fromDateInput.value && toDateInput.value) {
+        const fromDate = new Date(fromDateInput.value);
+        const toDate = new Date(toDateInput.value);
+        toDate.setHours(23, 59, 59);
+        
+        currentFromDate = fromDate;
+        currentToDate = toDate;
+        currentDateRange = 'custom';
+        
+        updateRangeDisplay('custom', { from: fromDate, to: toDate, display: 'Custom Range' });
+        updateFilterDisplay();
+        
+        const datePicker = document.getElementById('customDatePicker');
+        if (datePicker) {
+            datePicker.style.display = 'none';
+        }
+        
+        if (!isInitialLoad) {
+            refreshDashboardData(fromDate, toDate);
+        }
+    }
 }
 </script>
 

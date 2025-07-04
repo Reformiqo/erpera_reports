@@ -209,47 +209,38 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function() {
-    function renderMultiPieCharts_{{ chart_id }}(datasets) {
-      const container = document.getElementById('{{ chart_id }}_container');
-      
+    function renderMultiPieCharts(chartId, datasets) {
+      const container = document.getElementById(chartId + '_container');
       if (!datasets || Object.keys(datasets).length === 0) {
         container.innerHTML = '<div class="error-message">No data available</div>';
         return;
       }
-      
       // Create grid container
       const gridContainer = document.createElement('div');
       gridContainer.className = 'multi-pie-grid';
-      
       // Create pie chart for each entity
       Object.keys(datasets).forEach((entityName, index) => {
         const entityData = datasets[entityName];
-        
         // Create chart item container
         const chartItem = document.createElement('div');
         chartItem.className = 'pie-chart-item';
-        
         // Create title
         const title = document.createElement('div');
         title.className = 'pie-chart-title';
         title.textContent = entityName;
-        
         // Create total amount
         const total = document.createElement('div');
         total.className = 'pie-chart-total';
         total.textContent = `Total: ₹${entityData.total_amount.toLocaleString()}`;
-        
         // Create canvas
         const canvas = document.createElement('canvas');
-        canvas.id = '{{ chart_id }}_' + index;
+        canvas.id = chartId + '_' + index;
         canvas.className = 'pie-canvas';
-        
         // Append elements
         chartItem.appendChild(title);
         chartItem.appendChild(total);
         chartItem.appendChild(canvas);
         gridContainer.appendChild(chartItem);
-        
         // Create pie chart
         const chartInstance = new Chart(canvas, {
           type: 'pie',
@@ -258,7 +249,6 @@
             datasets: [{
               data: entityData.data,
               backgroundColor: entityData.backgroundColor,
-              // Add initial offset array (all 0)
               offset: entityData.data.map(() => 0)
             }]
           },
@@ -269,19 +259,15 @@
                 labels: {
                   boxWidth: 12,
                   padding: 8,
-                  font: {
-                    size: 10
-                  },
+                  font: { size: 10 },
                   generateLabels: function(chart) {
-                    // Default generator
                     const original = Chart.overrides.pie.plugins.legend.labels.generateLabels;
                     const labels = original(chart);
-                    // Highlight hovered label
                     const hovered = chart.$_hoveredIndex;
                     return labels.map((label, idx) => {
                       if (hovered === idx) {
                         return Object.assign({}, label, {
-                          fontColor: '#1d4ed8', // blue-700
+                          fontColor: '#1d4ed8',
                           fontStyle: 'bold',
                           fillStyle: label.fillStyle,
                           strokeStyle: label.strokeStyle,
@@ -305,7 +291,6 @@
               }
             },
             onHover: function(evt, activeEls) {
-              // Pop out the hovered segment and highlight legend label
               const chart = this;
               const dataset = chart.data.datasets[0];
               if (!dataset._originalOffset) {
@@ -322,25 +307,30 @@
                 chart.update('none');
               }
             },
+            onClick: function(evt, elements) {
+              if (elements.length > 0) {
+                const idx = elements[0].index;
+                let label = this.data.labels[idx];
+                const value = this.data.datasets[0].data[idx];
+                label = label.replace(/\s*\(.*\)$/, '').trim();
+                if (typeof showDrillDownModal === 'function') {
+                  showDrillDownModal({ label, value, entity: entityName }, '{{ title }}');
+                }
+              }
+            },
             responsive: true,
             maintainAspectRatio: false
           }
         });
       });
-      
-      // Replace loading spinner with charts
       container.innerHTML = '';
       container.appendChild(gridContainer);
     }
-    
-    function loadMultiPieData_{{ chart_id }}() {
-      const container = document.getElementById('{{ chart_id }}_container');
+    function loadMultiPieData(chartId) {
+      const container = document.getElementById(chartId + '_container');
       container.innerHTML = `<div class="loading-spinner"><i class="fa fa-spinner fa-spin"></i> Loading charts...</div>`;
-
-      // Read filters from query params
-      {% set filters_json = filters|tojson if filters is defined else 'null' %}
+      var filterDefs = {{ filters|tojson|default('null')|safe }};
       var filters = {};
-      var filterDefs = {{ filters_json }};
       function decodeQueryParam(val) {
         return decodeURIComponent((val || '').replace(/\+/g, ' '));
       }
@@ -352,28 +342,269 @@
           }
         });
       }
-
       frappe.call({
         method: "{{ data_url }}",
         args: { filters: filters },
         callback: function(r) {
           if (r.message && r.message.success) {
-            renderMultiPieCharts_{{ chart_id }}(r.message.datasets);
+            renderMultiPieCharts(chartId, r.message.datasets);
           } else {
-            const container = document.getElementById('{{ chart_id }}_container');
+            const container = document.getElementById(chartId + '_container');
             container.innerHTML = '<div class="error-message">Error loading data: ' + 
               (r.message ? r.message.error || 'Unknown error' : 'No response') + '</div>';
           }
         },
         error: function(err) {
-          const container = document.getElementById('{{ chart_id }}_container');
+          const container = document.getElementById(chartId + '_container');
           container.innerHTML = '<div class="error-message">Failed to load data</div>';
         }
       });
     }
-
     // Initial chart load
-    loadMultiPieData_{{ chart_id }}();
+    loadMultiPieData('{{ chart_id }}');
   });
+
+  function showDrillDownModal(clickData, chartTitle) {
+    // Prepare filters for drill-down
+    const filters = {};
+    // Get current filter values if they exist
+    const chartId = chartTitle.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
+    const filterElements = document.querySelectorAll(`.filter-control-${chartId}`);
+    filterElements.forEach(function(el) {
+      const fieldname = el.dataset.fieldname;
+      if (fieldname && el.value) {
+        filters[fieldname] = el.value;
+      }
+    });
+    // Add the clicked label as a filter context
+    let label = clickData.label;
+    const value = clickData.value;
+    // Remove anything in parentheses (and trailing spaces)
+    label = label.replace(/\s*\(.*\)$/, '').trim();
+    // Set drill_type based on chart title and context
+    const titleLower = chartTitle ? chartTitle.toLowerCase() : '';
+    // If chart is 'Top Buying Products by Branch' or 'Top Selling Products by Branch', always treat label as item
+    if (titleLower.includes('top buying products by branch') || titleLower.includes('top selling products by branch')) {
+      filters['drill_type'] = 'item';
+      filters['drill_value'] = label;
+    } else if (titleLower.includes('product') || titleLower.includes('item')) {
+      filters['drill_type'] = 'item';
+      filters['drill_value'] = label;
+    } else if (titleLower.includes('company')) {
+      filters['drill_type'] = 'company';
+      filters['drill_value'] = label;
+    } else if (titleLower.includes('branch')) {
+      filters['drill_type'] = 'branch';
+      filters['drill_value'] = label;
+    } else {
+      filters['drill_type'] = 'general';
+      filters['drill_value'] = label;
+    }
+    if (clickData.entity) {
+      filters['entity'] = clickData.entity;
+    }
+    // Call backend drill down method if defined
+    const drillDownMethod = '{{ drill_down_method | default("erpera_reports.api.get_buying_drill_down_data") }}';
+    const drillDownTitle = '{{ drill_down_title | default("Purchase Details") }}';
+    frappe.call({
+      method: drillDownMethod,
+      args: { filters: filters },
+      callback: function(r) {
+        if (r.message && r.message.success) {
+          const data = r.message.data || [];
+          const title = r.message.title || `${drillDownTitle}: ${label}`;
+          if (data.length === 0) {
+            frappe.msgprint({
+              title: title,
+              message: '<div style="text-align: center; padding: 20px; color: #6c757d;">No detailed data found for this selection.</div>',
+              wide: true,
+              indicator: 'blue'
+            });
+            return;
+          }
+          // Build HTML table
+          let tableHtml = `
+            <style>
+              .drill-down-modal .modal-dialog,
+              .msgprint.drill-down-modal .modal-dialog,
+              .modal.drill-down-modal .modal-dialog {
+                max-width: 95vw !important;
+                width: 95vw !important;
+                margin: 1vh auto !important;
+              }
+              .drill-down-modal .modal-content,
+              .msgprint.drill-down-modal .modal-content,
+              .modal.drill-down-modal .modal-content {
+                height: 95vh !important;
+                display: flex !important;
+                flex-direction: column !important;
+              }
+              .drill-down-modal .modal-body,
+              .msgprint.drill-down-modal .modal-body,
+              .modal.drill-down-modal .modal-body {
+                flex: 1 !important;
+                overflow: hidden !important;
+                padding: 15px !important;
+              }
+              .drill-down-table-container {
+                height: 100% !important;
+                overflow-y: auto !important;
+                border: 1px solid #e5e7eb !important;
+                border-radius: 6px !important;
+              }
+              .drill-down-table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                font-size: 0.85em !important;
+                margin: 0 !important;
+              }
+              .drill-down-table th {
+                padding: 12px 8px !important;
+                text-align: left !important;
+                border-bottom: 2px solid #e5e7eb !important;
+                font-weight: 600 !important;
+                color: #374151 !important;
+                background: #f9fafb !important;
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 10 !important;
+                white-space: nowrap !important;
+              }
+              .drill-down-table td {
+                padding: 10px 8px !important;
+                border-bottom: 1px solid #f3f4f6 !important;
+                color: #374151 !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                max-width: 200px !important;
+              }
+              .drill-down-table tr:nth-child(even) {
+                background: #f9fafb !important;
+              }
+              .drill-down-table tr:hover {
+                background: #f3f4f6 !important;
+              }
+              .drill-down-summary {
+                margin-bottom: 15px !important;
+                padding: 15px !important;
+                background: #f8f9fa !important;
+                border-radius: 6px !important;
+                border: 1px solid #e9ecef !important;
+              }
+            </style>
+            <div class="drill-down-summary">
+              <h4 style="margin: 0 0 10px 0; color: #374151; font-size: 1.1em;">${title}</h4>
+              <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <span style="color: #6b7280; font-size: 0.9em;">
+                  <strong style="color: #374151;">Total Amount:</strong> ₹${value.toLocaleString()}
+                </span>
+                <span style="color: #6b7280; font-size: 0.9em;">
+                  <strong style="color: #374151;">Records:</strong> ${data.length}
+                </span>
+                <span style="color: #6b7280; font-size: 0.9em;">
+                  <strong style="color: #374151;">Chart:</strong> ${chartTitle}
+                </span>
+              </div>
+            </div>
+            <div class="drill-down-table-container">
+              <table class="drill-down-table">
+                <thead>
+                  <tr>`;
+          // Table headers (use first row to determine columns)
+          if (data.length > 0) {
+            const headers = Object.keys(data[0]);
+            headers.forEach(header => {
+              const displayHeader = header.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              tableHtml += `<th>${displayHeader}</th>`;
+            });
+          }
+          tableHtml += `</tr></thead><tbody>`;
+          // Table rows
+          data.forEach((row, index) => {
+            tableHtml += `<tr>`;
+            Object.values(row).forEach(value => {
+              let displayValue = value;
+              // Format different types of values
+              if (typeof value === 'number') {
+                if (value > 1000) {
+                  displayValue = '₹' + value.toLocaleString();
+                } else {
+                  displayValue = value.toLocaleString();
+                }
+              } else if (value && typeof value === 'string' && value.includes('-')) {
+                // Might be a date
+                const date = new Date(value);
+                if (!isNaN(date.getTime())) {
+                  displayValue = date.toLocaleDateString();
+                }
+              }
+              tableHtml += `<td title="${displayValue || '-'}">${displayValue || '-'}</td>`;
+            });
+            tableHtml += `</tr>`;
+          });
+          tableHtml += `</tbody></table></div>`;
+          // Show the modal with data
+          frappe.msgprint({
+            title: drillDownTitle,
+            message: tableHtml,
+            wide: true,
+            indicator: 'green'
+          });
+          // Apply custom styles immediately and repeatedly
+          const applyModalStyles = () => {
+            // Target all possible modal selectors
+            const selectors = [
+              '.modal-dialog',
+              '.msgprint .modal-dialog',
+              '.modal .modal-dialog',
+              '.frappe-msgprint .modal-dialog'
+            ];
+            selectors.forEach(selector => {
+              const elements = document.querySelectorAll(selector);
+              elements.forEach(el => {
+                el.style.setProperty('max-width', '95vw', 'important');
+                el.style.setProperty('width', '95vw', 'important');
+                el.style.setProperty('margin', '1vh auto', 'important');
+              });
+            });
+            // Also target modal content for height
+            const contentSelectors = [
+              '.modal-content',
+              '.msgprint .modal-content',
+              '.modal .modal-content'
+            ];
+            contentSelectors.forEach(selector => {
+              const elements = document.querySelectorAll(selector);
+              elements.forEach(el => {
+                el.style.setProperty('height', '95vh', 'important');
+                el.style.setProperty('display', 'flex', 'important');
+                el.style.setProperty('flex-direction', 'column', 'important');
+              });
+            });
+          };
+          setTimeout(applyModalStyles, 0);
+          setTimeout(applyModalStyles, 50);
+          setTimeout(applyModalStyles, 100);
+          setTimeout(applyModalStyles, 200);
+        } else {
+          frappe.msgprint({
+            title: 'Drill Down Error',
+            message: '<div style="text-align: center; padding: 20px; color: #dc2626;">Error loading drill-down data. Please try again.</div>',
+            wide: true,
+            indicator: 'red'
+          });
+        }
+      },
+      error: function() {
+        frappe.msgprint({
+          title: 'Drill Down Error',
+          message: '<div style="text-align: center; padding: 20px; color: #dc2626;">Error loading drill-down data. Please try again.</div>',
+          wide: true,
+          indicator: 'red'
+        });
+      }
+    });
+  }
 </script>
 {% endif %} 

@@ -1,9 +1,7 @@
 import frappe
 from datetime import datetime
-from erpera_reports.expense import (
-    get_expense_stats,
-    get_cost_center_expense_details
-)
+
+
 
 def get_context(context):
     """
@@ -71,14 +69,73 @@ def get_context(context):
     filter_month_from = from_date or current_date.replace(day=1).strftime("%Y-%m-%d")
     filter_month_to = to_date or current_date.strftime("%Y-%m-%d")
 
-    # Get expense stats (only item group 'EXPENSE')
-    stats = get_expense_stats(filter_from, filter_to, filter_month_from, filter_month_to, company, branch)
-    context.total_expense = stats['total_expense']
-    context.invoice_count = stats['invoice_count']
-    context.supplier_count = stats['supplier_count']
-    context.avg_invoice_value = stats['avg_invoice_value']
+    # Build extra conditions for company/branch
+    extra_gle = ""
+    extra_args = {}
+    if company and company.strip():
+        extra_gle += " AND gle.company = %(company)s"
+        extra_args['company'] = company
+    if branch and branch.strip():
+        extra_gle += " AND gle.cost_center = %(branch)s"
+        extra_args['branch'] = branch
+
+    # Query for Total Expense (all expense accounts)
+    total_expense_query = f"""
+        SELECT SUM(gle.debit) AS total_expense
+        FROM `tabGL Entry` gle
+        INNER JOIN `tabAccount` acc ON gle.account = acc.name
+        WHERE acc.account_type = 'Expense' AND gle.debit > 0
+        AND gle.posting_date BETWEEN {filter_from} AND {filter_to}
+    """
+    total_expense_result = frappe.db.sql(total_expense_query, as_dict=True)[0] or {}
+    total_expense = total_expense_result.get('total_expense') or 0
+
+    # Query for Total Salaries (accounts containing salary, payroll, wage, compensation)
+    total_salaries_query = f"""
+        SELECT SUM(gle.debit) AS total_salaries
+        FROM `tabGL Entry` gle
+        WHERE gle.account = 'Salary - HKE'
+        AND gle.debit > 0
+    """
+    total_salaries_result = frappe.db.sql(total_salaries_query, as_dict=True)[0] or {}
+    total_salaries = total_salaries_result.get('total_salaries') or 0
+
+    # Query for Total Rents (accounts containing rent, lease, premises)
+    total_rents_query = f"""
+        SELECT SUM(gle.debit) AS total_rents
+        FROM `tabGL Entry` gle
+        INNER JOIN `tabAccount` acc ON gle.account = acc.name
+        WHERE acc.account_type = 'Expense' AND gle.debit > 0
+        AND gle.posting_date BETWEEN {filter_from} AND {filter_to}
+        AND (LOWER(acc.account_name) LIKE '%rent%' 
+             OR LOWER(acc.account_name) LIKE '%lease%' 
+             OR LOWER(acc.account_name) LIKE '%premises%')
+    """
+    total_rents_result = frappe.db.sql(total_rents_query, as_dict=True)[0] or {}
+    total_rents = total_rents_result.get('total_rents') or 0
+
+    # Query for Total Electric Bill (accounts containing electric, power, electricity, utility)
+    total_electric_bill_query = f"""
+        SELECT SUM(gle.debit) AS total_electric_bill
+        FROM `tabGL Entry` gle
+        INNER JOIN `tabAccount` acc ON gle.account = acc.name
+        WHERE acc.account_type = 'Expense' AND gle.debit > 0
+        AND gle.posting_date BETWEEN {filter_from} AND {filter_to}
+        AND (LOWER(acc.account_name) LIKE '%electric%' 
+             OR LOWER(acc.account_name) LIKE '%power%' 
+             OR LOWER(acc.account_name) LIKE '%electricity%' 
+             OR LOWER(acc.account_name) LIKE '%utility%')
+    """
+    total_electric_bill_result = frappe.db.sql(total_electric_bill_query, as_dict=True)[0] or {}
+    total_electric_bill = total_electric_bill_result.get('total_electric_bill') or 0
+
+    # Add expense stats to context
+    context.total_expense = f"₹{total_expense:,.0f}"
+    context.total_salaries = f"₹{total_salaries:,.0f}"
+    context.total_rents = f"₹{total_rents:,.0f}"
+    context.total_electric_bill = f"₹{total_electric_bill:,.0f}"
 
     # Get detailed data for each cost center for modal display, using filters
-    context.cost_center_details = get_cost_center_expense_details(filter_from, filter_to, filter_month_from, filter_month_to, company, branch)
+    context.cost_center_details = 0
 
     return context

@@ -14,13 +14,13 @@
                     <div class="filter-buttons">
                         <button class="filter-btn active" data-range="today" onclick="setDateRange('today')">1D</button>
                         <!-- <button class="filter-btn" data-range="yesterday" onclick="setDateRange('yesterday')">Yesterday</button> -->
-                        <button class="filter-btn" data-range="this_week" onclick="setDateRange('this_week')">1W</button>
+                        <button class="filter-btn" data-range="1w" onclick="setDateRange('1w')">1W</button>
                         <!-- <button class="filter-btn" data-range="last_week" onclick="setDateRange('last_week')">Last Week</button> -->
-                        <button class="filter-btn" data-range="this_month" onclick="setDateRange('this_month')">1M</button>
+                        <button class="filter-btn" data-range="1m" onclick="setDateRange('1m')">1M</button>
                         <!-- <button class="filter-btn" data-range="last_month" onclick="setDateRange('last_month')">Last Month</button> -->
-                        <button class="filter-btn" data-range="this_quarter" onclick="setDateRange('this_quarter')">3M</button>
-                        <button class="filter-btn" data-range="last_quarter" onclick="setDateRange('last_quarter')">6M</button>
-                        <button class="filter-btn" data-range="this_year" onclick="setDateRange('this_year')">1Y</button>
+                        <button class="filter-btn" data-range="3m" onclick="setDateRange('3m')">3M</button>
+                        <button class="filter-btn" data-range="6m" onclick="setDateRange('6m')">6M</button>
+                        <button class="filter-btn" data-range="1y" onclick="setDateRange('1y')">1Y</button>
                         <!-- <button class="filter-btn" data-range="last_year" onclick="setDateRange('last_year')">Last Year</button> -->
                         <button class="filter-btn custom" data-range="custom" onclick="showCustomDatePicker()">Custom Range</button>
                     </div>
@@ -642,8 +642,24 @@
         currentToDate = dates.to;
         updateRangeDisplay(range, dates);
         updateFilterDisplay();
+        // Always update query params to exact dates
         if (!isInitialLoad && shouldRefresh) {
-            refreshDashboardData(dates.from, dates.to);
+            const fromDateStr = dates.from.toISOString().split('T')[0];
+            const toDateStr = dates.to.toISOString().split('T')[0];
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('from_date', fromDateStr);
+            currentUrl.searchParams.set('to_date', toDateStr);
+            if (currentCompany) {
+                currentUrl.searchParams.set('company', currentCompany);
+            } else {
+                currentUrl.searchParams.delete('company');
+            }
+            if (currentBranch) {
+                currentUrl.searchParams.set('branch', currentBranch);
+            } else {
+                currentUrl.searchParams.delete('branch');
+            }
+            window.location.href = currentUrl.toString();
         }
     }
 
@@ -735,49 +751,41 @@
         switch(range) {
             case 'today':
                 return { from: startOfDay, to: endOfDay, display: 'Today' };
-            case 'yesterday':
-                const yesterday = new Date(today);
-                yesterday.setDate(today.getDate() - 1);
-                return { from: new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()), to: new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59), display: 'Yesterday' };
-            case 'this_week':
-                const startOfWeek = new Date(today);
-                const dayOfWeek = today.getDay();
-                startOfWeek.setDate(today.getDate() - dayOfWeek);
-                return { from: new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate()), to: endOfDay, display: 'This Week' };
-            case 'last_week':
-                const lastWeekStart = new Date(today);
-                lastWeekStart.setDate(today.getDate() - dayOfWeek - 7);
-                const lastWeekEnd = new Date(lastWeekStart);
-                lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
-                return { from: new Date(lastWeekStart.getFullYear(), lastWeekStart.getMonth(), lastWeekStart.getDate()), to: new Date(lastWeekEnd.getFullYear(), lastWeekEnd.getMonth(), lastWeekEnd.getDate(), 23, 59, 59), display: 'Last Week' };
-            case 'this_month':
-                return { from: new Date(today.getFullYear(), today.getMonth(), 1), to: endOfDay, display: 'This Month' };
-            case 'last_month':
-                const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-                const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-                return { from: lastMonth, to: new Date(lastMonthEnd.getFullYear(), lastMonthEnd.getMonth(), lastMonthEnd.getDate(), 23, 59, 59), display: 'Last Month' };
-            case 'this_quarter':
-            case '3m':
-                // Rolling 3 months (calendar months) up to today
+            case '1w': {
+                // Last 7 days including today
+                const weekAgo = new Date(today);
+                weekAgo.setDate(today.getDate() - 6);
+                return { from: weekAgo, to: endOfDay, display: 'Last 7 Days' };
+            }
+            case '1m':
+                // get last month
+                const lastMonth = new Date(today);
+                lastMonth.setMonth(today.getMonth() - 1);
+                return { from: lastMonth, to: endOfDay, display: 'Last Month' };
+            case '3m': {
+                // Last 3 months from today (same day-of-month or last valid day)
                 const threeMonthsAgo = new Date(today);
-                threeMonthsAgo.setMonth(today.getMonth() - 3);
+                const targetMonth = today.getMonth() - 3;
+                threeMonthsAgo.setMonth(targetMonth);
+                // If the day rolled over, set to last day of month
+                if (threeMonthsAgo.getMonth() !== ((targetMonth + 12) % 12)) {
+                    threeMonthsAgo.setDate(0);
+                }
                 return { from: threeMonthsAgo, to: endOfDay, display: 'Last 3 Months' };
-            case '6m':
-                // Rolling 6 months (calendar months) up to today
+            }
+            case '6m': {
+                // Last 6 months from today (same day-of-month or last valid day)
                 const sixMonthsAgo = new Date(today);
-                sixMonthsAgo.setMonth(today.getMonth() - 6);
+                const targetMonth = today.getMonth() - 6;
+                sixMonthsAgo.setMonth(targetMonth);
+                if (sixMonthsAgo.getMonth() !== ((targetMonth + 12) % 12)) {
+                    sixMonthsAgo.setDate(0);
+                }
                 return { from: sixMonthsAgo, to: endOfDay, display: 'Last 6 Months' };
-            case 'last_quarter':
-                const lastQuarter = Math.floor((today.getMonth() - 3) / 3);
-                const lastQuarterStart = new Date(today.getFullYear(), lastQuarter * 3, 1);
-                const lastQuarterEnd = new Date(today.getFullYear(), (lastQuarter + 1) * 3, 0);
-                return { from: lastQuarterStart, to: new Date(lastQuarterEnd.getFullYear(), lastQuarterEnd.getMonth(), lastQuarterEnd.getDate(), 23, 59, 59), display: 'Last Quarter' };
+            }
             case 'this_year':
+            case '1y':
                 return { from: new Date(today.getFullYear(), 0, 1), to: endOfDay, display: 'This Year' };
-            case 'last_year':
-                const lastYearStart = new Date(today.getFullYear() - 1, 0, 1);
-                const lastYearEnd = new Date(today.getFullYear() - 1, 11, 31);
-                return { from: lastYearStart, to: new Date(lastYearEnd.getFullYear(), lastYearEnd.getMonth(), lastYearEnd.getDate(), 23, 59, 59), display: 'Last Year' };
             default:
                 return { from: new Date(today.getFullYear(), today.getMonth(), 1), to: endOfDay, display: 'This Month' };
         }

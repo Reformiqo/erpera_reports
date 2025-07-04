@@ -798,8 +798,12 @@
             if (isToday) {
                 range = 'today';
             } else {
-                // You can add more logic here to match other ranges if needed
-                range = 'custom';
+                // Detect 6m, 3m, 1w, etc. by comparing from/to
+                const diffDays = Math.round((to - from) / (1000 * 60 * 60 * 24));
+                if (diffDays >= 180 - 2 && diffDays <= 184) range = '6m';
+                else if (diffDays >= 90 - 2 && diffDays <= 92) range = '3m';
+                else if (diffDays >= 6 && diffDays <= 7) range = '1w';
+                else range = 'custom';
             }
             currentFromDate = from;
             currentToDate = to;
@@ -965,7 +969,7 @@
                 
             case 'yesterday':
                 const yesterday = new Date(today);
-                yesterday.setDate(yesterday.getDate() - 1);
+                yesterday.setDate(today.getDate() - 1);
                 return {
                     from: new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()),
                     to: new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59),
@@ -1013,16 +1017,20 @@
                 };
                 
             case 'this_quarter':
-            case '3m':
-                // Rolling 3 months (calendar months) up to today
+            case '3m': {
+                // Last 3 months from today (same day-of-month or last valid day)
                 const threeMonthsAgo = new Date(today);
-                threeMonthsAgo.setMonth(today.getMonth() - 3);
+                const targetMonth = today.getMonth() - 3;
+                threeMonthsAgo.setMonth(targetMonth);
+                if (threeMonthsAgo.getMonth() !== ((targetMonth + 12) % 12)) {
+                    threeMonthsAgo.setDate(0);
+                }
                 return {
                     from: threeMonthsAgo,
                     to: endOfDay,
                     display: 'Last 3 Months'
                 };
-                
+            }
             case 'last_quarter':
                 const lastQuarter = Math.floor((today.getMonth() - 3) / 3);
                 const lastQuarterStart = new Date(today.getFullYear(), lastQuarter * 3, 1);
@@ -1052,16 +1060,20 @@
                     display: 'Last Year'
                 };
                 
-            case '6m':
-                // Rolling 6 months (calendar months) up to today
+            case '6m': {
+                // Last 6 months from today (same day-of-month or last valid day)
                 const sixMonthsAgo = new Date(today);
-                sixMonthsAgo.setMonth(today.getMonth() - 6);
+                const targetMonth = today.getMonth() - 6;
+                sixMonthsAgo.setMonth(targetMonth);
+                if (sixMonthsAgo.getMonth() !== ((targetMonth + 12) % 12)) {
+                    sixMonthsAgo.setDate(0);
+                }
                 return {
                     from: sixMonthsAgo,
                     to: endOfDay,
                     display: 'Last 6 Months'
                 };
-                
+            }
             default:
                 return {
                     from: new Date(today.getFullYear(), today.getMonth(), 1),

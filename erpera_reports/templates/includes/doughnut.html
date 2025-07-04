@@ -134,16 +134,21 @@
       });
     }
     {% if data_url %}
-    // Get filters from query params (decode values) - comprehensive approach like bar template
-    const queryFiltersRaw = getQueryParams();
-    const queryFilters = {};
-    Object.keys(queryFiltersRaw).forEach(function(key) {
-      queryFilters[key] = decodeQueryParam(queryFiltersRaw[key]);
-    });
+    // Get filters from query params - only use defined filters
+    var filters = {{ filters|tojson if filters is defined else 'null' }};
+    var args = {};
+    if (filters && Array.isArray(filters)) {
+      var urlParams = new URLSearchParams(window.location.search);
+      filters.forEach(function(f) {
+        if (urlParams.has(f.fieldname)) {
+          args[f.fieldname] = decodeQueryParam(urlParams.get(f.fieldname));
+        }
+      });
+    }
     
     frappe.call({
       method: "{{ data_url }}",
-      args: { filters: queryFilters },
+      args: { filters: args },
       callback: function(r) {
         if (r.message) {
           renderDoughnutChart_{{ chart_id }}(

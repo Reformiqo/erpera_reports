@@ -333,8 +333,13 @@ def get_selling_drill_down_data(filters=None, chart_title=None, clicked_label=No
             query += " AND si.cost_center = %(branch)s"
             params['branch'] = filters['branch']
         if filters.get('item'):
-            query += " AND sii.item_code = %(item)s"
+            query += " AND (sii.item_code = %(item)s OR sii.item_name = %(item)s"
             params['item'] = filters['item']
+            # If this is a category chart, also match item_group
+            if chart_title and "category" in chart_title.lower():
+                query += " OR sii.item_group = %(item_group)s"
+                params['item_group'] = filters['item']
+            query += ")"
         if filters.get('item_group'):
             query += " AND sii.item_group = %(item_group)s"
             params['item_group'] = filters['item_group']
