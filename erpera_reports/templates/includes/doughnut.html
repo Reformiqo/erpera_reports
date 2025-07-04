@@ -46,6 +46,19 @@
   <canvas id="{{ chart_id }}" class="doughnut-canvas"></canvas>
 </div>
 <script>
+  // Utility to get query params as an object
+  function getQueryParams() {
+    const params = {};
+    window.location.search.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(str, key, value) {
+      params[key] = value;
+    });
+    return params;
+  }
+  // Utility to decode query param values (handles + and percent encoding)
+  function decodeQueryParam(val) {
+    return decodeURIComponent((val || '').replace(/\+/g, ' '));
+  }
+
   document.addEventListener("DOMContentLoaded", function() {
     function renderDoughnutChart_{{ chart_id }}(labels, data, backgroundColor) {
       new Chart(document.getElementById('{{ chart_id }}'), {
@@ -121,22 +134,16 @@
       });
     }
     {% if data_url %}
-    var filters = {{ filters|tojson if filters is defined else 'null' }};
-    var args = {};
-    function decodeQueryParam(val) {
-      return decodeURIComponent((val || '').replace(/\+/g, ' '));
-    }
-    if (filters && Array.isArray(filters)) {
-      var urlParams = new URLSearchParams(window.location.search);
-      filters.forEach(function(f) {
-        if (urlParams.has(f.fieldname)) {
-          args[f.fieldname] = decodeQueryParam(urlParams.get(f.fieldname));
-        }
-      });
-    }
+    // Get filters from query params (decode values) - comprehensive approach like bar template
+    const queryFiltersRaw = getQueryParams();
+    const queryFilters = {};
+    Object.keys(queryFiltersRaw).forEach(function(key) {
+      queryFilters[key] = decodeQueryParam(queryFiltersRaw[key]);
+    });
+    
     frappe.call({
       method: "{{ data_url }}",
-      args: { filters: args },
+      args: { filters: queryFilters },
       callback: function(r) {
         if (r.message) {
           renderDoughnutChart_{{ chart_id }}(
@@ -155,5 +162,309 @@
     );
     {% endif %}
   });
+</script>
+
+<script>
+// Global drill-down modal function for doughnut charts
+function showDrillDownModal(clickData, chartTitle) {
+  // Prepare filters for drill-down
+  const filters = {};
+  
+  // Get current filter values if they exist
+  const chartId = chartTitle.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
+  const filterElements = document.querySelectorAll(`.filter-control-${chartId}`);
+  
+  filterElements.forEach(function(el) {
+    const fieldname = el.dataset.fieldname;
+    if (fieldname && el.value) {
+      filters[fieldname] = el.value;
+    }
+  });
+  
+  // Add the clicked label as a filter context
+  const label = clickData.label;
+  const value = clickData.value;
+  
+  // Check if the label is a date/time period (like "Feb 2025", "Jan 2024", etc.)
+  const isDateLabel = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}$/i.test(label);
+  
+  // Determine drill-down method and type based on chart title and label type
+  let drillDownMethod = '{{ drill_down_method | default("erpera_reports.api.get_selling_drill_down_data") }}';
+  let drillDownTitle = '{{ drill_down_title | default("Selling Details") }}';
+  
+  if (isDateLabel) {
+    // Handle time period drill-down
+    filters['drill_type'] = 'time_period';
+    filters['drill_value'] = label;
+    
+    // Convert month-year to date range
+    const [monthName, year] = label.split(' ');
+    const monthIndex = new Date(Date.parse(monthName + " 1, 2000")).getMonth();
+    const startDate = new Date(parseInt(year), monthIndex, 1);
+    const endDate = new Date(parseInt(year), monthIndex + 1, 0); // Last day of month
+    
+    // Add date filters
+    filters['from_date'] = startDate.toISOString().split('T')[0];
+    filters['to_date'] = endDate.toISOString().split('T')[0];
+    
+  } else if (chartTitle.toLowerCase().includes('branch')) {
+    filters['drill_type'] = 'branch';
+    filters['drill_value'] = label.split(' (₹')[0]; // Remove amount from label if present
+  } else if (chartTitle.toLowerCase().includes('company')) {
+    filters['drill_type'] = 'company';
+    filters['drill_value'] = label.split(' (₹')[0]; // Remove amount from label if present
+  } else if (chartTitle.toLowerCase().includes('supplier')) {
+    filters['drill_type'] = 'supplier';
+    filters['drill_value'] = label.split(' (₹')[0]; // Remove amount from label
+  } else {
+    filters['drill_type'] = 'general';
+    filters['drill_value'] = label.split(' (₹')[0]; // Remove amount from label if present
+  }
+  
+  // If the chart is about items, set filters['item'] = label
+  if (chartTitle && chartTitle.toLowerCase().includes('item')) {
+    filters['item'] = label;
+  }
+  
+  // If the chart is 'Sales Snapshot Across All Branches', set filters['branch'] = label
+  if (chartTitle && chartTitle.toLowerCase().includes('sales snapshot')) {
+    filters['branch'] = label;
+  }
+  
+  // If the chart is 'Outstanding by Supplier', set filters['supplier'] = label
+  if (chartTitle && chartTitle.toLowerCase().includes('outstanding by supplier')) {
+    filters['supplier'] = label;
+  }
+  
+  // Show loading message
+  frappe.msgprint({
+    title: 'Drill Down',
+    wide: true
+  });
+  
+  // Call backend for drill-down data
+  frappe.call({
+    method: drillDownMethod,
+    args: { 
+      filters: filters,
+      chart_title: chartTitle,
+      clicked_label: label,
+      clicked_value: value
+    },
+    callback: function(r) {
+      if (r.message && r.message.success) {
+        const data = r.message.data || [];
+        const title = r.message.title || `${drillDownTitle}: ${label}`;
+        
+        if (data.length === 0) {
+          frappe.msgprint({
+            title: title,
+            message: '<div style="text-align: center; padding: 20px; color: #6c757d;">No detailed data found for this selection.</div>',
+            wide: true,
+            indicator: 'blue'
+          });
+          return;
+        }
+        
+        // Build HTML table
+        let tableHtml = `
+          <style>
+            .drill-down-modal .modal-dialog,
+            .msgprint.drill-down-modal .modal-dialog,
+            .modal.drill-down-modal .modal-dialog {
+              max-width: 95vw !important;
+              width: 95vw !important;
+              margin: 1vh auto !important;
+            }
+            .drill-down-modal .modal-content,
+            .msgprint.drill-down-modal .modal-content,
+            .modal.drill-down-modal .modal-content {
+              height: 95vh !important;
+              display: flex !important;
+              flex-direction: column !important;
+            }
+            .drill-down-modal .modal-body,
+            .msgprint.drill-down-modal .modal-body,
+            .modal.drill-down-modal .modal-body {
+              flex: 1 !important;
+              overflow: hidden !important;
+              padding: 15px !important;
+            }
+            .drill-down-table-container {
+              height: 100% !important;
+              overflow-y: auto !important;
+              border: 1px solid #e5e7eb !important;
+              border-radius: 6px !important;
+            }
+            .drill-down-table {
+              width: 100% !important;
+              border-collapse: collapse !important;
+              font-size: 0.85em !important;
+              margin: 0 !important;
+            }
+            .drill-down-table th {
+              padding: 12px 8px !important;
+              text-align: left !important;
+              border-bottom: 2px solid #e5e7eb !important;
+              font-weight: 600 !important;
+              color: #374151 !important;
+              background: #f9fafb !important;
+              position: sticky !important;
+              top: 0 !important;
+              z-index: 10 !important;
+              white-space: nowrap !important;
+            }
+            .drill-down-table td {
+              padding: 10px 8px !important;
+              border-bottom: 1px solid #f3f4f6 !important;
+              color: #374151 !important;
+              white-space: nowrap !important;
+              overflow: hidden !important;
+              text-overflow: ellipsis !important;
+              max-width: 200px !important;
+            }
+            .drill-down-table tr:nth-child(even) {
+              background: #f9fafb !important;
+            }
+            .drill-down-table tr:hover {
+              background: #f3f4f6 !important;
+            }
+            .drill-down-summary {
+              margin-bottom: 15px !important;
+              padding: 15px !important;
+              background: #f8f9fa !important;
+              border-radius: 6px !important;
+              border: 1px solid #e9ecef !important;
+            }
+          </style>
+          <div class="drill-down-summary">
+            <h4 style="margin: 0 0 10px 0; color: #374151; font-size: 1.1em;">${title}</h4>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+              <span style="color: #6b7280; font-size: 0.9em;">
+                <strong style="color: #374151;">Total Amount:</strong> ₹${value.toLocaleString()}
+              </span>
+              <span style="color: #6b7280; font-size: 0.9em;">
+                <strong style="color: #374151;">Records:</strong> ${data.length}
+              </span>
+              <span style="color: #6b7280; font-size: 0.9em;">
+                <strong style="color: #374151;">Chart:</strong> ${chartTitle}
+              </span>
+            </div>
+          </div>
+          <div class="drill-down-table-container">
+            <table class="drill-down-table">
+              <thead>
+                <tr>`;
+        
+        // Table headers (use first row to determine columns)
+        if (data.length > 0) {
+          const headers = Object.keys(data[0]);
+          headers.forEach(header => {
+            const displayHeader = header.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            tableHtml += `<th>${displayHeader}</th>`;
+          });
+        }
+        
+        tableHtml += `</tr></thead><tbody>`;
+        
+        // Table rows
+        data.forEach((row, index) => {
+          tableHtml += `<tr>`;
+          
+          Object.values(row).forEach(value => {
+            let displayValue = value;
+            
+            // Format different types of values
+            if (typeof value === 'number') {
+              if (value > 1000) {
+                displayValue = '₹' + value.toLocaleString();
+              } else {
+                displayValue = value.toLocaleString();
+              }
+            } else if (value && typeof value === 'string' && value.includes('-')) {
+              // Might be a date
+              const date = new Date(value);
+              if (!isNaN(date.getTime())) {
+                displayValue = date.toLocaleDateString();
+              }
+            }
+            
+            tableHtml += `<td title="${displayValue || '-'}">${displayValue || '-'}</td>`;
+          });
+          
+          tableHtml += `</tr>`;
+        });
+        
+        tableHtml += `</tbody></table></div>`;
+        
+        // Show the modal with data
+        frappe.msgprint({
+          title: drillDownTitle,
+          message: tableHtml,
+          wide: true,
+          indicator: 'green'
+        });
+        
+        // Apply custom styles immediately and repeatedly
+        const applyModalStyles = () => {
+          // Target all possible modal selectors
+          const selectors = [
+            '.modal-dialog',
+            '.msgprint .modal-dialog',
+            '.modal .modal-dialog',
+            '.frappe-msgprint .modal-dialog'
+          ];
+          
+          selectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+              el.style.setProperty('max-width', '95vw', 'important');
+              el.style.setProperty('width', '95vw', 'important');
+              el.style.setProperty('margin', '1vh auto', 'important');
+            });
+          });
+          
+          // Also target modal content for height
+          const contentSelectors = [
+            '.modal-content',
+            '.msgprint .modal-content',
+            '.modal .modal-content'
+          ];
+          
+          contentSelectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+              el.style.setProperty('height', '95vh', 'important');
+              el.style.setProperty('display', 'flex', 'important');
+              el.style.setProperty('flex-direction', 'column', 'important');
+            });
+          });
+        };
+        
+        // Apply styles multiple times to ensure they stick
+        setTimeout(applyModalStyles, 0);
+        setTimeout(applyModalStyles, 50);
+        setTimeout(applyModalStyles, 100);
+        setTimeout(applyModalStyles, 200);
+        
+      } else {
+        frappe.msgprint({
+          title: 'Drill Down Error',
+          message: '<div style="text-align: center; padding: 20px; color: #dc2626;">Error loading drill-down data. Please try again.</div>',
+          wide: true,
+          indicator: 'red'
+        });
+      }
+    },
+    error: function() {
+      frappe.msgprint({
+        title: 'Drill Down Error',
+        message: '<div style="text-align: center; padding: 20px; color: #dc2626;">Error loading drill-down data. Please try again.</div>',
+        wide: true,
+        indicator: 'red'
+      });
+    }
+  });
+}
 </script>
 {% endif %} 

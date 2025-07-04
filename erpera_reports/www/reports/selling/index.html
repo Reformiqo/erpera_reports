@@ -278,6 +278,14 @@
             {% set chart_type = 'pie' %}
             {% set width = 12 %}
             {% set data_url = 'erpera_reports.selling.get_consolidated_top_selling_products' %}
+            {% set filters = [
+              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
+            ] %}
+            {% set drill_down_method = 'erpera_reports.api.get_selling_drill_down_data' %}
+            {% set drill_down_title = 'Selling Details' %}
             {% include "erpera_reports/templates/includes/doughnut.html" %}
         </div>
     </div>
