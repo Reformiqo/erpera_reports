@@ -5,72 +5,67 @@
     
     <div class="filter-section">
         <div><h1>Expenses Dashboard</h1></div>
-<<<<<<< HEAD
         <div id="filter-box" class="filter-box">
             <button id="toggle-btn" class="toggle-btn">&gt;</button>
             <div class="filter-content">
                 <div class="filter-container">
-            <div class="filter-row-main">
-=======
-        <div class="filter-container">
-            <div style="text-align:end;">
-                <button id="filter-btn-open-close" class="filter-btn-open-close">Filter</button>
-            </div>
-            <div class="all-filters" id="all-filters">
-            <div class="filter-row-main" id="filter-row-main">
->>>>>>> d7101e6 (Dashbaord number card changes and filter modified)
-                <div class="filter-group">
-                    <div class="filter-buttons">
-                        <button class="filter-btn active" data-range="1d" onclick="setDateRange('today')">1D</button>
-                        <button class="filter-btn" data-range="1w" onclick="setDateRange('1w')">1W</button>
-                        <button class="filter-btn" data-range="1m" onclick="setDateRange('1m')">1M</button>
-                        <button class="filter-btn" data-range="3m" onclick="setDateRange('3m')">3M</button>
-                        <button class="filter-btn" data-range="6m" onclick="setDateRange('6m')">6M</button>
-                        <button class="filter-btn" data-range="1y" onclick="setDateRange('1y')">1Y</button>
-                        <button class="filter-btn custom" data-range="custom" onclick="showCustomDatePicker()">Custom Range</button>
+                    <div class="filter-row-main">
+                        <div class="filter-container">
+                            <div style="text-align:end;">
+                                <button id="filter-btn-open-close" class="filter-btn-open-close">Filter</button>
+                            </div>
+                            <div class="all-filters" id="all-filters">
+                                <div class="filter-row-main" id="filter-row-main">
+                                    <div class="filter-group">
+                                        <div class="filter-buttons">
+                                            <button class="filter-btn active" data-range="1d" onclick="setDateRange('today')">1D</button>
+                                            <button class="filter-btn" data-range="1w" onclick="setDateRange('1w')">1W</button>
+                                            <button class="filter-btn" data-range="1m" onclick="setDateRange('1m')">1M</button>
+                                            <button class="filter-btn" data-range="3m" onclick="setDateRange('3m')">3M</button>
+                                            <button class="filter-btn" data-range="6m" onclick="setDateRange('6m')">6M</button>
+                                            <button class="filter-btn" data-range="1y" onclick="setDateRange('1y')">1Y</button>
+                                            <button class="filter-btn custom" data-range="custom" onclick="showCustomDatePicker()">Custom Range</button>
+                                        </div>
+                                    </div>
+                                    <div class="filter-group">
+                                        <select id="companyFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setCompanyFilter()">
+                                            <option value="">All Companies</option>
+                                            {% for company in company_list %}
+                                                <option value="{{ company.value }}">{{ company.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <select id="branchFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setBranchFilter()">
+                                            <option value="">All Branches</option>
+                                            {% for branch in branch_list %}
+                                                <option value="{{ branch.value }}">{{ branch.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="custom-date-picker" id="customDatePicker" style="display: none;">
+                                    <div class="date-inputs">
+                                        <div class="date-input-group">
+                                            <label for="fromDate">From Date:</label>
+                                            <input type="date" id="fromDate" class="date-input">
+                                        </div>
+                                        <div class="date-input-group">
+                                            <label for="toDate">To Date:</label>
+                                            <input type="date" id="toDate" class="date-input">
+                                        </div>
+                                        <button class="apply-btn" onclick="applyCustomDateRange()">Apply</button>
+                                    </div>
+                                </div>
+                                <div class="current-range-display" id="currentFiltersBar">
+                                    <span id="currentRangeText">Showing: This Month</span>
+                                    <span id="filterChips"></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="filter-group">
-                    <select id="companyFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setCompanyFilter()">
-                        <option value="">All Companies</option>
-                        {% for company in company_list %}
-                            <option value="{{ company.value }}">{{ company.label }}</option>
-                        {% endfor %}
-                    </select>
-                    <select id="branchFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setBranchFilter()">
-                        <option value="">All Branches</option>
-                        {% for branch in branch_list %}
-                            <option value="{{ branch.value }}">{{ branch.label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="custom-date-picker" id="customDatePicker" style="display: none;">
-                <div class="date-inputs">
-                    <div class="date-input-group">
-                        <label for="fromDate">From Date:</label>
-                        <input type="date" id="fromDate" class="date-input">
-                    </div>
-                    <div class="date-input-group">
-                        <label for="toDate">To Date:</label>
-                        <input type="date" id="toDate" class="date-input">
-                    </div>
-                    <button class="apply-btn" onclick="applyCustomDateRange()">Apply</button>
-                </div>
-            </div>
-            <div class="current-range-display" id="currentFiltersBar">
-                <span id="currentRangeText">Showing: This Month</span>
-                <span id="filterChips"></span>
-            </div>
                 </div>
             </div>
         </div>
-<<<<<<< HEAD
     </div>
-=======
-        </div>
-</div>
->>>>>>> d7101e6 (Dashbaord number card changes and filter modified)
     
 
 <div class="overview-cards">
@@ -179,7 +174,6 @@
         {% set drill_down_method = 'erpera_reports.api.get_buying_drill_down_data' %}
         {% set drill_down_title = 'Purchase Details' %}
         {% include "erpera_reports/templates/includes/multi_pie.html" %}
-<<<<<<< HEAD
 
         {% set chart_id = 'mostExpensesHeadByCompany' %}
         {% set title = 'Most Expenses Head by Company' %}
@@ -217,9 +211,9 @@
         {% include "erpera_reports/templates/includes/doughnut.html" %}
     </div>
 </div>
-
-=======
->>>>>>> d7101e6 (Dashbaord number card changes and filter modified)
+<div class="section-container">
+    <h2 class="section-title">Consolidate Most Purchase Head</h2>
+    <div class="charts-row">
 
         {% set chart_id = 'mostExpensesHeadByCompany' %}
         {% set title = 'Most Expenses Head by Company' %}
@@ -508,7 +502,6 @@
 }
 </style>
 <script>
-<<<<<<< HEAD
     const toggleBtn = document.getElementById('toggle-btn');
   const filterBox = document.getElementById('filter-box');
 
@@ -532,7 +525,7 @@
       filterBox.classList.remove('sticky');
     }
   });
-=======
+    
     const filterBtn = document.getElementById('filter-btn-open-close');
     const filterOptions = document.getElementById('all-filters');
     filterBtn.addEventListener('click', () => {
@@ -543,7 +536,6 @@
         filterBtn.innerHTML = 'Filter';
       }
     });
->>>>>>> d7101e6 (Dashbaord number card changes and filter modified)
   </script>
 <script>
 // Store cost center data from server
