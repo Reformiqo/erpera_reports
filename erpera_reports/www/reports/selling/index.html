@@ -5,7 +5,10 @@
     
     <div class="filter-section">
         <div><h1>Sales Dashboard</h1></div>
-        <div class="filter-container">
+        <div id="filter-box" class="filter-box">
+            <button id="toggle-btn" class="toggle-btn">&gt;</button>
+            <div class="filter-content">
+                <div class="filter-container">
             <!-- <h3 class="filter-title">🔍 Dashboard Filters</h3> -->
             <div class="filter-row-main">
                 <!-- Date Range Filter -->
@@ -62,6 +65,8 @@
             <div class="current-range-display" id="currentFiltersBar">
                 <span id="currentRangeText">Showing: This Month</span>
                 <span id="filterChips"></span>
+            </div>
+                </div>
             </div>
         </div>
     </div>
@@ -411,7 +416,58 @@
         flex-direction: row;
         padding: 35px;
     }
-    .filter-container { max-width: 100%; right: 20px;}
+
+    .filter-box {
+      position: fixed;
+      top: 20px;
+      right: -45%;
+      transition: right 0.3s ease-in-out;
+      z-index: 1000;
+    }
+
+    .filter-box.sticky {
+      position: sticky;
+      top: 20px;
+    }
+
+    .toggle-btn {
+      position: absolute;
+      top: 10px;
+      left: -25px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .filter-content button {
+      margin-top: 20px;
+      padding: 8px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .filter-box.open {
+      right: 0;
+    }
+    .toggle-btn.open {
+      transform: rotate(180deg);
+    }
+    .filter-section{
+      display: flex;
+        flex-direction: row;
+        padding: 35px;
+    }
+    .filter-container {
+    background: #b08120 !important;
+    border-radius: 8px;
+    padding: 0.75rem;
+    right: 20px;
+  }
     .filter-title { font-size: 1.25rem; font-weight: 600; color: #1a1a1a; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
     .filter-row-main { 
         display: flex;
@@ -528,7 +584,31 @@
         }
     }
     </style>
+<script>
+    const toggleBtn = document.getElementById('toggle-btn');
+  const filterBox = document.getElementById('filter-box');
 
+  // Toggle the filter box on button click
+  toggleBtn.addEventListener('click', () => {
+    filterBox.classList.toggle('open');
+    toggleBtn.classList.toggle('open');  // Add or remove 'open' class for rotating the button
+    // Change the button symbol based on the state
+    if (filterBox.classList.contains('open')) {
+      toggleBtn.innerHTML = '&lt;';  // Change to '<' when filter box is open
+    } else {
+      toggleBtn.innerHTML = '&gt;';  // Change to '>' when filter box is closed
+    }
+  });
+
+  // Make the filter box sticky on scroll
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 100) {
+      filterBox.classList.add('sticky');
+    } else {
+      filterBox.classList.remove('sticky');
+    }
+  });
+  </script>
     <script>
     // Store cost center data from server
     const costCenterData = JSON.parse('{{ cost_center_details | tojson | safe }}');

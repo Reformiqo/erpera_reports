@@ -5,7 +5,10 @@
     
     <div class="filter-section">
         <div><h1>Expenses Dashboard</h1></div>
-        <div class="filter-container">
+        <div id="filter-box" class="filter-box">
+            <button id="toggle-btn" class="toggle-btn">&gt;</button>
+            <div class="filter-content">
+                <div class="filter-container">
             <div class="filter-row-main">
                 <div class="filter-group">
                     <div class="filter-buttons">
@@ -50,8 +53,10 @@
                 <span id="currentRangeText">Showing: This Month</span>
                 <span id="filterChips"></span>
             </div>
+                </div>
+            </div>
         </div>
-</div>
+    </div>
     
 
 <div class="overview-cards">
@@ -143,6 +148,61 @@
         {% include "erpera_reports/templates/includes/bar.html" %}
     </div>
 </div>
+<div class="section-container">
+    <h2 class="section-title">Most Expenses Head</h2>
+    <div class="charts-row">
+        {% set chart_id = 'mostExpensesHeadByBranch' %}
+        {% set title = 'Most Expenses Head by Branch' %}
+        {% set data_url = 'erpera_reports.buying.get_most_expenses_head_by_branch' %}
+        {% set width = 12 %}
+        {% set filters = [
+            { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+            { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+            { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+            { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+            { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
+        ] %}
+        {% set drill_down_method = 'erpera_reports.api.get_buying_drill_down_data' %}
+        {% set drill_down_title = 'Purchase Details' %}
+        {% include "erpera_reports/templates/includes/multi_pie.html" %}
+
+        {% set chart_id = 'mostExpensesHeadByCompany' %}
+        {% set title = 'Most Expenses Head by Company' %}
+        {% set data_url = 'erpera_reports.buying.get_most_expenses_head_by_company' %}
+        {% set width = 12 %}
+        {% set filters = [
+            { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+            { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+            { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+            { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+            { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
+        ] %}
+        {% set drill_down_method = 'erpera_reports.api.get_buying_drill_down_data' %}
+        {% set drill_down_title = 'Purchase Details' %}
+        {% include "erpera_reports/templates/includes/multi_pie.html" %}
+    </div>
+</div>
+
+<div class="section-container">
+    <h2 class="section-title">Consolidate Most Purchase Head</h2>
+    <div class="charts-row">
+        {% set chart_id = 'consolidateMostPurchaseHead' %}
+        {% set title = 'Top 10 Expense Categories Overall' %}
+        {% set backgroundColor = '#059669' %}
+        {% set chart_type = 'pie' %}
+        {% set width = 12 %}
+        {% set data_url = 'erpera_reports.buying.get_consolidate_most_purchase_head' %}
+        {% set filters = [
+            { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
+            { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
+            { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
+            { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
+            { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
+        ] %}
+        {% include "erpera_reports/templates/includes/doughnut.html" %}
+    </div>
+</div>
+
 
 <style>
 .filter-section{
@@ -192,7 +252,57 @@
 
 
 
+    .filter-box {
+      position: fixed;
+      top: 20px;
+      right: -45%;
+      transition: right 0.3s ease-in-out;
+      z-index: 1000;
+    }
 
+    .filter-box.sticky {
+      position: sticky;
+      top: 20px;
+    }
+
+    .toggle-btn {
+      position: absolute;
+      top: 10px;
+      left: -25px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .filter-content button {
+      margin-top: 20px;
+      padding: 8px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .filter-box.open {
+      right: 0;
+    }
+    .toggle-btn.open {
+      transform: rotate(180deg);
+    }
+    .filter-section{
+      display: flex;
+        flex-direction: row;
+        padding: 35px;
+    }
+    .filter-container {
+    background: #b08120 !important;
+    border-radius: 8px;
+    padding: 0.75rem;
+    right: 20px;
+  }
 
 
 
@@ -290,7 +400,31 @@
     color: #dc2626;
 }
 </style>
+<script>
+    const toggleBtn = document.getElementById('toggle-btn');
+  const filterBox = document.getElementById('filter-box');
 
+  // Toggle the filter box on button click
+  toggleBtn.addEventListener('click', () => {
+    filterBox.classList.toggle('open');
+    toggleBtn.classList.toggle('open');  // Add or remove 'open' class for rotating the button
+    // Change the button symbol based on the state
+    if (filterBox.classList.contains('open')) {
+      toggleBtn.innerHTML = '&lt;';  // Change to '<' when filter box is open
+    } else {
+      toggleBtn.innerHTML = '&gt;';  // Change to '>' when filter box is closed
+    }
+  });
+
+  // Make the filter box sticky on scroll
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 100) {
+      filterBox.classList.add('sticky');
+    } else {
+      filterBox.classList.remove('sticky');
+    }
+  });
+  </script>
 <script>
 // Store cost center data from server
 const costCenterData = JSON.parse('{{ cost_center_details | tojson | safe }}');
