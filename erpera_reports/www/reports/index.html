@@ -9,9 +9,12 @@
             <div class="filter-content">
                 <div class="filter-container">
             <!-- <h3 class="filter-title">🔍 Dashboard Filters</h3> -->
-            
+            <div style="text-align:end;">
+                <button id="filter-btn-open-close" class="filter-btn-open-close">Filter</button>
+            </div>
             <!-- All Filters in One Line -->
-            <div class="filter-row-main">
+            <div class="all-filters" id="all-filters">
+            <div class="filter-row-main" id="filter-row-main">
                 <!-- Date Range Filter -->
                 <div class="filter-group">
                     <!-- <label class="filter-group-label">📅 Date Range:</label> -->
@@ -68,13 +71,17 @@
                 <span id="currentRangeText">Showing: This Month</span>
                 <span id="filterChips"></span>
             </div> 
+<<<<<<< HEAD
                 </div>
+=======
+>>>>>>> d7101e6 (Dashbaord number card changes and filter modified)
             </div>
         </div>
     </div>
 
     <div class="overview-cards">
         <!-- Sales Area -->
+         <a href="/reports/selling/index" style="text-decoration: none;">
         <div class="card clickable-card" onclick="showCostCenterModal('total_sales')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
             <div class="card-content">
                 <div class="card-info">
@@ -85,7 +92,9 @@
                 <div class="card-icon">₹</div>
             </div>
         </div>
+        </a>
         <!-- Purchase Area -->
+        <a href="/reports/buying/index" style="text-decoration: none;">
         <div class="card clickable-card" onclick="showCostCenterModal('total_amount')" style="background: linear-gradient(135deg, #ffc0c0 0%, #ff0000f5 100%);">
             <div class="card-content">
                 <div class="card-info">
@@ -96,6 +105,8 @@
                 <div class="card-icon">💰</div>
             </div>
         </div>
+        </a>
+        <a href="/reports/expenses/index" style="text-decoration: none;">
         <div class="card clickable-card" onclick="showCostCenterModal('total_outstanding')" style="background: linear-gradient(135deg, #e9c0ff 0%, #67469b 100%);">
             <div class="card-content">
                 <div class="card-info">
@@ -106,6 +117,8 @@
                 <div class="card-icon">💵</div>
             </div>
         </div>
+        </a>
+        <a href="/reports/stock/index" style="text-decoration: none;">
         <div class="card clickable-card" onclick="showCostCenterModal('total_stock_value')" style="background: linear-gradient(135deg, #f5ba7e 0%, #7b4a0f 100%);">
             <div class="card-content">
                 <div class="card-info">
@@ -116,6 +129,7 @@
                 <div class="card-icon">📦</div>
             </div>
         </div>
+        </a>
     </div>
 
  
@@ -324,14 +338,43 @@
             {% include "erpera_reports/templates/includes/line_sales_velocity_trends.html" %}
         </div>
     </div>
-
+    
     <style>
     /* Filter Section Styles */
-    .filter-section {
-        display: flex;
-        flex-direction: row;
-        padding: 35px;
+
+    .filter-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
     }
+    .all-filters {
+      display: none;
+    }
+    .all-filters.active {
+      display: block;
+    }
+    .all-filters label {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .all-filters button {
+      border: none;
+    }
+    .filter-btn-open-close {
+    background: none;
+    color: white;
+    border: none;
+    font-size: 27px;
+    }
+    .filter-row-main {
+        display: flex;
+        flex-flow: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        align-items: center;
+    }
+<<<<<<< HEAD
     .filter-box {
       position: fixed;
       top: 20px;
@@ -383,6 +426,22 @@
     padding: 0.75rem;
     right: 20px;
   }
+=======
+
+    .filter-container {
+        max-width: 100%;
+        right: 20px;
+        display: flex;
+    flex-flow: row-reverse;
+    }
+
+    .filter-section {
+        display: flex;
+        flex-direction: row;
+    }
+
+    
+>>>>>>> d7101e6 (Dashbaord number card changes and filter modified)
 
     .filter-title {
         font-size: 1.25rem;
@@ -394,13 +453,7 @@
         gap: 0.5rem;
     }
 
-    .filter-row-main {
-        display: flex;
-        flex-flow: column;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-        align-items: center;
-    }
+    
 
     .filter-group {
         display: flex;
@@ -455,11 +508,13 @@
         background: #f59e0b;
         color: #fff;
         border-color: #f59e0b;
+        font-weight: bold;
     }
 
     .filter-btn.custom:hover {
         background: #d97706;
         border-color: #d97706;
+        font-weight: bold;
     }
 
     .filter-select {
@@ -644,7 +699,8 @@
         border-radius: 12px;
         padding: 1.5rem 1.5rem 1.5rem 1.5rem;
         min-width: 0;
-        min-height: 120px;
+        /* min-height: 120px; */
+        height: 100%;
         box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         display: flex;
         align-items: stretch;
@@ -821,6 +877,7 @@
     }
     </style>
 <script>
+<<<<<<< HEAD
     const toggleBtn = document.getElementById('toggle-btn');
   const filterBox = document.getElementById('filter-box');
 
@@ -844,6 +901,18 @@
       filterBox.classList.remove('sticky');
     }
   });
+=======
+    const filterBtn = document.getElementById('filter-btn-open-close');
+    const filterOptions = document.getElementById('all-filters');
+    filterBtn.addEventListener('click', () => {
+      filterOptions.classList.toggle('active');
+      if (filterOptions.classList.contains('active')) {
+        filterBtn.innerHTML = '>';
+      } else {
+        filterBtn.innerHTML = 'Filter';
+      }
+    });
+>>>>>>> d7101e6 (Dashbaord number card changes and filter modified)
   </script>
     <script>
     // Date Range Filtering Functions

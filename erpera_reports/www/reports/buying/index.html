@@ -8,7 +8,11 @@
             <div class="filter-content">
                 <div class="filter-container">
             <!-- <h3 class="filter-title">🔍 Dashboard Filters</h3> -->
-            <div class="filter-row-main">
+            <div style="text-align:end;">
+                <button id="filter-btn-open-close" class="filter-btn-open-close">Filter</button>
+            </div>
+            <div class="all-filters" id="all-filters">
+            <div class="filter-row-main" id="filter-row-main">
                 <!-- Date Range Filter -->
                 <div class="filter-group">
                     <!-- <label class="filter-group-label">📅 Date Range:</label> -->
@@ -66,6 +70,7 @@
             </div>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 
@@ -256,6 +261,67 @@
     <!-- Space for future sections -->
 
     <style>
+
+.filter-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+    .all-filters {
+      display: none;
+    }
+    .all-filters.active {
+      display: block;
+    }
+    .all-filters label {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .all-filters button {
+      border: none;
+    }
+    .filter-btn-open-close {
+    background: none;
+    color: white;
+    border: none;
+    font-size: 27px;
+    }
+    .filter-row-main {
+        display: flex;
+        flex-flow: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        align-items: center;
+    }
+    
+    .filter-container {
+        max-width: 100%;
+        right: 20px;
+        display: flex;
+    flex-flow: row-reverse;
+    }
+
+    .filter-section {
+        display: flex;
+        flex-direction: row;
+    }
+
+    
+
+    .filter-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+
+
+
     .section-container {
         margin: 2rem 0;
         padding: 1rem;
@@ -335,6 +401,7 @@
         font-weight: 500;
     }
     /* Filter Section Styles (copied from reports/index.html) */
+<<<<<<< HEAD
     .filter-section {
         display: flex;
         flex-direction: row;
@@ -391,6 +458,10 @@
     padding: 0.75rem;
     right: 20px;
   }
+=======
+    
+    .filter-container { max-width: 100%;right: 20px; }
+>>>>>>> d7101e6 (Dashbaord number card changes and filter modified)
     .filter-title { font-size: 1.25rem; font-weight: 600; color: #1a1a1a; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
     .filter-row-main { 
         display: flex;
@@ -412,8 +483,8 @@
     .filter-btn { padding: 0.375rem 0.75rem; border: 1px solid #d1d5db; background: #fff; color: #374151; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500; transition: all 0.2s ease; white-space: nowrap; }
     .filter-btn:hover { background: #f3f4f6; border-color: #9ca3af; }
     .filter-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
-    .filter-btn.custom { background: #f59e0b; color: #fff; border-color: #f59e0b; }
-    .filter-btn.custom:hover { background: #d97706; border-color: #d97706; }
+    .filter-btn.custom { background: #f59e0b; color: #fff; border-color: #f59e0b; font-weight: bold;}
+    .filter-btn.custom:hover { background: #d97706; border-color: #d97706; font-weight: bold;}
     .filter-select { padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; color: #374151; font-size: 0.875rem; font-weight: 500; cursor: pointer; width: 100%; transition: all 0.2s ease; }
     .filter-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
     .filter-select:hover { border-color: #9ca3af; }
@@ -508,6 +579,7 @@
     }
     </style>
 <script>
+<<<<<<< HEAD
     const toggleBtn = document.getElementById('toggle-btn');
   const filterBox = document.getElementById('filter-box');
 
@@ -531,6 +603,18 @@
       filterBox.classList.remove('sticky');
     }
   });
+=======
+    const filterBtn = document.getElementById('filter-btn-open-close');
+    const filterOptions = document.getElementById('all-filters');
+    filterBtn.addEventListener('click', () => {
+      filterOptions.classList.toggle('active');
+      if (filterOptions.classList.contains('active')) {
+        filterBtn.innerHTML = '>';
+      } else {
+        filterBtn.innerHTML = 'Filter';
+      }
+    });
+>>>>>>> d7101e6 (Dashbaord number card changes and filter modified)
   </script>
     <script>
     // Store cost center data from server

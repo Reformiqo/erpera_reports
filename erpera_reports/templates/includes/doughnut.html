@@ -343,7 +343,7 @@ function showDrillDownModal(clickData, chartTitle) {
             }
           </style>
           <div class="drill-down-summary">
-            <h4 style="margin: 0 0 10px 0; color: #374151; font-size: 1.1em;">${title}</h4>
+            <h4 style="margin: 0 0 10px 0; color: #374151; font-size: 1.1em;">${chartTitle}</h4>
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
               <span style="color: #6b7280; font-size: 0.9em;">
                 <strong style="color: #374151;">Total Amount:</strong> ₹${value.toLocaleString()}
@@ -352,7 +352,7 @@ function showDrillDownModal(clickData, chartTitle) {
                 <strong style="color: #374151;">Records:</strong> ${data.length}
               </span>
               <span style="color: #6b7280; font-size: 0.9em;">
-                <strong style="color: #374151;">Chart:</strong> ${chartTitle}
+                <strong style="color: #374151;">Chart:</strong> ${title}
               </span>
             </div>
           </div>
