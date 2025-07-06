@@ -68,41 +68,41 @@
 
 
     <div class="overview-cards">
-        <div class="card clickable-card" onclick="showCostCenterModal('total_expenses')">
+        <div class="card clickable-card" onclick="showWarehouseModal('total_items')">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ total_expenses }}</div>
-                    <div class="card-label">Total Expenses</div>
+                    <div class="card-value">{{ total_items }}</div>
+                    <div class="card-label">Total Items</div>
                     <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
                 </div>
                 <div class="card-icon">📦</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showCostCenterModal('total_branches')">
+        <div class="card clickable-card" onclick="showWarehouseModal('total_warehouses')">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ total_branches }} </div>
-                    <div class="card-label">Total Branches</div>
+                    <div class="card-value">{{ total_warehouses }}</div>
+                    <div class="card-label">Total Warehouses</div>
                     <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
                 </div>
                 <div class="card-icon">🏪</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showCostCenterModal('total_expense_value')">
+        <div class="card clickable-card" onclick="showWarehouseModal('total_stock_value')">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ total_expense_value }} </div>
-                    <div class="card-label">Total Expense Value</div>
+                    <div class="card-value">{{ total_stock_value }}</div>
+                    <div class="card-label">Total Stock Value</div>
                     <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
                 </div>
                 <div class="card-icon">📊</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showCostCenterModal('low_expense_items')">
+        <div class="card clickable-card" onclick="showWarehouseModal('low_stock_items')">
             <div class="card-content">
                 <div class="card-info">
-                    <div class="card-value">{{ low_expense_items }} </div>
-                    <div class="card-label">Low Expense Items</div>
+                    <div class="card-value">{{ low_stock_items }}</div>
+                    <div class="card-label">Low Stock Items</div>
                     <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_month }})</p>
                 </div>
                 <div class="card-icon">⚠️</div>
@@ -672,6 +672,13 @@
             flex-direction: row;
         }
     }
+    .overview-cards, .overview-cards * {
+      pointer-events: auto !important;
+      z-index: 10 !important;
+    }
+    .card, .card * {
+      pointer-events: auto !important;
+    }
     </style>
 <script>
     const toggleBtn = document.getElementById('toggle-btn');
@@ -716,50 +723,30 @@
     function showWarehouseModal(metricType) {
         const metricTitles = {
             'total_items': 'Total Items by Warehouse',
-            'total_warehouses': 'Total Warehouses by Warehouse', 
+            'total_warehouses': 'Total Warehouses by Warehouse',
             'total_stock_value': 'Total Stock Value by Warehouse',
             'low_stock_items': 'Low Stock Items by Warehouse'
         };
-        
-        const metricLabels = {
-            'total_items': 'Total Items',
-            'total_warehouses': 'Total Warehouses',
-            'total_stock_value': 'Total Stock Value', 
-            'low_stock_items': 'Low Stock Items'
-        };
-        
         const metricIcons = {
             'total_items': '📦',
             'total_warehouses': '🏪',
             'total_stock_value': '📊',
             'low_stock_items': '⚠️'
         };
-        
-        const title = metricTitles[metricType];
-        const label = metricLabels[metricType];
-        const icon = metricIcons[metricType];
-        
-        // Create number cards HTML
+        const title = metricTitles[metricType] || 'Warehouse Details';
+        const icon = metricIcons[metricType] || '';
+
         let cardsHTML = '<div class="warehouse-modal-content">';
         cardsHTML += '<div class="overview-cards">';
-        
-        // Add number cards for each warehouse
         warehouseData.forEach(function(item) {
             const value = item[metricType];
             cardsHTML += '<div class="card">';
-            cardsHTML += '<div class="card-content">';
-            cardsHTML += '<div class="card-info">';
+            cardsHTML += '<div class="card-icon">' + icon + '</div>';
             cardsHTML += '<div class="card-value">' + value + '</div>';
             cardsHTML += '<div class="card-label">' + item.display_name + '</div>';
             cardsHTML += '</div>';
-            cardsHTML += '<div class="card-icon">' + icon + '</div>';
-            cardsHTML += '</div>';
-            cardsHTML += '</div>';
         });
-        
         cardsHTML += '</div></div>';
-        
-        // Show modal using frappe.msgprint
         frappe.msgprint({
             title: title,
             message: cardsHTML,
@@ -767,6 +754,7 @@
             indicator: 'blue'
         });
     }
+    window.showWarehouseModal = showWarehouseModal;
 
     // Filter logic for expenses dashboard
     let currentDateRange = 'this_month';

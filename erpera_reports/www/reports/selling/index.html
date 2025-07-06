@@ -77,7 +77,7 @@
     </div>
     
     <div class="overview-cards">
-        <div class="card clickable-card" onclick="showCostCenterModal('total_sales')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
+        <div class="card clickable-card" onclick="showBranchModal('total_sales')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ total_sales }} </div>
@@ -87,7 +87,7 @@
                 <div class="card-icon">💰</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showCostCenterModal('invoice_count')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
+        <div class="card clickable-card" onclick="showBranchModal('invoice_count')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value py-0">{{ invoice_count }} </div>
@@ -97,7 +97,7 @@
                 <div class="card-icon">📄</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showCostCenterModal('customer_count')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
+        <div class="card clickable-card" onclick="showBranchModal('customer_count')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ customer_count }}</div>
@@ -106,7 +106,7 @@
                 <div class="card-icon">👥</div>
             </div>
         </div>
-        <div class="card clickable-card" onclick="showCostCenterModal('avg_invoice_value')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
+        <div class="card clickable-card" onclick="showBranchModal('avg_invoice_value')" style="background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);">
             <div class="card-content">
                 <div class="card-info">
                     <div class="card-value">{{ avg_invoice_value }} </div>
@@ -337,19 +337,19 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
-    .cost-center-modal-content {
+    .branch-modal-content {
         max-height: 70vh;
         overflow-y: auto;
     }
 
-    .cost-center-modal-content .overview-cards {
+    .branch-modal-content .overview-cards {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 1rem;
         padding: 1rem 0;
     }
 
-    .cost-center-modal-content .card {
+    .branch-modal-content .card {
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 8px;
@@ -359,58 +359,58 @@
         transition: all 0.3s ease;
     }
 
-    .cost-center-modal-content .card:hover {
+    .branch-modal-content .card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
-    .cost-center-modal-content .card-icon {
+    .branch-modal-content .card-icon {
         font-size: 2rem;
         margin-bottom: 0.5rem;
     }
 
-    .cost-center-modal-content .card-value {
+    .branch-modal-content .card-value {
         font-size: 1.5rem;
         font-weight: 700;
         color: #1f2937;
         margin-bottom: 0.5rem;
     }
 
-    .cost-center-modal-content .card-label {
+    .branch-modal-content .card-label {
         font-size: 0.875rem;
         color: #6b7280;
         font-weight: 500;
     }
 
-    .cost-center-table {
+    .branch-table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 1rem;
     }
 
-    .cost-center-table th,
-    .cost-center-table td {
+    .branch-table th,
+    .branch-table td {
         padding: 12px;
         text-align: left;
         border-bottom: 1px solid #e5e7eb;
     }
 
-    .cost-center-table th {
+    .branch-table th {
         background-color: #f9fafb;
         font-weight: 600;
         color: #374151;
     }
 
-    .cost-center-table tr:hover {
+    .branch-table tr:hover {
         background-color: #f9fafb;
     }
 
-    .cost-center-name {
+    .branch-name {
         font-weight: 500;
         color: #1f2937;
     }
 
-    .cost-center-value {
+    .branch-value {
         font-weight: 600;
         color: #7c3aed;
     }
@@ -628,6 +628,13 @@
             flex-direction: row;
         }
     }
+    .card, .card * {
+      pointer-events: auto !important;
+    }
+    .overview-cards, .overview-cards * {
+      pointer-events: auto !important;
+      z-index: 10 !important;
+    }
     </style>
 <script>
     const toggleBtn = document.getElementById('toggle-btn');
@@ -666,41 +673,27 @@
     });
 </script>
     <script>
-    // Store cost center data from server
-    const costCenterData = JSON.parse('{{ cost_center_details | tojson | safe }}');
+    const branchData = JSON.parse('{{ cost_center_details | tojson | safe }}');
 
-    function showCostCenterModal(metricType) {
+    function showBranchModal(metricType) {
         const metricTitles = {
-            'total_sales': 'Total Sales by Cost Center',
-            'invoice_count': 'Total Invoices by Cost Center', 
-            'customer_count': 'Unique Customers by Cost Center',
-            'avg_invoice_value': 'Average Sale Value by Cost Center'
+            'total_sales': 'Total Sales by Branch',
+            'invoice_count': 'Total Invoices by Branch',
+            'customer_count': 'Unique Customers by Branch',
+            'avg_invoice_value': 'Average Sale Value by Branch'
         };
-        
-        const metricLabels = {
-            'total_sales': 'Total Sales',
-            'invoice_count': 'Total Invoices',
-            'customer_count': 'Unique Customers', 
-            'avg_invoice_value': 'Average Sale Value'
-        };
-        
         const metricIcons = {
             'total_sales': '💰',
             'invoice_count': '📄',
             'customer_count': '👥',
             'avg_invoice_value': '📊'
         };
-        
-        const title = metricTitles[metricType];
-        const label = metricLabels[metricType];
-        const icon = metricIcons[metricType];
-        
-        // Create number cards HTML
-        let cardsHTML = '<div class="cost-center-modal-content">';
+        const title = metricTitles[metricType] || 'Branch Details';
+        const icon = metricIcons[metricType] || '';
+
+        let cardsHTML = '<div class="branch-modal-content">';
         cardsHTML += '<div class="overview-cards">';
-        
-        // Add number cards for each cost center
-        costCenterData.forEach(function(item) {
+        branchData.forEach(function(item) {
             const value = item[metricType];
             cardsHTML += '<div class="card">';
             cardsHTML += '<div class="card-icon">' + icon + '</div>';
@@ -708,10 +701,7 @@
             cardsHTML += '<div class="card-label">' + item.display_name + '</div>';
             cardsHTML += '</div>';
         });
-        
         cardsHTML += '</div></div>';
-        
-        // Show modal using frappe.msgprint
         frappe.msgprint({
             title: title,
             message: cardsHTML,
@@ -719,6 +709,7 @@
             indicator: 'blue'
         });
     }
+    window.showBranchModal = showBranchModal;
 
     // JS logic for filter handling (copied and adapted from reports/index.html)
     let currentDateRange = 'this_month';

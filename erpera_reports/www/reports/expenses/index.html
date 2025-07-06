@@ -443,6 +443,13 @@
     gap: 1rem;
     margin-bottom: 1rem;
 }
+.overview-cards, .overview-cards * {
+  pointer-events: auto !important;
+  z-index: 10 !important;
+}
+.card, .card * {
+  pointer-events: auto !important;
+}
 .card {
     background: linear-gradient(135deg, #e9c0ff 0%, #67469b 100%);
     border: 1px solid #e5e7eb;
@@ -539,7 +546,15 @@
   </script>
 <script>
 // Store cost center data from server
-const costCenterData = JSON.parse('{{ cost_center_details | tojson | safe }}');
+// Backend should always set context.cost_center_details = [...] or []
+let costCenterData;
+try {
+    costCenterData = JSON.parse('{{ cost_center_details | tojson | safe }}');
+    if (!Array.isArray(costCenterData)) costCenterData = [];
+} catch (e) {
+    costCenterData = [];
+}
+console.log('costCenterData:', costCenterData, typeof costCenterData);
 
 function showCostCenterModal(metricType) {
     const metricTitles = {
@@ -581,6 +596,7 @@ function showCostCenterModal(metricType) {
         indicator: 'blue'
     });
 }
+window.showCostCenterModal = showCostCenterModal;
 
 let currentDateRange = 'this_month';
 let currentFromDate = null;
