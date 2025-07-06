@@ -3,7 +3,7 @@
 {% block page_content %}
 
     <div class="filter-section">
-        <div><h1>Stock Dashboard</h1></div>
+        <div><h1 style="margin: 0px;">Stock Dashboard</h1></div>
         <div id="filter-box" class="filter-box">
             <button id="toggle-btn" class="toggle-btn">&gt;</button>
             <div class="filter-content">
@@ -409,13 +409,13 @@
 
     .warehouse-modal-content .overview-cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(4, minmax(200px, 1fr));
         gap: 1rem;
         padding: 1rem 0;
     }
 
     .warehouse-modal-content .card {
-        background: #fff;
+        background: linear-gradient(135deg, #f5ba7e 0%, #7b4a0f 100%);
         border: 1px solid #e5e7eb;
         border-radius: 8px;
         padding: 1.5rem;
@@ -519,10 +519,10 @@
     }
 
     .filter-content button {
-      margin-top: 20px;
+      /* margin-top: 20px;
       padding: 8px 15px;
-      background-color: #007bff;
-      color: white;
+      background-color: #007bff; */
+      /* color: white; */
       border: none;
       cursor: pointer;
     }
@@ -679,6 +679,12 @@
     .card, .card * {
       pointer-events: auto !important;
     }
+    .modal .modal-header .modal-title {
+    font-size: xx-large;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+}
     </style>
 <script>
     const toggleBtn = document.getElementById('toggle-btn');
@@ -740,10 +746,11 @@
         cardsHTML += '<div class="overview-cards">';
         warehouseData.forEach(function(item) {
             const value = item[metricType];
-            cardsHTML += '<div class="card">';
-            cardsHTML += '<div class="card-icon">' + icon + '</div>';
-            cardsHTML += '<div class="card-value">' + value + '</div>';
-            cardsHTML += '<div class="card-label">' + item.display_name + '</div>';
+            cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;gap:4rem;text-align: left;justify-content: space-between;">';
+                cardsHTML += '<div><div class="card-label">' + item.display_name + '</div>';
+                cardsHTML += '<div class="card-value">' + value + '</div></div>';
+                cardsHTML += '<div class="card-icon">' + icon + '</div>';
+                cardsHTML += '</div>';    
             cardsHTML += '</div>';
         });
         cardsHTML += '</div></div>';
