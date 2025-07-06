@@ -4,7 +4,7 @@
     <!-- Filter Section (copied and adapted from reports/index.html) -->
     
     <div class="filter-section">
-        <div><h1>Sales Dashboard</h1></div>
+        <div><h1 style="margin: 0px;">Sales Dashboard</h1></div>
         <div id="filter-box" class="filter-box">
             <button id="toggle-btn" class="toggle-btn">&gt;</button>
             <div class="filter-content">
@@ -344,13 +344,13 @@
 
     .branch-modal-content .overview-cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(4, 1fr);
         gap: 1rem;
         padding: 1rem 0;
     }
 
     .branch-modal-content .card {
-        background: #fff;
+        background: linear-gradient(135deg, #c0ffc0 0%, #277c09 100%);
         border: 1px solid #e5e7eb;
         border-radius: 8px;
         padding: 1.5rem;
@@ -376,11 +376,11 @@
         margin-bottom: 0.5rem;
     }
 
-    .branch-modal-content .card-label {
+    /* .branch-modal-content .card-label {
         font-size: 0.875rem;
         color: #6b7280;
         font-weight: 500;
-    }
+    } */
 
     .branch-table {
         width: 100%;
@@ -488,10 +488,10 @@
     }
 
     .filter-content button {
-      margin-top: 20px;
+      /* margin-top: 20px;
       padding: 8px 15px;
-      background-color: #007bff;
-      color: white;
+      background-color: #007bff; */
+      /* color: white; */
       border: none;
       cursor: pointer;
     }
@@ -635,6 +635,15 @@
       pointer-events: auto !important;
       z-index: 10 !important;
     }
+    .modal-header{
+        justify-content: normal;
+    }
+    .modal .modal-header .modal-title {
+    font-size: xx-large;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+}
     </style>
 <script>
     const toggleBtn = document.getElementById('toggle-btn');
@@ -695,10 +704,11 @@
         cardsHTML += '<div class="overview-cards">';
         branchData.forEach(function(item) {
             const value = item[metricType];
-            cardsHTML += '<div class="card">';
-            cardsHTML += '<div class="card-icon">' + icon + '</div>';
-            cardsHTML += '<div class="card-value">' + value + '</div>';
-            cardsHTML += '<div class="card-label">' + item.display_name + '</div>';
+            cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;gap:4rem;text-align: left;justify-content: space-between;">';
+                cardsHTML += '<div><div class="card-label">' + item.display_name + '</div>';
+                cardsHTML += '<div class="card-value">' + value + '</div></div>';
+                cardsHTML += '<div class="card-icon">' + icon + '</div>';
+                cardsHTML += '</div>';
             cardsHTML += '</div>';
         });
         cardsHTML += '</div></div>';
