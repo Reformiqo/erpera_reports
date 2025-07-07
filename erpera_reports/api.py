@@ -744,3 +744,24 @@ def get_expense_drill_down_data(filters=None, chart_title=None, clicked_label=No
 @frappe.whitelist()
 def log_error(doc, method=None):
     frappe.log_error(frappe.get_traceback(), "Erro in purchase receipt")
+
+
+
+@frappe.whitelist()
+def get_stock_value():
+    total_stock_value = frappe.db.sql("""
+    SELECT SUM(stock_value)
+    FROM `tabBin`
+    """, as_list=True)[0][0] or 0
+    return total_stock_value
+
+@frappe.whitelist()
+def get_stock_value_by_warehouse():
+    results = frappe.db.sql("""
+        SELECT warehouse, SUM(stock_value) AS total_stock_value
+        FROM `tabBin`
+        GROUP BY warehouse
+    """, as_dict=True)
+
+    warehouse_stock_values = {row["warehouse"]: row["total_stock_value"] for row in results}
+    return warehouse_stock_values

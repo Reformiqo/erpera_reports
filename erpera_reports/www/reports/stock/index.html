@@ -742,24 +742,54 @@
         const title = metricTitles[metricType] || 'Warehouse Details';
         const icon = metricIcons[metricType] || '';
 
-        let cardsHTML = '<div class="warehouse-modal-content">';
-        cardsHTML += '<div class="overview-cards">';
-        warehouseData.forEach(function(item) {
-            const value = item[metricType];
-            cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;gap:4rem;text-align: left;justify-content: space-between;">';
-                cardsHTML += '<div><div class="card-label">' + item.display_name + '</div>';
-                cardsHTML += '<div class="card-value">' + value + '</div></div>';
-                cardsHTML += '<div class="card-icon">' + icon + '</div>';
-                cardsHTML += '</div>';    
-            cardsHTML += '</div>';
-        });
-        cardsHTML += '</div></div>';
-        frappe.msgprint({
-            title: title,
-            message: cardsHTML,
-            wide: true,
-            indicator: 'blue'
-        });
+        if (metricType === 'total_stock_value') {
+            frappe.call({
+                method: 'erpera_reports.api.get_stock_value_by_warehouse',
+                callback: function(r) {
+                    if (r.message) {
+                        let cardsHTML = '<div class="warehouse-modal-content">';
+                        cardsHTML += '<div class="overview-cards">';
+                        
+                        Object.keys(r.message).forEach(function(warehouse) {
+                            const stockValue = r.message[warehouse];
+                            cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;gap:4rem;text-align: left;justify-content: space-between;">';
+                            cardsHTML += '<div><div class="card-label">' + warehouse + '</div>';
+                            cardsHTML += '<div class="card-value">₹' + frappe.format(stockValue, {fieldtype: 'Currency'}) + '</div></div>';
+                            cardsHTML += '<div class="card-icon">' + icon + '</div>';
+                            cardsHTML += '</div>';    
+                            cardsHTML += '</div>';
+                        });
+                        
+                        cardsHTML += '</div></div>';
+                        frappe.msgprint({
+                            title: title,
+                            message: cardsHTML,
+                            wide: true,
+                            indicator: 'blue'
+                        });
+                    }
+                }
+            });
+        } else {
+            let cardsHTML = '<div class="warehouse-modal-content">';
+            cardsHTML += '<div class="overview-cards">';
+            warehouseData.forEach(function(item) {
+                const value = item[metricType];
+                cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;gap:4rem;text-align: left;justify-content: space-between;">';
+                    cardsHTML += '<div><div class="card-label">' + item.display_name + '</div>';
+                    cardsHTML += '<div class="card-value">' + value + '</div></div>';
+                    cardsHTML += '<div class="card-icon">' + icon + '</div>';
+                    cardsHTML += '</div>';    
+                cardsHTML += '</div>';
+            });
+            cardsHTML += '</div></div>';
+            frappe.msgprint({
+                title: title,
+                message: cardsHTML,
+                wide: true,
+                indicator: 'blue'
+            });
+        }
     }
     window.showWarehouseModal = showWarehouseModal;
 

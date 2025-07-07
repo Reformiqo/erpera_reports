@@ -103,35 +103,24 @@ def get_context(context):
     total_warehouses = total_warehouses_result.get('warehouse_count') or 0
 
     # Total stock value
-    stock_value_query = f"""
-        SELECT SUM(sle.actual_qty * sle.valuation_rate) as total_value
-        FROM `tabStock Ledger Entry` sle
-        INNER JOIN `tabItem` item ON sle.item_code = item.name
-        WHERE item.is_stock_item = 1
-        AND sle.posting_date BETWEEN %(from_date)s AND %(to_date)s
-        AND sle.actual_qty > 0
-        {extra_item}
-    """
-    stock_value_result = frappe.db.sql(stock_value_query, dict(from_date=filter_from, to_date=filter_to, **extra_args), as_dict=True)[0] or {}
-    total_stock_value = stock_value_result.get('total_value') or 0
+    # stock_value_query = """
+    #     SELECT SUM(bin.stock_value)
+    #     FROM `tabBin` bin
+    # """
+    # stock_value_result = frappe.db.sql(stock_value_query, as_dict=True)[0] or {}
+    # total_stock_value = stock_value_result.get('stock_value')
+    total_stock_value = frappe.db.sql("""
+            SELECT SUM(stock_value)
+            FROM `tabBin`
+         """, as_list=True)[0][0] or 0
 
-    # Low stock items (current month or filtered)
-    low_stock_query = f"""
-        SELECT COUNT(DISTINCT item.name) as low_stock_count
-        FROM `tabItem` item
-        LEFT JOIN (
-            SELECT item_code, SUM(actual_qty) as current_stock
-            FROM `tabStock Ledger Entry`
-            WHERE posting_date BETWEEN %(from_date)s AND %(to_date)s
-            GROUP BY item_code
-        ) stock ON item.name = stock.item_code
-        WHERE item.is_stock_item = 1
-        AND (stock.current_stock IS NULL OR stock.current_stock <= item.safety_stock)
-        AND item.safety_stock > 0
-        {extra_item}
-    """
-    low_stock_result = frappe.db.sql(low_stock_query, dict(from_date=filter_month_from, to_date=filter_month_to, **extra_args), as_dict=True)[0] or {}
-    low_stock_items = low_stock_result.get('low_stock_count') or 0
+
+    low_stock_items = frappe.db.sql("""
+    SELECT COUNT(DISTINCT item_code)
+    FROM `tabBin`
+    WHERE actual_qty < 5
+    """, as_list=True)[0][0] or 0
+
 
     context.total_items = f"{total_items:,}"
     context.total_warehouses = f"{total_warehouses:,}"
