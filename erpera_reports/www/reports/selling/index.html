@@ -46,7 +46,7 @@
                                         <select id="branchFilter" class="filter-select" style="width: 180px; min-width: 120px; max-width: 200px;" onchange="setBranchFilter()">
                                             <option value="">All Branches</option>
                                             {% for branch in branch_list %}
-                                                <option value="{{ branch.value }}">{{ branch.label }}</option>
+                                                <option value="{{ branch.value }}">{{ branch.value }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>

@@ -80,7 +80,6 @@ def get_context(context):
         SELECT
             SUM(total) AS total_sales,
             COUNT(name) AS invoice_count,
-            COUNT(DISTINCT customer) AS customer_count
         FROM `tabSales Invoice` si
         WHERE docstatus = 1 AND status NOT IN ('Cancelled', 'Return')
         AND posting_date BETWEEN %(from_date)s AND %(to_date)s
