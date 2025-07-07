@@ -79,7 +79,7 @@ def get_context(context):
     fy_stats_query = f"""
         SELECT
             SUM(total) AS total_sales,
-            COUNT(name) AS invoice_count,
+            COUNT(name) AS invoice_count
         FROM `tabSales Invoice` si
         WHERE docstatus = 1 AND status NOT IN ('Cancelled', 'Return')
         AND posting_date BETWEEN %(from_date)s AND %(to_date)s
@@ -97,6 +97,7 @@ def get_context(context):
         AND posting_date BETWEEN %(from_date)s AND %(to_date)s
         {extra_si}
     """
+   
     month_sales_stats = frappe.db.sql(month_stats_query, dict(from_date=filter_month_from, to_date=filter_month_to, **extra_args), as_dict=True)[0] or {}
 
     # Calculate values
@@ -109,7 +110,7 @@ def get_context(context):
 
     context.total_sales = f"₹{total_sales:,.0f}"
     context.invoice_count = f"{invoice_count:,}"
-    context.customer_count = f"{customer_count:,}"
+    context.customer_count = frappe.db.count("Customer")
     context.avg_invoice_value = f"₹{avg_invoice_value:,.0f}"
 
     # Get detailed data for each cost center for modal display, using filters
