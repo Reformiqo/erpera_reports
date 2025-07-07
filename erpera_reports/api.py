@@ -1,5 +1,4 @@
 import frappe
-from frappe import _
 import json
 @frappe.whitelist()
 def get_buying_drill_down_data(filters=None, chart_title=None, clicked_label=None, clicked_value=None):
