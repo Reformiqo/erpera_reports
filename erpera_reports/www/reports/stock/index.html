@@ -68,6 +68,16 @@
 
 
     <div class="overview-cards">
+		<div class="card clickable-card" onclick="showWarehouseModal('total_stock_value')">
+            <div class="card-content">
+                <div class="card-info">
+                    <div class="card-value">{{ total_stock_value }}</div>
+                    <div class="card-label">Total Stock Value</div>
+                    <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
+                </div>
+                <div class="card-icon">📊</div>
+            </div>
+        </div>
         <div class="card clickable-card" onclick="showWarehouseModal('total_items')">
             <div class="card-content">
                 <div class="card-info">
@@ -86,16 +96,6 @@
                     <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
                 </div>
                 <div class="card-icon">🏪</div>
-            </div>
-        </div>
-        <div class="card clickable-card" onclick="showWarehouseModal('total_stock_value')">
-            <div class="card-content">
-                <div class="card-info">
-                    <div class="card-value">{{ total_stock_value }}</div>
-                    <div class="card-label">Total Stock Value</div>
-                    <p style="color: #dc2626; font-size: 16px; font-weight: bold;">({{ current_fiscal_year }})</p>
-                </div>
-                <div class="card-icon">📊</div>
             </div>
         </div>
         <div class="card clickable-card" onclick="showWarehouseModal('low_stock_items')">
