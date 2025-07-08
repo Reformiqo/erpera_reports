@@ -134,7 +134,7 @@
         {% set drill_down_title = 'Expense Details' %}
         {% include "erpera_reports/templates/includes/bar.html" %}
 
-        {% set chart_id = 'expenseByCompany' %}
+<!--         {% set chart_id = 'expenseByCompany' %}
         {% set title = 'Expense by Company' %}
         {% set backgroundColor = '#dc2626' %}
         {% set chart_type = 'bar' %}
@@ -145,15 +145,12 @@
             { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
             { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
         ] %}
-<!-- <<<<<<< HEAD -->
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
-<!-- ======= -->
-<!-- >>>>>>> ec77fe6 (update) -->
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
-        {% include "erpera_reports/templates/includes/bar.html" %}
+        {% include "erpera_reports/templates/includes/bar.html" %} -->
 
-        {% set chart_id = 'expenseSummary' %}
+<!--         {% set chart_id = 'expenseSummary' %}
         {% set title = 'Expense Summary' %}
         {% set backgroundColor = '#dc2626' %}
         {% set chart_type = 'bar' %}
@@ -166,13 +163,10 @@
           { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
           { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
         ] %}
-<!-- <<<<<<< HEAD -->
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
-<!-- ======= -->
-<!-- >>>>>>> ec77fe6 (update) -->
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
-        {% include "erpera_reports/templates/includes/bar.html" %}
+        {% include "erpera_reports/templates/includes/bar.html" %} -->
     </div>
 </div>
 <div class="section-container">
@@ -235,7 +229,7 @@
         {% include "erpera_reports/templates/includes/doughnut.html" %}
     </div>
 </div>
-<div class="section-container">
+<!-- <div class="section-container">
     <h2 class="section-title">Consolidate Most Purchase Head</h2>
     <div class="charts-row">
 
@@ -254,9 +248,9 @@
         {% set drill_down_title = 'Expense Details' %}
         {% include "erpera_reports/templates/includes/multi_pie.html" %}
     </div>
-</div>
+</div> -->
 
-<div class="section-container">
+<!-- <div class="section-container">
     <h2 class="section-title">Consolidate Most Purchase Head</h2>
     <div class="charts-row">
         {% set chart_id = 'consolidateMostPurchaseHead' %}
@@ -272,15 +266,12 @@
             { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
             { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
         ] %}
-<!-- <<<<<<< HEAD -->
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
-<!-- ======= -->
-<!-- >>>>>>> ec77fe6 (update) -->
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
         {% include "erpera_reports/templates/includes/doughnut.html" %}
     </div>
-</div>
+</div> -->
 <style>
 
 .filter-container {
