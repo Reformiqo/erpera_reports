@@ -113,7 +113,7 @@
 
 <div class="section-container">
     <h2 class="section-title">Expense Analysis</h2>
-    <div class="charts-row">
+    <div class="charts-row" style="display: grid;gap: 1rem;margin-bottom: 0;grid-template-columns: 2fr 1fr;">
         {% set chart_id = 'expenseByBranch' %}
         {% set title = 'Expense by Branch' %}
         {% set backgroundColor = '#dc2626' %}
@@ -126,15 +126,12 @@
           { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
           { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
         ] %}
-<!-- <<<<<<< HEAD -->
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
-<!-- ======= -->
-<!-- >>>>>>> ec77fe6 (update) -->
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
         {% include "erpera_reports/templates/includes/bar.html" %}
 
-<!--         {% set chart_id = 'expenseByCompany' %}
+        {% set chart_id = 'expenseByCompany' %}
         {% set title = 'Expense by Company' %}
         {% set backgroundColor = '#dc2626' %}
         {% set chart_type = 'bar' %}
@@ -148,25 +145,9 @@
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
-        {% include "erpera_reports/templates/includes/bar.html" %} -->
+        {% include "erpera_reports/templates/includes/bar.html" %}
 
-<!--         {% set chart_id = 'expenseSummary' %}
-        {% set title = 'Expense Summary' %}
-        {% set backgroundColor = '#dc2626' %}
-        {% set chart_type = 'bar' %}
-        {% set width = 12 %}
-        {% set data_url = 'erpera_reports.expense.get_expense_summary' %}
-        {% set filters = [
-          { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-          { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-          { "label": "Expense Head", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list },
-          { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-          { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
-        ] %}
-		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
-        {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
-        {% set drill_down_title = 'Expense Details' %}
-        {% include "erpera_reports/templates/includes/bar.html" %} -->
+        
     </div>
 </div>
 <div class="section-container">
@@ -220,10 +201,7 @@
             { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
             { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
         ] %}
-<!-- <<<<<<< HEAD -->
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
-<!-- ======= -->
-<!-- >>>>>>> ec77fe6 (update) -->
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
         {% include "erpera_reports/templates/includes/doughnut.html" %}
