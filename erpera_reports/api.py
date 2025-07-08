@@ -765,3 +765,139 @@ def get_stock_value_by_warehouse():
 
     warehouse_stock_values = {row["warehouse"]: row["total_stock_value"] for row in results}
     return warehouse_stock_values
+
+
+@frappe.whitelist()
+def get_total_expense_by_cost_center(date=None, start_date = None, company = None):
+    from erpnext.accounts.utils import get_balance_on
+    filters = {}
+    if date:
+        filters['date'] = date
+    if start_date:
+        filters['start_date'] = start_date
+    if company:
+        filters['company'] = company
+    account_list = frappe.db.get_list('Account', {'account_name': ['like', '%expense%', '%salary%', '%rent%', '%electric%']})
+    # now get cost centers 
+
+    cost_centers = frappe.db.get_list('Cost Center', pluck='name')
+    # for each cost center return the value 
+    data = {}
+    for cost_center in cost_centers:
+        for account in account_list:
+            if not data.get(cost_center):
+                data[cost_center] = 0
+            data[cost_center] += get_balance_on(account = account.name, cost_center = cost_center)
+    
+    # Collect keys to remove to avoid dictionary changed size during iteration error
+    keys_to_remove = []
+    for cost_center, value in data.items():
+        if value <= 0:
+            keys_to_remove.append(cost_center)
+    
+    # Remove the collected keys
+    for key in keys_to_remove:
+        data.pop(key)
+    
+    return data
+@frappe.whitelist()
+def get_total_salaries_by_cost_center(date=None, start_date = None, company = None):
+    from erpnext.accounts.utils import get_balance_on
+    filters = {}
+    if date:
+        filters['date'] = date
+    if start_date:
+        filters['start_date'] = start_date
+    if company:
+        filters['company'] = company
+    account_list = frappe.db.get_list('Account', {'account_name': ['like', '%salary%']})
+    # now get cost centers 
+
+    cost_centers = frappe.db.get_list('Cost Center', pluck='name')
+    # for each cost center return the value 
+    data = {}
+    for cost_center in cost_centers:
+        for account in account_list:
+            if not data.get(cost_center):
+                data[cost_center] = 0
+            data[cost_center] += get_balance_on(account = account.name, cost_center = cost_center)
+    
+    # Collect keys to remove to avoid dictionary changed size during iteration error
+    keys_to_remove = []
+    for cost_center, value in data.items():
+        if value <= 0:
+            keys_to_remove.append(cost_center)
+    
+    # Remove the collected keys
+    for key in keys_to_remove:
+        data.pop(key)
+    
+    return data
+
+@frappe.whitelist()
+def get_total_rents_by_cost_center(date=None, start_date = None, company = None):
+    from erpnext.accounts.utils import get_balance_on
+    filters = {}
+    if date:
+        filters['date'] = date
+    if start_date:
+        filters['start_date'] = start_date
+    if company:
+        filters['company'] = company
+    account_list = frappe.db.get_list('Account', {'account_name': ['like', '%rent%']})
+    # now get cost centers 
+
+    cost_centers = frappe.db.get_list('Cost Center', pluck='name')
+    # for each cost center return the value 
+    data = {}
+    for cost_center in cost_centers:
+        for account in account_list:
+            if not data.get(cost_center):
+                data[cost_center] = 0
+            data[cost_center] += get_balance_on(account = account.name, cost_center = cost_center)
+    
+    # Collect keys to remove to avoid dictionary changed size during iteration error
+    keys_to_remove = []
+    for cost_center, value in data.items():
+        if value <= 0:
+            keys_to_remove.append(cost_center)
+    
+    # Remove the collected keys
+    for key in keys_to_remove:
+        data.pop(key)
+    
+    return data
+
+@frappe.whitelist()
+def get_total_electric_bill_by_cost_center(date=None, start_date = None, company = None):
+    from erpnext.accounts.utils import get_balance_on
+    filters = {}
+    if date:
+        filters['date'] = date
+    if start_date:
+        filters['start_date'] = start_date
+    if company:
+        filters['company'] = company
+    account_list = frappe.db.get_list('Account', {'account_name': ['like', '%electric%']})
+    # now get cost centers 
+
+    cost_centers = frappe.db.get_list('Cost Center', pluck='name')
+    # for each cost center return the value 
+    data = {}
+    for cost_center in cost_centers:
+        for account in account_list:
+            if not data.get(cost_center):
+                data[cost_center] = 0
+            data[cost_center] += get_balance_on(account = account.name, cost_center = cost_center)
+    
+    # Collect keys to remove to avoid dictionary changed size during iteration error
+    keys_to_remove = []
+    for cost_center, value in data.items():
+        if value <= 0:
+            keys_to_remove.append(cost_center)
+    
+    # Remove the collected keys
+    for key in keys_to_remove:
+        data.pop(key)
+    
+    return data

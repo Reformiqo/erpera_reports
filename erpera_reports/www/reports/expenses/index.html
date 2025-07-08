@@ -126,7 +126,10 @@
           { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
           { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
         ] %}
+<<<<<<< HEAD
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
+=======
+>>>>>>> ec77fe6 (update)
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
         {% include "erpera_reports/templates/includes/bar.html" %}
@@ -142,7 +145,10 @@
             { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
             { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list }
         ] %}
+<<<<<<< HEAD
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
+=======
+>>>>>>> ec77fe6 (update)
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
         {% include "erpera_reports/templates/includes/bar.html" %}
@@ -160,7 +166,10 @@
           { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
           { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
         ] %}
+<<<<<<< HEAD
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
+=======
+>>>>>>> ec77fe6 (update)
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
         {% include "erpera_reports/templates/includes/bar.html" %}
@@ -217,7 +226,10 @@
             { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
             { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
         ] %}
+<<<<<<< HEAD
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
+=======
+>>>>>>> ec77fe6 (update)
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
         {% include "erpera_reports/templates/includes/doughnut.html" %}
@@ -260,7 +272,10 @@
             { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list },
             { "label": "Item Group", "fieldtype": "Select", "fieldname": "item_group", "options": item_group_list }
         ] %}
+<<<<<<< HEAD
 		{% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
+=======
+>>>>>>> ec77fe6 (update)
         {% set drill_down_method = 'erpera_reports.api.get_expense_drill_down_data' %}
         {% set drill_down_title = 'Expense Details' %}
         {% include "erpera_reports/templates/includes/doughnut.html" %}
@@ -631,26 +646,92 @@ function showCostCenterModal(metricType) {
         'total_rents': '🏢',
         'total_electric_bill': '⚡'
     };
+    
     const title = metricTitles[metricType];
     const label = metricLabels[metricType];
     const icon = metricIcons[metricType];
-    let cardsHTML = '<div class="cost-center-modal-content">';
-    cardsHTML += '<div class="overview-cards">';
-    costCenterData.forEach(function(item) {
-        const value = item[metricType];
-        cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;gap:4rem;text-align: left;justify-content: space-between;">';
-            cardsHTML += '<div><div class="card-label">' + item.display_name + '</div>';
-            cardsHTML += '<div class="card-value">' + value + '</div></div>';
-            cardsHTML += '<div class="card-icon">' + icon + '</div>';
-            cardsHTML += '</div>';
-        cardsHTML += '</div>';
-    });
-    cardsHTML += '</div></div>';
-    frappe.msgprint({
-        title: title,
-        message: cardsHTML,
-        wide: true,
-        indicator: 'blue'
+    
+    frappe.show_alert('Loading cost center details...', 2);
+    
+    // Prepare args only if filters are set
+    let args = {};
+    // Only set date if currentFromDate is set
+    if (currentFromDate) {
+        args.start_date = currentFromDate.toISOString().split('T')[0];
+    }
+    if (currentToDate) {
+        args.date = currentToDate.toISOString().split('T')[0];
+    }
+    if (currentCompany) {
+        args.company = currentCompany;
+    }
+    if (currentBranch) {
+        args.branch = currentBranch;
+    }
+    // If no filters are set, don't send any args
+    if (Object.keys(args).length === 0) {
+        args = undefined;
+    }
+    
+    let apiMethod;
+    switch(metricType) {
+        case 'total_expense':
+            apiMethod = 'erpera_reports.api.get_total_expense_by_cost_center';
+            break;
+        case 'total_salaries':
+            apiMethod = 'erpera_reports.api.get_total_salaries_by_cost_center';
+            break;
+        case 'total_rents':
+            apiMethod = 'erpera_reports.api.get_total_rents_by_cost_center';
+            break;
+        case 'total_electric_bill':
+            apiMethod = 'erpera_reports.api.get_total_electric_bill_by_cost_center';
+            break;
+        default:
+            frappe.msgprint('Invalid metric type');
+            return;
+    }
+    
+    frappe.call({
+        method: apiMethod,
+        args: args,
+        callback: function(r) {
+            // The backend returns a dict, not a list
+            let data = r.message;
+            if (data && Object.keys(data).length > 0) {
+                let cardsHTML = '<div class="cost-center-modal-content">';
+                cardsHTML += '<div class="overview-cards">';
+                Object.entries(data).forEach(function([cost_center, value]) {
+                    cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;gap:4rem;text-align: left;justify-content: space-between;">';
+                    cardsHTML += '<div><div class="card-label">' + cost_center + '</div>';
+                    cardsHTML += '<div class="card-value">' + frappe.format(value, { fieldtype: 'Currency' }) + '</div></div>';
+                    cardsHTML += '<div class="card-icon">' + icon + '</div>';
+                    cardsHTML += '</div>';
+                    cardsHTML += '</div>';
+                });
+                cardsHTML += '</div></div>';
+                frappe.msgprint({
+                    title: title,
+                    message: cardsHTML,
+                    wide: true,
+                    indicator: 'blue'
+                });
+            } else {
+                frappe.msgprint({
+                    title: title,
+                    message: '<div class="text-center">No data available for the selected filters.</div>',
+                    indicator: 'yellow'
+                });
+            }
+        },
+        error: function(err) {
+            console.error('Error fetching cost center data:', err);
+            frappe.msgprint({
+                title: 'Error',
+                message: 'Failed to load cost center details. Please try again.',
+                indicator: 'red'
+            });
+        }
     });
 }
 window.showCostCenterModal = showCostCenterModal;

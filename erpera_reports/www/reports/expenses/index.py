@@ -1,6 +1,6 @@
 import frappe
 from datetime import datetime
-
+from erpnext.accounts.utils import get_balance_on
 
 
 def get_context(context):
@@ -79,55 +79,33 @@ def get_context(context):
         extra_gle += " AND gle.cost_center = %(branch)s"
         extra_args['branch'] = branch
 
-    # Query for Total Expense (all expense accounts)
-    total_expense_query = f"""
-        SELECT SUM(gle.debit) AS total_expense
-        FROM `tabGL Entry` gle
-        INNER JOIN `tabAccount` acc ON gle.account = acc.name
-        WHERE acc.account_type = 'Expense' AND gle.debit > 0
-        AND gle.posting_date BETWEEN {filter_from} AND {filter_to}
-    """
-    total_expense_result = frappe.db.sql(total_expense_query, as_dict=True)[0] or {}
-    total_expense = total_expense_result.get('total_expense') or 0
+    # Query for Total Expense (all expense accounts) like salary, rent, electric, etc.
+    expense_accounts = frappe.db.get_list('Account', {'account_name': ['like', '%expense%', '%salary%', '%rent%', '%electric%']})
+    total_expense = 0
+    for account in expense_accounts:
+        total_expense += get_balance_on(account = account.name, date = filter_to, start_date = filter_from, company = company, cost_center = branch)
 
     # Query for Total Salaries (accounts containing salary, payroll, wage, compensation)
-    total_salaries_query = f"""
-        SELECT SUM(gle.debit) AS total_salaries
-        FROM `tabGL Entry` gle
-        WHERE gle.account = 'Salary - HKE'
-        AND gle.debit > 0
-    """
-    total_salaries_result = frappe.db.sql(total_salaries_query, as_dict=True)[0] or {}
-    total_salaries = total_salaries_result.get('total_salaries') or 0
+    # Get all accounts that contain 'salary' in their name
+    
+    salary_accounts = frappe.db.get_list('Account', {'account_name': ['like', '%salary%']})
+    total_salaries = 0
+    for account in salary_accounts:
+        total_salaries += get_balance_on(account = account.name, date = filter_to, start_date = filter_from, company = company)
+    
+    
 
     # Query for Total Rents (accounts containing rent, lease, premises)
-    total_rents_query = f"""
-        SELECT SUM(gle.debit) AS total_rents
-        FROM `tabGL Entry` gle
-        INNER JOIN `tabAccount` acc ON gle.account = acc.name
-        WHERE acc.account_type = 'Expense' AND gle.debit > 0
-        AND gle.posting_date BETWEEN {filter_from} AND {filter_to}
-        AND (LOWER(acc.account_name) LIKE '%rent%' 
-             OR LOWER(acc.account_name) LIKE '%lease%' 
-             OR LOWER(acc.account_name) LIKE '%premises%')
-    """
-    total_rents_result = frappe.db.sql(total_rents_query, as_dict=True)[0] or {}
-    total_rents = total_rents_result.get('total_rents') or 0
-
+    rent_accounts = frappe.db.get_list('Account', {'account_name': ['like', '%rent%']})
+    total_rents = 0
+    for account in rent_accounts:
+        total_rents += get_balance_on(account = account.name, date = filter_to, start_date = filter_from, company = company, cost_center = branch)
+    
     # Query for Total Electric Bill (accounts containing electric, power, electricity, utility)
-    total_electric_bill_query = f"""
-        SELECT SUM(gle.debit) AS total_electric_bill
-        FROM `tabGL Entry` gle
-        INNER JOIN `tabAccount` acc ON gle.account = acc.name
-        WHERE acc.account_type = 'Expense' AND gle.debit > 0
-        AND gle.posting_date BETWEEN {filter_from} AND {filter_to}
-        AND (LOWER(acc.account_name) LIKE '%electric%' 
-             OR LOWER(acc.account_name) LIKE '%power%' 
-             OR LOWER(acc.account_name) LIKE '%electricity%' 
-             OR LOWER(acc.account_name) LIKE '%utility%')
-    """
-    total_electric_bill_result = frappe.db.sql(total_electric_bill_query, as_dict=True)[0] or {}
-    total_electric_bill = total_electric_bill_result.get('total_electric_bill') or 0
+    electric_accounts = frappe.db.get_list('Account', {'account_name': ['like', '%electric%']})
+    total_electric_bill = 0
+    for account in electric_accounts:
+        total_electric_bill += get_balance_on(account = account.name, date = filter_to, start_date = filter_from, company = company, cost_center = branch)
 
     # Add expense stats to context
     context.total_expense = f"₹{total_expense:,.0f}"

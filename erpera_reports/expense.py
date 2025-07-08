@@ -285,27 +285,31 @@ def get_expense_by_branch(filters=None):
         import json
         filters = json.loads(filters)
     filters = filters or {}
+    where = []
     args = {}
-    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
     if filters.get('from_date'):
-        where.append("pi.posting_date >= %(from_date)s")
+        where.append("gl.posting_date >= %(from_date)s")
         args['from_date'] = filters['from_date']
     if filters.get('to_date'):
-        where.append("pi.posting_date <= %(to_date)s")
+        where.append("gl.posting_date <= %(to_date)s")
         args['to_date'] = filters['to_date']
     if filters.get('company'):
-        where.append("pi.company = %(company)s")
+        where.append("gl.company = %(company)s")
         args['company'] = filters['company']
     if filters.get('branch'):
-        where.append("pi.cost_center = %(branch)s")
+        where.append("gl.cost_center = %(branch)s")
         args['branch'] = filters['branch']
+    accounts = frappe.db.get_list('Account', {'account_name': ['like', '%electric%', '%rent%', '%salary%', '%expense%']}, pluck='name')
+    for account in accounts:
+        where.append("gl.account = %(account)s")
+        args['account'] = account
     sql = f"""
-        SELECT pi.cost_center, cc.cost_center_name, SUM(pii.amount) as total
-        FROM `tabPurchase Invoice` pi
-        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-        LEFT JOIN `tabCost Center` cc ON pi.cost_center = cc.name
-        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
-        GROUP BY pi.cost_center, cc.cost_center_name
+        SELECT gl.cost_center, cc.cost_center_name, SUM(gl.debit) as total
+        FROM `tabGL Entry` gl
+        INNER JOIN `tabAccount` acc ON gl.account = acc.name
+        LEFT JOIN `tabCost Center` cc ON gl.cost_center = cc.name
+        WHERE {' AND '.join(where)}
+        GROUP BY gl.cost_center, cc.cost_center_name
         ORDER BY total DESC
     """
     rows = frappe.db.sql(sql, args, as_dict=True)
@@ -327,22 +331,26 @@ def get_expense_by_company(filters=None):
         filters = json.loads(filters)
     filters = filters or {}
     args = {}
-    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    where = []
     if filters.get('from_date'):
-        where.append("pi.posting_date >= %(from_date)s")
+        where.append("gl.posting_date >= %(from_date)s")
         args['from_date'] = filters['from_date']
     if filters.get('to_date'):
-        where.append("pi.posting_date <= %(to_date)s")
+        where.append("gl.posting_date <= %(to_date)s")
         args['to_date'] = filters['to_date']
     if filters.get('company'):
-        where.append("pi.company = %(company)s")
+        where.append("gl.company = %(company)s")
         args['company'] = filters['company']
+    accounts = frappe.db.get_list('Account', {'account_name': ['like', '%electric%', '%rent%', '%salary%', '%expense%']}, pluck='name')
+    for account in accounts:
+        where.append("gl.account = %(account)s")
+        args['account'] = account
     sql = f"""
-        SELECT pi.company, SUM(pii.amount) as total
-        FROM `tabPurchase Invoice` pi
-        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
-        GROUP BY pi.company
+        SELECT gl.company, SUM(gl.debit) as total
+        FROM `tabGL Entry` gl
+        INNER JOIN `tabAccount` acc ON gl.account = acc.name
+        WHERE {' AND '.join(where)}
+        GROUP BY gl.company
         ORDER BY total DESC
     """
     rows = frappe.db.sql(sql, args, as_dict=True)
@@ -364,29 +372,33 @@ def get_expense_summary(filters=None):
         filters = json.loads(filters)
     filters = filters or {}
     args = {}
-    where = ["1=1", f"pii.item_group IN {EXPENSE_GROUPS}"]
+    where = []
     if filters.get('from_date'):
-        where.append("pi.posting_date >= %(from_date)s")
+        where.append("gl.posting_date >= %(from_date)s")
         args['from_date'] = filters['from_date']
     if filters.get('to_date'):
-        where.append("pi.posting_date <= %(to_date)s")
+        where.append("gl.posting_date <= %(to_date)s")
         args['to_date'] = filters['to_date']
     if filters.get('company'):
-        where.append("pi.company = %(company)s")
+        where.append("gl.company = %(company)s")
         args['company'] = filters['company']
     if filters.get('branch'):
-        where.append("pi.cost_center = %(branch)s")
+        where.append("gl.cost_center = %(branch)s")
         args['branch'] = filters['branch']
+    accounts = frappe.db.get_list('Account', {'account_name': ['like', '%electric%', '%rent%', '%salary%', '%expense%']}, pluck='name')
+    for account in accounts:
+        where.append("gl.account = %(account)s")
+        args['account'] = account
     sql = f"""
-        SELECT pii.item_group, SUM(pii.amount) as total
-        FROM `tabPurchase Invoice` pi
-        INNER JOIN `tabPurchase Invoice Item` pii ON pi.name = pii.parent
-        WHERE pi.docstatus = 1 AND pi.status NOT IN ('Cancelled', 'Return') AND {' AND '.join(where)}
-        GROUP BY pii.item_group
+        SELECT acc.account_name, SUM(gl.debit) as total
+        FROM `tabGL Entry` gl
+        INNER JOIN `tabAccount` acc ON gl.account = acc.name
+        WHERE {' AND '.join(where)}
+        GROUP BY acc.account_name
         ORDER BY total DESC
     """
     rows = frappe.db.sql(sql, args, as_dict=True)
-    labels = [row['item_group'] for row in rows]
+    labels = [row['account_name'] for row in rows]
     data = [row['total'] for row in rows]
     return {
         'labels': labels,
