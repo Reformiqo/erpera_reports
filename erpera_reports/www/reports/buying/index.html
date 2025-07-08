@@ -639,7 +639,7 @@
         cardsHTML += '<div class="overview-cards">';
         costCenterData.forEach(function(item) {
             const value = item[metricType];
-            cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;gap:4rem;text-align: left;justify-content: space-between;">';
+            cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;height:100%;text-align: left;justify-content: space-between;">';
                 cardsHTML += '<div><div class="card-label">' + item.display_name + '</div>';
                 cardsHTML += '<div class="card-value">' + value + '</div></div>';
                 cardsHTML += '<div class="card-icon">' + icon + '</div>';
