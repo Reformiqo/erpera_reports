@@ -403,8 +403,7 @@ def get_stock_drill_down_data(filters=None, chart_title=None, clicked_label=None
             i.item_name,
             i.item_group,
             sle.warehouse,
-            sle.actual_qty,
-            sle.valuation_rate,
+ 			sle.stock_value,
             sle.company,
             sle.voucher_type,
             sle.voucher_no
@@ -469,17 +468,12 @@ def get_stock_drill_down_data(filters=None, chart_title=None, clicked_label=None
         formatted_data = []
         for row in result:
             formatted_row = {
-                'entry_name': row.get('entry_name', ''),
                 'posting_date': row.get('posting_date', ''),
-                'item_code': row.get('item_code', ''),
                 'item_name': row.get('item_name', ''),
                 'item_group': row.get('item_group', ''),
                 'warehouse': row.get('warehouse', ''),
-                'actual_qty': float(row.get('actual_qty', 0)),
-                'valuation_rate': float(row.get('valuation_rate', 0)),
-                'company': row.get('company', ''),
-                'voucher_type': row.get('voucher_type', ''),
-                'voucher_no': row.get('voucher_no', '')
+                'stock_value': row.get('stock_value',''),
+                'company': row.get('company', '')
             }
             formatted_data.append(formatted_row)
         return {
