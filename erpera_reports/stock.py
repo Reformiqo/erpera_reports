@@ -91,7 +91,7 @@ def get_warehouse_wise_stock(filters=None):
         DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
         SUM(sle.actual_qty) AS total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
+        SUM(sle.stock_value) AS total_value,
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
@@ -204,7 +204,7 @@ def get_company_wise_stock(filters=None):
         DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
         SUM(sle.actual_qty) AS total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
+        SUM(sle.stock_value) AS total_value,
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
@@ -316,7 +316,7 @@ def get_stock_summary(filters=None):
         DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
         SUM(sle.actual_qty) AS total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
+        SUM(sle.stock_value) AS total_value,
         COUNT(DISTINCT sle.item_code) AS item_count,
         COUNT(DISTINCT sle.warehouse) AS warehouse_count,
         COUNT(DISTINCT sle.company) AS company_count
@@ -394,7 +394,7 @@ def get_consolidated_stock(filters=None):
         DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
         SUM(sle.actual_qty) AS total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
+        SUM(sle.stock_value) AS total_value,
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
@@ -439,7 +439,7 @@ def get_consolidated_stock(filters=None):
                 END AS entity_name,
                 COALESCE(sle.company, 'Unknown Company') AS company,
                 COUNT(DISTINCT sle.item_code) as item_count,
-                SUM(sle.actual_qty * sle.valuation_rate) as total_value
+                SUM(sle.stock_value) as total_value
             FROM `tabStock Ledger Entry` sle
             INNER JOIN `tabItem` i ON sle.item_code = i.name
             WHERE 
@@ -699,7 +699,7 @@ def get_top_stock_items_by_warehouse(filters=None):
         i.item_name,
         sle.item_code,
         SUM(sle.actual_qty) as total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) as total_value,
+        SUM(sle.stock_value) as total_value,
         COUNT(DISTINCT sle.item_code) as item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
@@ -809,7 +809,7 @@ def get_top_stock_items_by_company(filters=None):
         i.item_name,
         sle.item_code,
         SUM(sle.actual_qty) as total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) as total_value,
+        SUM(sle.stock_value) as total_value,
         COUNT(DISTINCT sle.item_code) as item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
@@ -921,7 +921,7 @@ def get_consolidated_top_stock_items(filters=None):
         i.item_name,
         sle.item_code,
         SUM(sle.actual_qty) as total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) as total_value,
+        SUM(sle.stock_value) as total_value,
         COUNT(DISTINCT sle.company) as company_count,
         GROUP_CONCAT(DISTINCT sle.company) as companies
     FROM `tabStock Ledger Entry` sle
@@ -1021,7 +1021,7 @@ def get_warehouse_wise_expiry_stock(filters=None):
         sle.item_code,
         sle.batch_no,
         SUM(sle.actual_qty) AS total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
+        SUM(sle.stock_value) AS total_value,
         b.expiry_date,
         DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry
     FROM `tabStock Ledger Entry` sle
@@ -1059,7 +1059,7 @@ def get_warehouse_wise_expiry_stock(filters=None):
             SELECT
                 COALESCE(sle.warehouse, 'Unknown Warehouse') AS warehouse,
                 COUNT(DISTINCT sle.item_code) as item_count,
-                SUM(sle.actual_qty * sle.valuation_rate) as total_value
+                SUM(sle.stock_value) as total_value
             FROM `tabStock Ledger Entry` sle
             INNER JOIN `tabItem` i ON sle.item_code = i.name
             INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
@@ -1223,7 +1223,7 @@ def get_company_wise_expiry_stock(filters=None):
         sle.item_code,
         sle.batch_no,
         SUM(sle.actual_qty) AS total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
+        SUM(sle.stock_value) AS total_value,
         b.expiry_date,
         DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry
     FROM `tabStock Ledger Entry` sle
@@ -1260,7 +1260,7 @@ def get_company_wise_expiry_stock(filters=None):
             SELECT
                 COALESCE(sle.company, 'Unknown Company') AS company,
                 COUNT(DISTINCT sle.item_code) as item_count,
-                SUM(sle.actual_qty * sle.valuation_rate) as total_value
+                SUM(sle.stock_value) as total_value
             FROM `tabStock Ledger Entry` sle
             INNER JOIN `tabItem` i ON sle.item_code = i.name
             INNER JOIN `tabItem Group` ig ON i.item_group = ig.name
@@ -1423,7 +1423,7 @@ def get_expiry_stock_summary(filters=None):
         sle.item_code,
         sle.batch_no,
         SUM(sle.actual_qty) AS total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
+        SUM(sle.stock_value) AS total_value,
         b.expiry_date,
         DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry,
         COUNT(DISTINCT sle.warehouse) AS warehouse_count,
@@ -1461,7 +1461,7 @@ def get_expiry_stock_summary(filters=None):
                 DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
                 DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
                 COUNT(DISTINCT sle.item_code) as item_count,
-                SUM(sle.actual_qty * sle.valuation_rate) as total_value,
+                SUM(sle.stock_value) as total_value,
                 COUNT(DISTINCT sle.warehouse) AS warehouse_count,
                 COUNT(DISTINCT sle.company) AS company_count
             FROM `tabStock Ledger Entry` sle
@@ -1621,7 +1621,7 @@ def get_consolidated_expired_items(filters=None):
         sle.item_code,
         sle.batch_no,
         SUM(sle.actual_qty) AS total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
+        SUM(sle.stock_value) AS total_value,
         b.expiry_date,
         DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry,
         COUNT(DISTINCT sle.company) as company_count,
@@ -1670,7 +1670,7 @@ def get_consolidated_expired_items(filters=None):
                 END AS entity_name,
                 COALESCE(sle.company, 'Unknown Company') AS company,
                 COUNT(DISTINCT sle.item_code) as item_count,
-                SUM(sle.actual_qty * sle.valuation_rate) as total_value
+                SUM(sle.stock_value) as total_value
             FROM `tabStock Ledger Entry` sle
             INNER JOIN `tabItem` i ON sle.item_code = i.name
             WHERE 
@@ -1905,7 +1905,7 @@ def get_consolidated_expiry_stock(filters=None):
         DATE_FORMAT(sle.posting_date, '%%b %%Y') AS month_year,
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
         SUM(sle.actual_qty) AS total_quantity,
-        SUM(sle.actual_qty * sle.valuation_rate) AS total_value,
+        SUM(sle.stock_value) AS total_value,
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
@@ -1950,7 +1950,7 @@ def get_consolidated_expiry_stock(filters=None):
                 END AS entity_name,
                 COALESCE(sle.company, 'Unknown Company') AS company,
                 COUNT(DISTINCT sle.item_code) as item_count,
-                SUM(sle.actual_qty * sle.valuation_rate) as total_value
+                SUM(sle.stock_value) as total_value
             FROM `tabStock Ledger Entry` sle
             INNER JOIN `tabItem` i ON sle.item_code = i.name
             WHERE 
@@ -2175,7 +2175,7 @@ def get_expiry_demand_comparison(filters=None):
             sle.item_code,
             sle.batch_no,
         SUM(sle.actual_qty) AS current_stock,
-        SUM(sle.actual_qty * sle.valuation_rate) AS stock_value,
+        SUM(sle.stock_value) AS stock_value,
             b.expiry_date,
         DATEDIFF(b.expiry_date, CURDATE()) AS days_until_expiry
         FROM `tabStock Ledger Entry` sle
@@ -2275,8 +2275,8 @@ def get_branch_wise_in_out_quantity(filters=None):
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
         SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty ELSE 0 END) AS quantity_in,
         SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) ELSE 0 END) AS quantity_out,
-        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty * sle.valuation_rate ELSE 0 END) AS value_in,
-        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty * sle.valuation_rate) ELSE 0 END) AS value_out,
+        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.stock_value ELSE 0 END) AS value_in,
+        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.stock_value) ELSE 0 END) AS value_out,
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
@@ -2435,8 +2435,8 @@ def get_company_wise_in_out_quantity(filters=None):
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
         SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty ELSE 0 END) AS quantity_in,
         SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) ELSE 0 END) AS quantity_out,
-        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty * sle.valuation_rate ELSE 0 END) AS value_in,
-        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty * sle.valuation_rate) ELSE 0 END) AS value_out,
+        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.stock_value ELSE 0 END) AS value_in,
+        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.stock_value) ELSE 0 END) AS value_out,
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
@@ -2618,8 +2618,8 @@ def get_consolidate_in_out_quantity(filters=None):
         DATE_FORMAT(sle.posting_date, '%%Y-%%m') AS sort_date,
         SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty ELSE 0 END) AS quantity_in,
         SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty) ELSE 0 END) AS quantity_out,
-        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.actual_qty * sle.valuation_rate ELSE 0 END) AS value_in,
-        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.actual_qty * sle.valuation_rate) ELSE 0 END) AS value_out,
+        SUM(CASE WHEN sle.actual_qty > 0 THEN sle.stock_value ELSE 0 END) AS value_in,
+        SUM(CASE WHEN sle.actual_qty < 0 THEN ABS(sle.stock_value) ELSE 0 END) AS value_out,
         COUNT(DISTINCT sle.item_code) AS item_count
     FROM `tabStock Ledger Entry` sle
     INNER JOIN `tabItem` i ON sle.item_code = i.name
