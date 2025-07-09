@@ -673,7 +673,7 @@ function showCostCenterModal(metricType) {
                 Object.entries(data).forEach(function([cost_center, value]) {
                     cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;height:100%;text-align: left;justify-content: space-between;">';
                     cardsHTML += '<div><div class="card-label">' + cost_center + '</div>';
-                    cardsHTML += '<div class="card-value">₹ ' + value + '</div></div>';
+                    cardsHTML += '<div class="card-value">₹ ' + Math.round(value).toLocaleString('en-IN') + '</div></div>';
                     cardsHTML += '<div class="card-icon">' + icon + '</div>';
                     cardsHTML += '</div>';
                     cardsHTML += '</div>';
