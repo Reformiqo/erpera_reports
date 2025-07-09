@@ -709,7 +709,7 @@ def get_expense_drill_down_data(filters=None, chart_title=None, clicked_label=No
                 # 'company': row.get('company', ''),
                 # 'branch': row.get('branch', ''),
                 'item_name': row.get('item_name', ''),
-                # 'item_group': row.get('item_group', ''),
+                'item_group': row.get('item_group', ''),
                 'total_qty': float(row.get('total_qty', 0)),
                 'total_amount': float(row.get('total_amount', 0)),
                 'status': row.get('status', '')
