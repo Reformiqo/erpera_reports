@@ -249,7 +249,7 @@ def get_stock_details(warehouse=None, company=None):
             sle.warehouse,
             w.warehouse_name,
             COUNT(DISTINCT sle.item_code) AS total_skus,
-            COALESCE(SUM(sle.actual_qty * sle.valuation_rate), 0) AS total_stock_value,
+            COALESCE(SUM(sle.stock_value), 0) AS total_stock_value,
             ROUND(
                 (COUNT(DISTINCT CASE WHEN sle.actual_qty > 0 THEN sle.item_code END) * 100.0) / 
                 COUNT(DISTINCT sle.item_code), 1
