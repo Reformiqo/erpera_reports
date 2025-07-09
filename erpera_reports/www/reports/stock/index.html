@@ -686,7 +686,7 @@
                             const stockValue = r.message[warehouse];
                             cardsHTML += '<div class="card"><div style="display:flex;flex-direction: row;height:100%;text-align: left;justify-content: space-between;">';
                             cardsHTML += '<div><div class="card-label">' + warehouse + '</div>';
-                            cardsHTML += '<div class="card-value">₹' + frappe.format(stockValue) + '</div></div>';
+                            cardsHTML += '<div class="card-value">₹' + Math.round(frappe.format(stockValue)).toLocaleString('en-IN') + '</div></div>';
                             cardsHTML += '<div class="card-icon">' + icon + '</div>';
                             cardsHTML += '</div>';    
                             cardsHTML += '</div>';
