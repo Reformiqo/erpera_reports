@@ -153,7 +153,7 @@ def get_warehouse_details(fy_start, fy_end, month_start, month_end, company=None
             w.warehouse_name,
             COUNT(DISTINCT sle.item_code) AS total_items,
             COUNT(DISTINCT sle.warehouse) AS total_warehouses,
-            SUM(sle.actual_qty * sle.valuation_rate) AS total_stock_value
+            SUM(sle.stock_value) AS total_stock_value
         FROM `tabStock Ledger Entry` sle
         INNER JOIN `tabItem` item ON sle.item_code = item.name
         LEFT JOIN `tabWarehouse` w ON sle.warehouse = w.name
