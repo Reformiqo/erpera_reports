@@ -163,60 +163,6 @@
             {% include "erpera_reports/templates/includes/bar.html" %}
         </div>
     </div>
-
-    <div class="section-container">
-        <h2 class="section-title">Consolidated Total Stock</h2>
-        <div class="charts-row">
-            {% set chart_id = 'consolidatedTotalStock' %}
-            {% set title = 'Consolidated Total Stock' %}
-            {% set backgroundColor = '#7c3aed' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_consolidated_stock' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
-            ] %}
-            {% set drill_down_method = 'erpera_reports.api.get_stock_drill_down_data' %}
-            {% set drill_down_title = 'Stock Details' %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'entityWiseStock' %}
-            {% set title = 'Entity Wise Stock' %}
-            {% set backgroundColor = '#7c3aed' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_entity_wise_stock' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
-            ] %}
-            {% set drill_down_method = 'erpera_reports.api.get_stock_drill_down_data' %}
-            {% set drill_down_title = 'Stock Details' %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-
-            {% set chart_id = 'consolidatedExpiryStock' %}
-            {% set title = 'Consolidated Expiry Stock' %}
-            {% set backgroundColor = '#7c3aed' %}
-            {% set chart_type = 'bar' %}
-            {% set width = 12 %}
-            {% set data_url = 'erpera_reports.stock.get_consolidated_expiry_stock' %}
-            {% set filters = [
-              { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-              { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-              { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-              { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
-            ] %}
-            {% set drill_down_method = 'erpera_reports.api.get_stock_drill_down_data' %}
-            {% set drill_down_title = 'Stock Details' %}
-            {% include "erpera_reports/templates/includes/bar.html" %}
-        </div>
-    </div>
-
     <div class="section-container">
         <h2 class="section-title">Expiry Stock</h2>
         <div class="charts-row">
