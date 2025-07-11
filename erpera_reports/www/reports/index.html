@@ -133,23 +133,10 @@
  
 
     <div class="section-container">
-        <div style="display: flex; flex-direction: row; gap: 1rem;justify-content: space-between;">
             <h2 class="section-title">Top Selling & Low Performing SKUs</h2>
-            <div>
-                <div class="custom-select">10</div>
-                <div class="custom-select">20</div>
-                <div class="custom-select">All</div>
-            <select id="type-select" class="custom-select" onchange="toggleChartType(this.value)">
-                <option value="quantity" selected>Quantity</option>
-                <option value="amount">Amount</option>
-            </select>
-            </div>
-        </div>
-        
         <div class="charts-row">
-        
             <!-- Quantity Charts -->
-            <div id="quantity-charts" style="width: 100%;">
+            <div id="quantity-charts">
                 {% set chart_id = 'topSellingSkus' %}
                 {% set title = 'Fast-Moving Items (By Quantity)' %}
                 {% set backgroundColor = '#10b981' %}
@@ -168,31 +155,6 @@
         
                 {% set chart_id = 'lowPerformingSkus' %}
                 {% set title = 'Slow-Moving Items (By Quantity)' %}
-                {% set backgroundColor = '#ef4444' %}
-                {% set data_url = 'erpera_reports.dashboard.get_low_performing_skus' %}
-                {% include "erpera_reports/templates/includes/bar.html" %}
-            </div>
-        
-            <!-- Amount Charts -->
-            <div id="amount-charts" style="display: none;width: 100%;">
-                {% set chart_id = 'topSellingSkusAmount' %}
-                {% set title = 'Top Selling Items (By Amount)' %}
-                {% set backgroundColor = '#10b981' %}
-                {% set chart_type = 'bar' %}
-                {% set width = 12 %}
-                {% set data_url = 'erpera_reports.dashboard.get_top_selling_skus' %}
-                {% set filters = [
-                  { "label": "From Date", "fieldtype": "Date", "fieldname": "from_date" },
-                  { "label": "To Date", "fieldtype": "Date", "fieldname": "to_date" },
-                  { "label": "Company", "fieldtype": "Select", "fieldname": "company", "options": company_list },
-                  { "label": "Branch", "fieldtype": "Select", "fieldname": "branch", "options": branch_list }
-                ] %}
-                {% set drill_down_method = 'erpera_reports.api.get_selling_drill_down_data' %}
-                {% set drill_down_title = 'Sales Details' %}
-                {% include "erpera_reports/templates/includes/bar.html" %}
-        
-                {% set chart_id = 'lowPerformingSkusAmount' %}
-                {% set title = 'Low Performing Items (By Amount)' %}
                 {% set backgroundColor = '#ef4444' %}
                 {% set data_url = 'erpera_reports.dashboard.get_low_performing_skus' %}
                 {% include "erpera_reports/templates/includes/bar.html" %}
